@@ -7,11 +7,13 @@ RU_PASSWORD="user"
 RU_ENABLE_PASSWORD="liteon168"
 GNB_SERVER_USER="oai72"
 GNB_SERVER_HOST="192.168.8.43"
-PASSWORD="bmwlab"
-CN_SERVER="open5gs"
+GNB_SERVER_PASSWORD="bmwlab"
 CONTROL_PC_IP="192.168.8.118"
 CONTROL_PC_USER="sshuser"
 CONTROL_PC_PASSWORD="bmwlab"
+CN_SERVER_USER="open5gs"
+CN_SERVER_HOST="192.168.8.108"
+CN_SERVER_PASSWORD="bmwlab"
 SERVER_IP="192.168.70.135"
 ADB_DEVICE="0123456789ABCDEF"
 TEST_DURATION=5
@@ -105,7 +107,7 @@ EOF
 start_gnb() {
     local mode=$1
     echo "Starting gNB in $mode mode..." | tee -a "$LOG_FILE"
-    export GNB_SERVER_USER GNB_SERVER_HOST PASSWORD
+    export GNB_SERVER_USER GNB_SERVER_HOST GNB_SERVER_PASSWORD
 
     local session_name
     local command
@@ -113,19 +115,19 @@ start_gnb() {
     if [ "$mode" == "nFAPI" ]; then
         # nFAPI VNF
         session_name="VNF"
-        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
-        sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
+        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+        sshpass -p "$GNB_SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB VNF"
 
         # nFAPI PNF
         session_name="PNF"
-        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
-        sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
+        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
+        sshpass -p "$GNB_SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB PNF"
     else  # FAPI
         session_name="Monolithic"
-        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
-        sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
+        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
+        sshpass -p "$GNB_SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB Monolithic"
     fi
 
@@ -139,21 +141,21 @@ toggle_airplane_mode() {
     echo "SSH to $CONTROL_PC_USER@$CONTROL_PC_IP. Setting airplane mode to $state..." | tee -a "$LOG_FILE"
     
     if [ "$state" == "off" ]; then
-        ssh IA-PC "adb -s $ADB_DEVICE shell \"settings put global airplane_mode_on 0\" && adb -s $ADB_DEVICE shell \"am broadcast -a android.intent.action.AIRPLANE_MODE --ez state false\"" >> "$LOG_FILE" 2>&1
+        sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell \"settings put global airplane_mode_on 0\" && adb -s $ADB_DEVICE shell \"am broadcast -a android.intent.action.AIRPLANE_MODE --ez state false\"" >> "$LOG_FILE" 2>&1
+        sleep 5  # 等待網絡穩定
     else
-        ssh IA-PC "adb -s $ADB_DEVICE shell \"settings put global airplane_mode_on 1\" && adb -s $ADB_DEVICE shell \"am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true\"" >> "$LOG_FILE" 2>&1
+        sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell \"settings put global airplane_mode_on 1\" && adb -s $ADB_DEVICE shell \"am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true\"" >> "$LOG_FILE" 2>&1
     fi
 
     check_status "Toggle airplane mode to $state on remote CONTROL_PC"
-    sleep 5  # 等待網絡穩定
 }
 
 # 函數：獲取 UE IP
 get_ue_ip() {
     echo "Fetching UE IP from $CONTROL_PC_IP..." | tee -a "$LOG_FILE"
-    UE_IP=$(ssh IA-PC "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni0" | grep inet | awk '{print \$2}' | cut -d/ -f1)
+    UE_IP=$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni0" | grep inet | awk '{print \$2}' | cut -d/ -f1)
     if [ -z "$UE_IP" ]; then
-        UE_IP=$(ssh IA-PC "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni1" | grep inet | awk '{print \$2}' | cut -d/ -f1)
+        UE_IP=$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni1" | grep inet | awk '{print \$2}' | cut -d/ -f1)
     fi
     if [ -z "$UE_IP" ]; then
         echo "Error: Unable to fetch UE IP." >&2
@@ -184,13 +186,13 @@ run_test() {
     fi
     iperf_cmd="$iperf_cmd $settings"
 
-    # 使用 SSH 進入 CN_SERVER，並在 CN_SERVER 上分別啟動 ping 與 iPerf3 測試
-    ssh $CN_SERVER "bash -c 'ping -I ogstun $UE_IP'" > "$ping_log" 2>&1 &
+    # 使用 sshpass 進入 CN_SERVER，並在 CN_SERVER 上分別啟動 ping 與 iPerf3 測試
+    sshpass -p "$CN_SERVER_PASSWORD" ssh $SSH_OPTIONS $CN_SERVER_USER@$CN_SERVER_HOST "bash -c 'ping -I ogstun $UE_IP'" > "$ping_log" 2>&1 &
     ping_pid=$!
-    ssh $CN_SERVER "nohup iperf3 -s > /dev/null 2>&1 &"
+    sshpass -p "$CN_SERVER_PASSWORD" ssh $SSH_OPTIONS $CN_SERVER_USER@$CN_SERVER_HOST "nohup iperf3 -s > /dev/null 2>&1 &"
 
-    # 運行 iPerf3，先透過 SSH 到 $CONTROL_PC_USER@$CONTROL_PC_IP，再執行 adb 命令
-    ssh IA-PC "adb -s $ADB_DEVICE shell \"$iperf_cmd\"" > "$iperf_log" 2>&1
+    # 運行 iPerf3，先透過 sshpass 到 $CONTROL_PC_USER@$CONTROL_PC_IP，再執行 adb 命令
+    sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell \"$iperf_cmd\"" > "$iperf_log" 2>&1
     check_status "iPerf3 test for $test_id"
 
     # 停止 ping 測試
@@ -216,84 +218,84 @@ run_test() {
 }
 
 # 初始化 CSV 文件
-echo "Test_ID,Bandwidth,Protocol,Direction,Settings,Throughput,RTT" > "$CSV_FILE"
+# echo "Test_ID,Bandwidth,Protocol,Direction,Settings,Throughput,RTT" > "$CSV_FILE"
 
-# 主流程
-for bw in 40000000 100000000; do
-    # 設定 RU 帶寬並重啟
-    set_ru_bandwidth $bw
+# # 主流程
+# for bw in 40000000 100000000; do
+#     # 設定 RU 帶寬並重啟
+#     set_ru_bandwidth $bw
 
-    # 遍歷 FAPI 和 nFAPI 模式
-    for mode in "FAPI" "nFAPI"; do
-        # 啟動 gNB
-        start_gnb "$mode"
+#     # 遍歷 FAPI 和 nFAPI 模式
+#     for mode in "FAPI" "nFAPI"; do
+#         # 啟動 gNB
+#         start_gnb "$mode"
 
-        # 關閉飛航模式並獲取 UE IP
-        toggle_airplane_mode "off"
-        get_ue_ip
+#         # 關閉飛航模式並獲取 UE IP
+#         toggle_airplane_mode "off"
+#         get_ue_ip
 
-        # 測試組合
-        run_test $bw "TCP" "DL" ""  # TCP 下行全速
-        run_test $bw "TCP" "UL" ""  # TCP 上行全速
-        run_test $bw "UDP" "DL" "-l 256 -b 1G"  # UDP 下行小封包低帶寬
-        run_test $bw "UDP" "DL" "-l 1470 -b 1G"  # UDP 下行大封包低帶寬
-        run_test $bw "UDP" "UL" "-l 256 -b 1G"  # UDP 上行小封包低帶寬
-        run_test $bw "UDP" "UL" "-l 1470 -b 1G"  # UDP 上行大封包低帶寬
+#         # 測試組合
+#         run_test $bw "TCP" "DL" ""  # TCP 下行全速
+#         run_test $bw "TCP" "UL" ""  # TCP 上行全速
+#         run_test $bw "UDP" "DL" "-l 256 -b 1G"  # UDP 下行小封包低帶寬
+#         run_test $bw "UDP" "DL" "-l 1470 -b 1G"  # UDP 下行大封包低帶寬
+#         run_test $bw "UDP" "UL" "-l 256 -b 1G"  # UDP 上行小封包低帶寬
+#         run_test $bw "UDP" "UL" "-l 1470 -b 1G"  # UDP 上行大封包低帶寬
 
-        # 測試完成後開啟飛航模式
-        toggle_airplane_mode "on"
-    done
-done
+#         # 測試完成後開啟飛航模式
+#         toggle_airplane_mode "on"
+#     done
+# done
 
-# 設置 Python 虛擬環境並生成圖表和 Markdown 文件
-echo "Setting up Python virtual environment and generating report..." | tee -a "$LOG_FILE"
+# # 設置 Python 虛擬環境並生成圖表和 Markdown 文件
+# echo "Setting up Python virtual environment and generating report..." | tee -a "$LOG_FILE"
 
-# 創建並啟用虛擬環境
-python3 -m venv "$VENV_DIR" >> "$LOG_FILE" 2>&1
-check_status "Create Python virtual environment"
-source "$VENV_DIR/bin/activate" >> "$LOG_FILE" 2>&1
-check_status "Activate Python virtual environment"
+# # 創建並啟用虛擬環境
+# python3 -m venv "$VENV_DIR" >> "$LOG_FILE" 2>&1
+# check_status "Create Python virtual environment"
+# source "$VENV_DIR/bin/activate" >> "$LOG_FILE" 2>&1
+# check_status "Activate Python virtual environment"
 
-# 安裝依賴
-pip install matplotlib pandas >> "$LOG_FILE" 2>&1
-check_status "Install Python dependencies"
+# # 安裝依賴
+# pip install matplotlib pandas >> "$LOG_FILE" 2>&1
+# check_status "Install Python dependencies"
 
-# 生成繪圖腳本
-cat << EOF > "$OUTPUT_DIR/generate_plot.py"
-import matplotlib.pyplot as plt
-import pandas as pd
-data = pd.read_csv("$CSV_FILE")
-plt.figure(figsize=(10, 6))
-for protocol in data['Protocol'].unique():
-    for direction in data['Direction'].unique():
-        subset = data[(data['Protocol'] == protocol) & (data['Direction'] == direction)]
-        plt.scatter(subset['Throughput'], subset['RTT'], label=f"{protocol} {direction}")
-plt.xlabel('Throughput (Mbps)')
-plt.ylabel('RTT (ms)')
-plt.title('Throughput vs RTT')
-plt.legend()
-plt.grid(True)
-plt.savefig("$OUTPUT_DIR/scatter_plot.png")
-plt.close()
-EOF
+# # 生成繪圖腳本
+# cat << EOF > "$OUTPUT_DIR/generate_plot.py"
+# import matplotlib.pyplot as plt
+# import pandas as pd
+# data = pd.read_csv("$CSV_FILE")
+# plt.figure(figsize=(10, 6))
+# for protocol in data['Protocol'].unique():
+#     for direction in data['Direction'].unique():
+#         subset = data[(data['Protocol'] == protocol) & (data['Direction'] == direction)]
+#         plt.scatter(subset['Throughput'], subset['RTT'], label=f"{protocol} {direction}")
+# plt.xlabel('Throughput (Mbps)')
+# plt.ylabel('RTT (ms)')
+# plt.title('Throughput vs RTT')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig("$OUTPUT_DIR/scatter_plot.png")
+# plt.close()
+# EOF
 
-# 在虛擬環境中運行繪圖腳本
-python "$OUTPUT_DIR/generate_plot.py" >> "$LOG_FILE" 2>&1
-check_status "Generate plot"
+# # 在虛擬環境中運行繪圖腳本
+# python "$OUTPUT_DIR/generate_plot.py" >> "$LOG_FILE" 2>&1
+# check_status "Generate plot"
 
-# 生成 Markdown 報告
-cat << EOF > "$OUTPUT_DIR/report.md"
-# Network Test Report
-Generated on: $(date)
+# # 生成 Markdown 報告
+# cat << EOF > "$OUTPUT_DIR/report.md"
+# # Network Test Report
+# Generated on: $(date)
 
-## Test Results
-![Scatter Plot]($OUTPUT_DIR/scatter_plot.png)
+# ## Test Results
+# ![Scatter Plot]($OUTPUT_DIR/scatter_plot.png)
 
-## Data
-$(cat "$CSV_FILE" | column -t -s,)
-EOF
+# ## Data
+# $(cat "$CSV_FILE" | column -t -s,)
+# EOF
 
-# 退出虛擬環境
-deactivate >> "$LOG_FILE" 2>&1
+# # 退出虛擬環境
+# deactivate >> "$LOG_FILE" 2>&1
 
-echo "Test completed at $(date). Results saved in $OUTPUT_DIR" | tee -a "$LOG_FILE"
+# echo "Test completed at $(date). Results saved in $OUTPUT_DIR" | tee -a "$LOG_FILE"
