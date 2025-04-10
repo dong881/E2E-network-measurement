@@ -5,9 +5,10 @@ RU_IP="192.168.8.77"
 RU_USER="user"
 RU_PASSWORD="user"
 RU_ENABLE_PASSWORD="liteon168"
-GNB_SERVER="R750-OAI-BBU/CUDU"
-CN_SERVER="192.168.70.135"  # 修改為實際的CN伺服器IP
-GNB_PASSWORD="bmwlab"
+GNB_SERVER_USER="oai72"
+GNB_SERVER_HOST="192.168.8.43"
+PASSWORD="bmwlab"
+CN_SERVER="open5gs"
 CONTROL_PC_IP="192.168.8.118"
 CONTROL_PC_USER="sshuser"
 CONTROL_PC_PASSWORD="bmwlab"
@@ -15,7 +16,7 @@ SERVER_IP="192.168.70.135"
 ADB_DEVICE="0123456789ABCDEF"
 TEST_DURATION=5
 WAIT_AFTER_REBOOT=60
-WAIT_AFTER_GNB=60
+WAIT_AFTER_GNB=30
 OUTPUT_DIR="test_results_$(date +%Y%m%d_%H%M%S)"
 CSV_FILE="$OUTPUT_DIR/results.csv"
 LOG_FILE="$OUTPUT_DIR/test.log"
@@ -25,7 +26,7 @@ VENV_DIR="$OUTPUT_DIR/venv"
 SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 # 確保必要的工具都已安裝
-for cmd in expect ssh adb python3; do
+for cmd in expect ssh sshpass python3; do
     if ! command -v $cmd &> /dev/null; then
         echo "Error: $cmd is not installed. Please install it first." >&2
         exit 1
@@ -100,84 +101,32 @@ EOF
     fi
 }
 
-# 函數：SSH 到 gNB 並啟動服務（使用 expect 處理密碼）
+# 函數：SSH 到 gNB 並啟動服務（使用 screen 啟動不同模式）
 start_gnb() {
     local mode=$1
     echo "Starting gNB in $mode mode..." | tee -a "$LOG_FILE"
-    export GNB_SERVER GNB_PASSWORD OUTPUT_DIR
+    export GNB_SERVER_USER GNB_SERVER_HOST PASSWORD
+
+    local session_name
+    local command
 
     if [ "$mode" == "nFAPI" ]; then
         # nFAPI VNF
-        cat << 'EOF' > "$OUTPUT_DIR/start_gnb_vnf.exp"
-#!/usr/bin/expect
-set timeout 60
-spawn ssh $env(GNB_SERVER)
-expect {
-    "yes/no" { send "yes\r"; exp_continue }
-    "$" {}
-}
-send "sudo -S -p \"\" echo \"\"\r"
-expect {
-    -re ".*:" { send "$env(GNB_PASSWORD)\r"; exp_continue }
-    "$" {}
-}
-send "cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && sudo NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF &\r"
-expect "TYPE <CTRL-C> TO TERMINATE"
-send "exit\r"
-expect eof
-EOF
-        chmod +x "$OUTPUT_DIR/start_gnb_vnf.exp"
-        expect "$OUTPUT_DIR/start_gnb_vnf.exp" >> "$LOG_FILE" 2>&1
+        session_name="VNF"
+        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+        sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB VNF"
-        sleep 5  # 確保 VNF 先啟動
 
         # nFAPI PNF
-        cat << 'EOF' > "$OUTPUT_DIR/start_gnb_pnf.exp"
-#!/usr/bin/expect
-set timeout 60
-spawn ssh $env(GNB_SERVER)
-expect {
-    "yes/no" { send "yes\r"; exp_continue }
-    "$" {}
-}
-send "sudo -S -p \"\" echo \"\"\r"
-expect {
-    -re ".*:" { send "$env(GNB_PASSWORD)\r"; exp_continue }
-    "$" {}
-}
-send "cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && sudo NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15 &\r"
-expect "TYPE <CTRL-C> TO TERMINATE"
-send "exit\r"
-expect eof
-EOF
-        chmod +x "$OUTPUT_DIR/start_gnb_pnf.exp"
-        expect "$OUTPUT_DIR/start_gnb_pnf.exp" >> "$LOG_FILE" 2>&1
+        session_name="PNF"
+        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
+        sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB PNF"
     else  # FAPI
-        cat << 'EOF' > "$OUTPUT_DIR/start_gnb_fapi.exp"
-#!/usr/bin/expect
-set timeout 60
-spawn ssh $env(GNB_SERVER)
-expect {
-    "yes/no" { send "yes\r"; exp_continue }
-    "$" {}
-}
-send "sudo su\r"
-expect {
-    -re ".*:" { send "$env(GNB_PASSWORD)\r"; exp_continue }
-    "$" {}
-}
-send "cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15 &\r"
-expect {
-    "TYPE <CTRL-C> TO TERMINATE" { }
-    timeout { puts "Timeout waiting for gNB to start"; exit 1 }
-}
-send "exit\r"
-expect eof
-EOF
-        chmod +x "$OUTPUT_DIR/start_gnb_fapi.exp"
-        expect "$OUTPUT_DIR/start_gnb_fapi.exp" >> "$LOG_FILE" 2>&1
-        check_status "Start gNB FAPI"
+        session_name="Monolithic"
+        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
+        sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
+        check_status "Start gNB Monolithic"
     fi
 
     echo "Waiting $WAIT_AFTER_GNB seconds for gNB to initialize..." | tee -a "$LOG_FILE"
