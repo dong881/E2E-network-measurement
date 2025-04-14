@@ -1,0 +1,23 @@
+#!/bin/bash
+export RU_IP="192.168.8.77"
+export RU_USER="user"
+export RU_PASSWORD="user"
+export RU_ENABLE_PASSWORD="liteon168"
+export GNB_SERVER_USER="oai72"
+export GNB_SERVER_HOST="192.168.8.43"
+export GNB_SERVER_PASSWORD="bmwlab"
+export CONTROL_PC_IP="192.168.8.118"
+export CONTROL_PC_USER="sshuser"
+export CONTROL_PC_PASSWORD="bmwlab"
+export CN_SERVER_USER="open5gs"
+export CN_SERVER_HOST="192.168.8.108"
+export CN_SERVER_PASSWORD="bmwlab"
+export SERVER_IP="192.168.70.135"
+export ADB_DEVICE="0123456789ABCDEF"
+export TEST_DURATION=5
+export WAIT_AFTER_REBOOT=60
+export WAIT_AFTER_GNB=18
+export OUTPUT_DIR="test_results_$(date +%Y%m%d_%H%M%S)"
+export CSV_FILE="$OUTPUT_DIR/results.csv"
+export LOG_FILE="$OUTPUT_DIR/test.log"
+export VENV_DIR="$OUTPUT_DIR/venv"

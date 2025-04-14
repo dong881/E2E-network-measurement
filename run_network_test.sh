@@ -47,18 +47,47 @@ check_status() {
     fi
 }
 
-# 函數：SSH 到 RU 並設定帶寬，並檢查配置後是否需要重啟
+# Function: set_ru_bandwidth
+# Description: Sets the bandwidth for a Remote Unit (RU) device via SSH
+#
+# This function performs the following operations:
+# 1. Creates an expect script to handle SSH interaction
+# 2. Logs into the RU using provided credentials
+# 3. Checks current bandwidth
+# 4. Sets new bandwidth value
+# 5. Verifies the change
+# 6. Reboots the RU if bandwidth was changed
+#
+# Arguments:
+#   $1 - bandwidth value in bps (bits per second)
+#
+# Environment variables required:
+#   RU_USER - Username for RU SSH login
+#   RU_IP - IP address of the RU
+#   RU_PASSWORD - Password for RU SSH login
+#   RU_ENABLE_PASSWORD - Enable password for privileged mode
+#   OUTPUT_DIR - Directory for output files
+#   LOG_FILE - Path to log file
+#   WAIT_AFTER_REBOOT - Time to wait after reboot in seconds
+#
+# Returns:
+#   0 on success, non-zero on failure
+#
+# Outputs:
+#   - Writes progress messages to LOG_FILE
+#   - Creates expect script at $OUTPUT_DIR/set_bandwidth.exp
+#   - Creates output log at $OUTPUT_DIR/set_bandwidth.out
+
+
 set_ru_bandwidth() {
     local bw=$1
     echo "Setting RU bandwidth to $bw bps..." | tee -a "$LOG_FILE"
-    
-    # Remove any previous output file
-    rm -f "$OUTPUT_DIR/set_bandwidth.out"
     
     cat << 'EOF' > "$OUTPUT_DIR/set_bandwidth.exp"
 #!/usr/bin/expect
 log_file -a "$env(OUTPUT_DIR)/set_bandwidth.out"
 set timeout 60
+
 spawn ssh $env(RU_USER)@$env(RU_IP)
 expect "password:"
 send "$env(RU_PASSWORD)\r"
@@ -67,41 +96,47 @@ send "enable\r"
 expect "Password:"
 send "$env(RU_ENABLE_PASSWORD)\r"
 expect "#"
+
+# 先檢查當前帶寬
+send "show running-config\r"
+expect "#"
+
+# 設定新帶寬
 send "configure terminal\r"
 expect "(config)#"
 send "bandwidth $env(bw)\r"
 expect "(config)#"
 send "exit\r"
 expect "#"
+
+# 確認新帶寬
 send "show running-config\r"
 expect "#"
-send "show oru-status\r"
-expect "#"
-send "exit\r"
-expect ">"
-send "exit\r"
+
+# 如果需要重啟，就在同一個 session 執行
+if {[catch {set old_bw [exec grep "Band Width = " $env(OUTPUT_DIR)/set_bandwidth.out | head -1 | cut -d= -f2 | tr -d " "]}]} {
+    set old_bw "unknown"
+}
+if {$old_bw != $env(bw)} {
+    send "reboot\r"
+    expect "system is going down"
+}
 expect eof
 EOF
 
     chmod +x "$OUTPUT_DIR/set_bandwidth.exp"
     
-    # Export needed variables for expect
     export RU_USER RU_IP RU_PASSWORD RU_ENABLE_PASSWORD OUTPUT_DIR bw=$bw
-
     expect "$OUTPUT_DIR/set_bandwidth.exp" >> "$LOG_FILE" 2>&1
     check_status "SSH to RU and set bandwidth"
     
-    # Extract Old and New Bandwidth values from the expect output log.
-    local old_bw
-    local new_bw
-    old_bw=$(grep "Old Band Width" "$OUTPUT_DIR/set_bandwidth.out" | awk -F '=' '{print $2}' | tr -d ' ')
-    new_bw=$(grep "New Band Width" "$OUTPUT_DIR/set_bandwidth.out" | awk -F '=' '{print $2}' | tr -d ' ')
-    
-    if [ "$old_bw" != "$new_bw" ]; then
-        echo "Bandwidth changed from $old_bw to $new_bw. Reboot RU and waiting $WAIT_AFTER_REBOOT seconds..." | tee -a "$LOG_FILE"
+    # 檢查是否執行了重啟
+    if grep -q "system is going down" "$OUTPUT_DIR/set_bandwidth.out"; then
+        echo "Bandwidth changed to $bw. RU is rebooting..." | tee -a "$LOG_FILE"
+        echo "Waiting $WAIT_AFTER_REBOOT seconds for RU to reboot..." | tee -a "$LOG_FILE"
         sleep $WAIT_AFTER_REBOOT
     else
-        echo "Bandwidth not changed. Skipping reboot." | tee -a "$LOG_FILE"
+        echo "Bandwidth unchanged. No reboot needed." | tee -a "$LOG_FILE"
     fi
 }
 
@@ -173,142 +208,3 @@ get_ue_ip() {
     echo "UE IP: $UE_IP" | tee -a "$LOG_FILE"
 }
 
-# 函數：運行測試並收集數據
-run_test() {
-    local bw=$1
-    local protocol=$2
-    local direction=$3
-    local settings=$4
-    local test_id="${bw}_${protocol}_${direction}_${settings// /_}"
-    local iperf_log="$OUTPUT_DIR/iperf_${test_id}.log"
-    local ping_log="$OUTPUT_DIR/ping_${test_id}.log"
-
-    echo "Running test: Bandwidth=$bw, Protocol=$protocol, Direction=$direction, Settings=$settings" | tee -a "$LOG_FILE"
-
-    # 構建 iPerf3 命令
-    local iperf_cmd="/data/local/tmp/iperf3 -c $SERVER_IP -t $TEST_DURATION -B $UE_IP"
-    if [ "$protocol" == "UDP" ]; then
-        iperf_cmd="$iperf_cmd -u"
-    fi
-    if [ "$direction" == "DL" ]; then
-        iperf_cmd="$iperf_cmd -R"
-    fi
-    iperf_cmd="$iperf_cmd $settings"
-
-    # 使用 sshpass 進入 CN_SERVER，並在 CN_SERVER 上分別啟動 ping 與 iPerf3 測試
-    sshpass -p "$CN_SERVER_PASSWORD" ssh $SSH_OPTIONS $CN_SERVER_USER@$CN_SERVER_HOST "bash -c 'ping -I ogstun $UE_IP'" > "$ping_log" 2>&1 &
-    ping_pid=$!
-    # sshpass -p "$CN_SERVER_PASSWORD" ssh $SSH_OPTIONS $CN_SERVER_USER@$CN_SERVER_HOST "nohup iperf3 -s > /dev/null 2>&1 &"
-
-    # 運行 iPerf3，先透過 sshpass 到 $CONTROL_PC_USER@$CONTROL_PC_IP，再執行 adb 命令
-    sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell \"$iperf_cmd\"" > "$iperf_log" 2>&1
-    check_status "iPerf3 test for $test_id"
-
-    # 停止 ping 測試
-    kill $ping_pid
-    sleep 1  # 確保 ping 日誌寫入完成
-
-    # 提取數據
-    throughput=$(grep "sender" "$iperf_log" | tail -n 1 | awk '{print $7}' | grep -o '[0-9.]*')
-    if [ -z "$throughput" ]; then
-        throughput=$(grep "receiver" "$iperf_log" | tail -n 1 | awk '{print $7}' | grep -o '[0-9.]*')
-    fi
-    rtt=$(tail -n 1 "$ping_log" | grep -o "rtt min/avg/max/mdev = [0-9./]*" | awk '{print $4}' | cut -d/ -f2)
-
-    # 檢查數據是否有效
-    if [ -z "$throughput" ] || [ -z "$rtt" ]; then
-        echo "Warning: Invalid data for $test_id. Throughput=$throughput, RTT=$rtt" | tee -a "$LOG_FILE"
-        return
-    fi
-
-    # 寫入 CSV
-    echo "$test_id,$bw,$protocol,$direction,$settings,$throughput,$rtt" >> "$CSV_FILE"
-    echo "Test $test_id completed: Throughput=$throughput Mbps, RTT=$rtt ms" | tee -a "$LOG_FILE"
-}
-# set_ru_bandwidth 100000000
-# start_gnb FAPI 100000000
-# toggle_airplane_mode "off"
-get_ue_ip
-run_test 40000000 "UDP" "DL" "-l 256 -b 1G"  # UDP 下行小封包低帶寬
-# 初始化 CSV 文件
-# echo "Test_ID,Bandwidth,Protocol,Direction,Settings,Throughput,RTT" > "$CSV_FILE"
-
-# # 主流程
-# for bw in 40000000 100000000; do
-#     # 設定 RU 帶寬並重啟
-#     set_ru_bandwidth $bw
-
-#     # 遍歷 FAPI 和 nFAPI 模式
-#     for mode in "FAPI" "nFAPI"; do
-#         # 啟動 gNB
-#         start_gnb "$mode"
-
-#         # 關閉飛航模式並獲取 UE IP
-#         toggle_airplane_mode "off"
-#         get_ue_ip
-
-#         # 測試組合
-#         run_test $bw "TCP" "DL" ""  # TCP 下行全速
-#         run_test $bw "TCP" "UL" ""  # TCP 上行全速
-#         run_test $bw "UDP" "DL" "-l 256 -b 1G"  # UDP 下行小封包低帶寬
-#         run_test $bw "UDP" "DL" "-l 1470 -b 1G"  # UDP 下行大封包低帶寬
-#         run_test $bw "UDP" "UL" "-l 256 -b 1G"  # UDP 上行小封包低帶寬
-#         run_test $bw "UDP" "UL" "-l 1470 -b 1G"  # UDP 上行大封包低帶寬
-
-#         # 測試完成後開啟飛航模式
-#         toggle_airplane_mode "on"
-#     done
-# done
-
-# # 設置 Python 虛擬環境並生成圖表和 Markdown 文件
-# echo "Setting up Python virtual environment and generating report..." | tee -a "$LOG_FILE"
-
-# # 創建並啟用虛擬環境
-# python3 -m venv "$VENV_DIR" >> "$LOG_FILE" 2>&1
-# check_status "Create Python virtual environment"
-# source "$VENV_DIR/bin/activate" >> "$LOG_FILE" 2>&1
-# check_status "Activate Python virtual environment"
-
-# # 安裝依賴
-# pip install matplotlib pandas >> "$LOG_FILE" 2>&1
-# check_status "Install Python dependencies"
-
-# # 生成繪圖腳本
-# cat << EOF > "$OUTPUT_DIR/generate_plot.py"
-# import matplotlib.pyplot as plt
-# import pandas as pd
-# data = pd.read_csv("$CSV_FILE")
-# plt.figure(figsize=(10, 6))
-# for protocol in data['Protocol'].unique():
-#     for direction in data['Direction'].unique():
-#         subset = data[(data['Protocol'] == protocol) & (data['Direction'] == direction)]
-#         plt.scatter(subset['Throughput'], subset['RTT'], label=f"{protocol} {direction}")
-# plt.xlabel('Throughput (Mbps)')
-# plt.ylabel('RTT (ms)')
-# plt.title('Throughput vs RTT')
-# plt.legend()
-# plt.grid(True)
-# plt.savefig("$OUTPUT_DIR/scatter_plot.png")
-# plt.close()
-# EOF
-
-# # 在虛擬環境中運行繪圖腳本
-# python "$OUTPUT_DIR/generate_plot.py" >> "$LOG_FILE" 2>&1
-# check_status "Generate plot"
-
-# # 生成 Markdown 報告
-# cat << EOF > "$OUTPUT_DIR/report.md"
-# # Network Test Report
-# Generated on: $(date)
-
-# ## Test Results
-# ![Scatter Plot]($OUTPUT_DIR/scatter_plot.png)
-
-# ## Data
-# $(cat "$CSV_FILE" | column -t -s,)
-# EOF
-
-# # 退出虛擬環境
-# deactivate >> "$LOG_FILE" 2>&1
-
-# echo "Test completed at $(date). Results saved in $OUTPUT_DIR" | tee -a "$LOG_FILE"
