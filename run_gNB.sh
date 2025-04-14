@@ -95,5 +95,7 @@ start_split_setup "100M"    # 100M bandwidth
 # stop_session "VNF_100M" "$VNF_USER" "$VNF_HOST"
 # stop_session "VNF_40M" "$VNF_USER" "$VNF_HOST"
 # stop_session "PNF" "$Main_USER" "$Main_HOST"
+# stop_session "VNF_100M" "$Main_USER" "$Main_HOST"
+# stop_session "VNF_40M" "$Main_USER" "$Main_HOST"
 # stop_session "MONO_100M" "$Main_USER" "$Main_HOST"
 # stop_session "MONO_40M" "$Main_USER" "$Main_HOST"
