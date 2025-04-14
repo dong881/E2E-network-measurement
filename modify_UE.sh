@@ -48,6 +48,7 @@ run_iperf() {
     local mode=$1  # 'server' or 'client'
     local server_ip=$2  # 僅客戶端模式需要
     local options=$3  # 額外選項，例如 "-u -b 100M -t 600 -i 1 -l 1300 -p 5201 -R"
+    local local_log_path=$4  # 本機儲存日誌的路徑 (可選)
     
     echo "Running iperf3 in $mode mode..." | tee -a "$LOG_FILE"
     
@@ -93,7 +94,36 @@ run_iperf() {
         # 添加 -B 選項以綁定到 UE IP
         local client_cmd="adb -s $ADB_DEVICE shell /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options"
         echo "Executing: $client_cmd" | tee -a "$LOG_FILE"
-        sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "$client_cmd" | tee -a "$LOG_FILE"
+        
+        # 如果指定了本機日誌路徑，則將結果儲存到UE臨時檔案並下載
+        if [ -n "$local_log_path" ]; then
+            local timestamp=$(date "+%Y%m%d_%H%M%S")
+            local ue_log_file="/data/local/tmp/iperf3_result_${timestamp}.log"
+            local control_pc_temp_path="/tmp/iperf3_result_${timestamp}.log"
+            
+            echo "Saving iperf3 results to $local_log_path" | tee -a "$LOG_FILE"
+            
+            # 在UE上執行iperf3並將結果儲存到臨時檔案
+            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell \"/data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options > $ue_log_file 2>&1\"" | tee -a "$LOG_FILE"
+            
+            # 從UE下載到控制電腦
+            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE pull $ue_log_file $control_pc_temp_path" >> "$LOG_FILE" 2>&1
+            check_status "Pulled iperf3 log to control PC"
+            
+            # 從控制電腦下載到本機
+            sshpass -p "$CONTROL_PC_PASSWORD" scp $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP:$control_pc_temp_path "$local_log_path"
+            check_status "Downloaded iperf3 log to local machine at $local_log_path"
+            
+            # 清理臨時檔案
+            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "rm $control_pc_temp_path && adb -s $ADB_DEVICE shell rm $ue_log_file" >> "$LOG_FILE" 2>&1
+            
+            # 顯示儲存的檔案內容
+            echo "iperf3 results saved to $local_log_path. Preview:" | tee -a "$LOG_FILE"
+            head -n 20 "$local_log_path" | tee -a "$LOG_FILE"
+        else
+            # 如果沒有指定本機日誌路徑，則使用原來的方式顯示結果
+            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "$client_cmd" | tee -a "$LOG_FILE"
+        fi
         check_status "iperf3 client test"
     else
         echo "Error: Invalid mode. Use 'server' or 'client'." | tee -a "$LOG_FILE"
@@ -107,10 +137,15 @@ run_iperf() {
 # # 示例：關閉飛航模式
 # toggle_airplane_mode "off"
 
+## 示：獲取 UE IP (可以透過是否順利取得UE IP判斷gNB是否)
+# get_ue_ip
+
 # 示例：在 UE 上運行 iperf3 服務器
 # run_iperf "server" "" "-p 5201"
 
 # 示例：在 UE 上運行 iperf3 客戶端
-run_iperf "client" "10.45.0.1" "-u -b 100M -t 60 -i 1 -p 5201"
+# run_iperf "client" "10.45.0.1" "-u -b 100M -t 10"
 
-# get_ue_ip
+# 示例：在 UE 上運行 iperf3 客戶端並儲存日誌到本機
+# run_iperf "client" "10.45.0.1" "-u -b 100M -t 10" "/home/ming/iperf3_results.log"
+
