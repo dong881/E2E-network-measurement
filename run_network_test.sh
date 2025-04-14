@@ -18,7 +18,7 @@ SERVER_IP="192.168.70.135"
 ADB_DEVICE="0123456789ABCDEF"
 TEST_DURATION=5
 WAIT_AFTER_REBOOT=60
-WAIT_AFTER_GNB=30
+WAIT_AFTER_GNB=18
 OUTPUT_DIR="test_results_$(date +%Y%m%d_%H%M%S)"
 CSV_FILE="$OUTPUT_DIR/results.csv"
 LOG_FILE="$OUTPUT_DIR/test.log"
@@ -75,6 +75,8 @@ send "exit\r"
 expect "#"
 send "show running-config\r"
 expect "#"
+send "show oru-status\r"
+expect "#"
 send "exit\r"
 expect ">"
 send "exit\r"
@@ -106,27 +108,34 @@ EOF
 # 函數：SSH 到 gNB 並啟動服務（使用 screen 啟動不同模式）
 start_gnb() {
     local mode=$1
-    echo "Starting gNB in $mode mode..." | tee -a "$LOG_FILE"
+    local bandwidth=$2
+    echo "Starting gNB in $mode mode with bandwidth $bandwidth..." | tee -a "$LOG_FILE"
     export GNB_SERVER_USER GNB_SERVER_HOST GNB_SERVER_PASSWORD
 
     local session_name
     local command
 
     if [ "$mode" == "nFAPI" ]; then
-        # nFAPI VNF
-        session_name="VNF"
-        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+        session_name="VNF_${bandwidth}"
+        if [ "$bandwidth" == "40000000" ]; then
+            command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
+        else
+            command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+        fi
         sshpass -p "$GNB_SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB VNF"
 
-        # nFAPI PNF
-        session_name="PNF"
+        session_name="PNF_${bandwidth}"
         command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
         sshpass -p "$GNB_SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB PNF"
     else  # FAPI
-        session_name="Monolithic"
-        command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
+        session_name="Monolithic_${bandwidth}"
+        if [ "$bandwidth" == "40000000" ]; then
+            command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new --thread-pool 1,3,5,7,9,11,13,15"
+        else
+            command="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$GNB_SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
+        fi
         sshpass -p "$GNB_SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS $session_name bash -c '$command'"
         check_status "Start gNB Monolithic"
     fi
@@ -152,10 +161,10 @@ toggle_airplane_mode() {
 
 # 函數：獲取 UE IP
 get_ue_ip() {
-    echo "Fetching UE IP from $CONTROL_PC_IP..." | tee -a "$LOG_FILE"
-    UE_IP=$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni0" | grep inet | awk '{print \$2}' | cut -d/ -f1)
+    # echo "Fetching UE IP from $CONTROL_PC_IP..." | tee -a "$LOG_FILE"
+    UE_IP=$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni0" | grep inet | awk '{print $2}' | cut -d/ -f1)
     if [ -z "$UE_IP" ]; then
-        UE_IP=$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni1" | grep inet | awk '{print \$2}' | cut -d/ -f1)
+        UE_IP=$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni1" | grep inet | awk '{print $2}' | cut -d/ -f1)
     fi
     if [ -z "$UE_IP" ]; then
         echo "Error: Unable to fetch UE IP." >&2
@@ -189,7 +198,7 @@ run_test() {
     # 使用 sshpass 進入 CN_SERVER，並在 CN_SERVER 上分別啟動 ping 與 iPerf3 測試
     sshpass -p "$CN_SERVER_PASSWORD" ssh $SSH_OPTIONS $CN_SERVER_USER@$CN_SERVER_HOST "bash -c 'ping -I ogstun $UE_IP'" > "$ping_log" 2>&1 &
     ping_pid=$!
-    sshpass -p "$CN_SERVER_PASSWORD" ssh $SSH_OPTIONS $CN_SERVER_USER@$CN_SERVER_HOST "nohup iperf3 -s > /dev/null 2>&1 &"
+    # sshpass -p "$CN_SERVER_PASSWORD" ssh $SSH_OPTIONS $CN_SERVER_USER@$CN_SERVER_HOST "nohup iperf3 -s > /dev/null 2>&1 &"
 
     # 運行 iPerf3，先透過 sshpass 到 $CONTROL_PC_USER@$CONTROL_PC_IP，再執行 adb 命令
     sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP "adb -s $ADB_DEVICE shell \"$iperf_cmd\"" > "$iperf_log" 2>&1
@@ -216,7 +225,11 @@ run_test() {
     echo "$test_id,$bw,$protocol,$direction,$settings,$throughput,$rtt" >> "$CSV_FILE"
     echo "Test $test_id completed: Throughput=$throughput Mbps, RTT=$rtt ms" | tee -a "$LOG_FILE"
 }
-
+# set_ru_bandwidth 100000000
+# start_gnb FAPI 100000000
+# toggle_airplane_mode "off"
+get_ue_ip
+run_test 40000000 "UDP" "DL" "-l 256 -b 1G"  # UDP 下行小封包低帶寬
 # 初始化 CSV 文件
 # echo "Test_ID,Bandwidth,Protocol,Direction,Settings,Throughput,RTT" > "$CSV_FILE"
 
