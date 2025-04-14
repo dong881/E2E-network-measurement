@@ -21,3 +21,5 @@ export OUTPUT_DIR="test_results_$(date +%Y%m%d_%H%M%S)"
 export CSV_FILE="$OUTPUT_DIR/results.csv"
 export LOG_FILE="$OUTPUT_DIR/test.log"
 export VENV_DIR="$OUTPUT_DIR/venv"
+
+mkdir -p "$OUTPUT_DIR"
