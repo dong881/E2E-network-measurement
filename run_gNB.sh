@@ -1,45 +1,99 @@
 #!/bin/bash
 
 # Global variables
-USER="oai72"
-HOST="192.168.8.43"
+VNF_USER="hpe"
+VNF_HOST="192.168.8.26"
+Main_USER="oai72"
+Main_HOST="192.168.8.43"
 PASSWORD="bmwlab"
 
-CMD_VNF_100M="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
-CMD_PNF="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
-CMD_Monolithic="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
+# Commands for Split Machine Setup (Two Machines)
+CMD_VNF_100M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+CMD_VNF_40M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
+CMD_PNF_SPLIT="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf-twoMachine.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
 
-# Commands for 40MHz (106PRB)
-CMD_VNF_40MHz="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
-CMD_Monolithic_40MHz="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new --thread-pool 1,3,5,7,9,11,13,15"
+# Commands for Single Machine Setup
+CMD_VNF_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+CMD_MONO_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
+CMD_VNF_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
+CMD_MONO_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new --thread-pool 1,3,5,7,9,11,13,15"
+CMD_PNF_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
+
+# PNF Command (Common)
 
 # Function to start a screen session
 start_session() {
     local session_name=$1
     local command=$2
-    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $USER@$HOST "screen -dmS $session_name bash -c '$command'"
+    local target_user=$3
+    local target_host=$4
+    
+    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command'"
 }
 
 # Function to stop a screen session
 stop_session() {
     local session_name=$1
-    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $USER@$HOST "screen -X -S $session_name quit"
+    local target_user=$2
+    local target_host=$3
+    
+    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -X -S $session_name quit"
 }
 
-# Start sessions
-start_session "VNF" "$CMD_VNF_100M"
-# start_session "PNF" "$CMD_PNF"
-# start_session "Monolithic" "$CMD_Monolithic"
+# Function to start split machine setup
+start_split_setup() {
+    local bandwidth=$1  # 100M or 40M
+    
+    if [ "$bandwidth" = "100M" ]; then
+        start_session "VNF_100M" "$CMD_VNF_100M_SPLIT" "$VNF_USER" "$VNF_HOST"
+        start_session "PNF" "$CMD_PNF_SPLIT" "$Main_USER" "$Main_HOST"
+    elif [ "$bandwidth" = "40M" ]; then
+        start_session "VNF_40M" "$CMD_VNF_40M_SPLIT" "$VNF_USER" "$VNF_HOST"
+        start_session "PNF" "$CMD_PNF_SPLIT" "$Main_USER" "$Main_HOST"
+    fi
+}
 
-# Start sessions for 40MHz
-# start_session "VNF_40MHz" "$CMD_VNF_40MHz"
-start_session "PNF" "$CMD_PNF"
-# start_session "Monolithic_40MHz" "$CMD_Monolithic_40MHz"
+# Function to start single machine setup
+start_single_setup() {
+    local bandwidth=$1  # 100M or 40M
+    local mode=$2      # NFAPI or MONO
+    
+    if [ "$bandwidth" = "100M" ]; then
+        if [ "$mode" = "NFAPI" ]; then
+            start_session "VNF_100M" "$CMD_VNF_100M_SINGLE" "$Main_USER" "$Main_HOST"
+            start_session "PNF" "$CMD_PNF_SINGLE" "$Main_USER" "$Main_HOST"
+        else
+            start_session "MONO_100M" "$CMD_MONO_100M_SINGLE" "$Main_USER" "$Main_HOST"
+        fi
+    elif [ "$bandwidth" = "40M" ]; then
+        if [ "$mode" = "NFAPI" ]; then
+            start_session "VNF_40M" "$CMD_VNF_40M_SINGLE" "$Main_USER" "$Main_HOST"
+            start_session "PNF" "$CMD_PNF_SINGLE" "$Main_USER" "$Main_HOST"
+        else
+            start_session "MONO_40M" "$CMD_MONO_40M_SINGLE" "$Main_USER" "$Main_HOST"
+        fi
+    fi
+}
 
-# Example to stop sessions (uncomment to use)
-# stop_session "VNF"
-# stop_session "PNF"
-# stop_session "Monolithic"
-# stop_session "VNF_40MHz"
-# stop_session "PNF"
-# stop_session "Monolithic_40MHz"
+### ------------------------------------------------------------------------------------------------
+
+# Example usage of all possible function combinations
+
+# Split machine setup (VNF + PNF)
+start_split_setup "100M"    # 100M bandwidth
+# start_split_setup "40M"     # 40M bandwidth
+
+# Single machine setup (NFAPI mode)
+# start_single_setup "100M" "NFAPI"    # 100M bandwidth
+# start_single_setup "40M" "NFAPI"     # 40M bandwidth
+
+# Single machine setup (MONO mode)
+# start_single_setup "100M" "MONO"    # 100M bandwidth
+# start_single_setup "40M" "MONO"     # 40M bandwidth
+
+# Stop sessions
+# stop_session "VNF_100M" "$VNF_USER" "$VNF_HOST"
+# stop_session "VNF_40M" "$VNF_USER" "$VNF_HOST"
+# stop_session "PNF" "$Main_USER" "$Main_HOST"
+# stop_session "MONO_100M" "$Main_USER" "$Main_HOST"
+# stop_session "MONO_40M" "$Main_USER" "$Main_HOST"
