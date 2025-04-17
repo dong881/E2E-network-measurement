@@ -27,7 +27,6 @@
 #   0 on success, non-zero on failure
 #
 # Outputs:
-#   - Writes progress messages to LOG_FILE
 #   - Creates expect script at $OUTPUT_DIR/set_bandwidth.exp
 #   - Creates output log at $OUTPUT_DIR/set_bandwidth.out
 
@@ -60,17 +59,14 @@ fi
 
 # 創建輸出目錄
 mkdir -p "$OUTPUT_DIR"
-echo "Test started at $(date)" > "$LOG_FILE"
 
 set_ru_bandwidth() {
     local bw=$1
-    echo "Setting RU bandwidth to $bw bps..." | tee -a "$LOG_FILE"
-    
+    echo "Setting RU bandwidth to $bw bps..."
+
     cat << 'EOF' > "$OUTPUT_DIR/set_bandwidth.exp"
 #!/usr/bin/expect
-log_file -a "$env(OUTPUT_DIR)/set_bandwidth.out"
 set timeout 60
-
 spawn ssh $env(RU_USER)@$env(RU_IP)
 expect "password:"
 send "$env(RU_PASSWORD)\r"
@@ -79,24 +75,16 @@ send "enable\r"
 expect "Password:"
 send "$env(RU_ENABLE_PASSWORD)\r"
 expect "#"
-
-# 先檢查當前帶寬
 send "show running-config\r"
 expect "#"
-
-# 設定新帶寬
 send "configure terminal\r"
 expect "(config)#"
 send "bandwidth $env(bw)\r"
 expect "(config)#"
 send "exit\r"
 expect "#"
-
-# 確認新帶寬
 send "show running-config\r"
 expect "#"
-
-# 如果需要重啟，就在同一個 session 執行
 if {[catch {set old_bw [exec grep "Band Width = " $env(OUTPUT_DIR)/set_bandwidth.out | head -1 | cut -d= -f2 | tr -d " "]}]} {
     set old_bw "unknown"
 }
@@ -108,17 +96,15 @@ expect eof
 EOF
 
     chmod +x "$OUTPUT_DIR/set_bandwidth.exp"
-    
-    export RU_USER RU_IP RU_PASSWORD RU_ENABLE_PASSWORD OUTPUT_DIR bw=$bw
-    expect "$OUTPUT_DIR/set_bandwidth.exp" >> "$LOG_FILE" 2>&1
-    
-    # 檢查是否執行了重啟
+    export RU_USER RU_IP RU_PASSWORD RU_ENABLE_PASSWORD OUTPUT_DIR bw
+    expect "$OUTPUT_DIR/set_bandwidth.exp"
+
     if grep -q "system is going down" "$OUTPUT_DIR/set_bandwidth.out"; then
-        echo "Bandwidth changed to $bw. RU is rebooting..." | tee -a "$LOG_FILE"
-        echo "Waiting $WAIT_AFTER_REBOOT seconds for RU to reboot..." | tee -a "$LOG_FILE"
+        echo "Bandwidth changed to $bw. RU is rebooting..."
+        echo "Waiting $WAIT_AFTER_REBOOT seconds for RU to reboot..."
         sleep $WAIT_AFTER_REBOOT
     else
-        echo "Bandwidth unchanged. No reboot needed." | tee -a "$LOG_FILE"
+        echo "Bandwidth unchanged. No reboot needed."
     fi
 }
 
