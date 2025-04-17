@@ -31,38 +31,13 @@
 #   - Creates output log at $OUTPUT_DIR/set_bandwidth.out
 
 source variable.sh
-# # Check if expect is installed
-# if ! command -v expect &> /dev/null; then
-#     echo "expect could not be found. Please install it to proceed."
-#     exit 1
-# fi
-# # Check if the required environment variables are set
-# if [ -z "$RU_USER" ] || [ -z "$RU_IP" ] || [ -z "$RU_PASSWORD" ] || [ -z "$RU_ENABLE_PASSWORD" ]; then
-#     echo "Error: Required environment variables are not set." >&2
-#     exit 1
-# fi
-# # Check if the bandwidth argument is provided
-# if [ -z "$1" ]; then
-#     echo "Error: Bandwidth argument is missing." >&2
-#     exit 1
-# fi
-# # Check if the bandwidth argument is a valid number
-# if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-#     echo "Error: Bandwidth argument must be a valid number." >&2
-#     exit 1
-# fi
-# # Check if the bandwidth argument is within a valid range
-# if [ "$1" -lt 1000000 ] || [ "$1" -gt 1000000000 ]; then
-#     echo "Error: Bandwidth argument must be between 1Mbps and 1Gbps." >&2
-#     exit 1
-# fi
-
-# # 創建輸出目錄
-# mkdir -p "$OUTPUT_DIR"
 
 set_ru_bandwidth() {
     local bw=$1
     echo "Setting RU bandwidth to $bw bps..."
+
+    # Ensure the output directory exists
+    mkdir -p "$OUTPUT_DIR"
 
     cat << 'EOF' > "$OUTPUT_DIR/set_bandwidth.exp"
 #!/usr/bin/expect
@@ -95,10 +70,16 @@ if {$old_bw != $env(bw)} {
 expect eof
 EOF
 
+    # Ensure the script is executable
     chmod +x "$OUTPUT_DIR/set_bandwidth.exp"
-    export RU_USER RU_IP RU_PASSWORD RU_ENABLE_PASSWORD OUTPUT_DIR bw
-    expect "$OUTPUT_DIR/set_bandwidth.exp"
 
+    # Export required variables for the expect script
+    export RU_USER RU_IP RU_PASSWORD RU_ENABLE_PASSWORD OUTPUT_DIR bw
+
+    # Run the expect script and redirect output to .out file
+    expect "$OUTPUT_DIR/set_bandwidth.exp" > "$OUTPUT_DIR/set_bandwidth.out" 2>&1
+
+    # Check if the RU is rebooting
     if grep -q "system is going down" "$OUTPUT_DIR/set_bandwidth.out"; then
         echo "Bandwidth changed to $bw. RU is rebooting..."
         echo "Waiting $WAIT_AFTER_REBOOT seconds for RU to reboot..."
