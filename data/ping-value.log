@@ -1,12 +1,18 @@
-2025-04-17 15:54:57: PING 10.45.0.6 (10.45.0.6) from 10.45.0.1 ogstun: 56(84) bytes of data.
-2025-04-17 15:54:57: 64 bytes from 10.45.0.6: icmp_seq=1 ttl=64 time=17.5 ms
-2025-04-17 15:54:58: 64 bytes from 10.45.0.6: icmp_seq=2 ttl=64 time=25.6 ms
-2025-04-17 15:54:59: 64 bytes from 10.45.0.6: icmp_seq=3 ttl=64 time=23.7 ms
-2025-04-17 15:55:00: 64 bytes from 10.45.0.6: icmp_seq=4 ttl=64 time=27.0 ms
-2025-04-17 15:55:01: 64 bytes from 10.45.0.6: icmp_seq=5 ttl=64 time=25.7 ms
-2025-04-17 15:55:02: 64 bytes from 10.45.0.6: icmp_seq=6 ttl=64 time=23.8 ms
-2025-04-17 15:55:03: 64 bytes from 10.45.0.6: icmp_seq=7 ttl=64 time=26.9 ms
-2025-04-17 15:55:04: 64 bytes from 10.45.0.6: icmp_seq=8 ttl=64 time=24.9 ms
-2025-04-17 15:55:05: 64 bytes from 10.45.0.6: icmp_seq=9 ttl=64 time=28.9 ms
-2025-04-17 15:55:06: 64 bytes from 10.45.0.6: icmp_seq=10 ttl=64 time=22.7 ms
-2025-04-17 15:55:07: 64 bytes from 10.45.0.6: icmp_seq=11 ttl=64 time=25.8 ms
+1744878874: PING 10.45.0.6 (10.45.0.6) from 10.45.0.1 ogstun: 56(84) bytes of data.
+1744878874: 64 bytes from 10.45.0.6: icmp_seq=1 ttl=64 time=26.0 ms
+1744878875: 64 bytes from 10.45.0.6: icmp_seq=2 ttl=64 time=24.9 ms
+1744878876: 64 bytes from 10.45.0.6: icmp_seq=3 ttl=64 time=22.9 ms
+1744878877: 64 bytes from 10.45.0.6: icmp_seq=4 ttl=64 time=25.8 ms
+1744878878: 64 bytes from 10.45.0.6: icmp_seq=5 ttl=64 time=23.9 ms
+1744878879: 64 bytes from 10.45.0.6: icmp_seq=6 ttl=64 time=22.8 ms
+1744878880: 64 bytes from 10.45.0.6: icmp_seq=7 ttl=64 time=31.5 ms
+1744878881: 64 bytes from 10.45.0.6: icmp_seq=8 ttl=64 time=30.5 ms
+1744878883: 64 bytes from 10.45.0.6: icmp_seq=9 ttl=64 time=844 ms
+1744878885: 64 bytes from 10.45.0.6: icmp_seq=10 ttl=64 time=1849 ms
+1744878886: 64 bytes from 10.45.0.6: icmp_seq=11 ttl=64 time=1979 ms
+1744878886: 64 bytes from 10.45.0.6: icmp_seq=12 ttl=64 time=1422 ms
+1744878886: 64 bytes from 10.45.0.6: icmp_seq=13 ttl=64 time=423 ms
+1744878887: 64 bytes from 10.45.0.6: icmp_seq=14 ttl=64 time=19.4 ms
+1744878888: 64 bytes from 10.45.0.6: icmp_seq=15 ttl=64 time=22.9 ms
+1744878889: 64 bytes from 10.45.0.6: icmp_seq=16 ttl=64 time=26.1 ms
+1744878890: 64 bytes from 10.45.0.6: icmp_seq=17 ttl=64 time=25.4 ms

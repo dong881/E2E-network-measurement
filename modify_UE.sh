@@ -51,8 +51,10 @@ run_iperf() {
             local ts=$(date +%Y%m%d_%H%M%S)
             local ue_log="/data/local/tmp/iperf3_${ts}.json"
             local remote_log="C:/Data/iperf3-temp.json"
+            # Run iperf3 with JSON output and add timestamp at the beginning
             sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE shell \"/data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options > $ue_log 2>&1\""
+                "adb -s $ADB_DEVICE shell \"current_time=\$(date +\\\"%s\\\"); /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options -J > $ue_log.tmp && sed '1s|{|{\\\"start_timestamp\\\": '\$current_time',|' $ue_log.tmp > $ue_log && rm $ue_log.tmp\""
+            # Pull the result file from device
             sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
                 "adb -s $ADB_DEVICE pull $ue_log $remote_log"
             sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
@@ -60,8 +62,9 @@ run_iperf() {
             scp $CONTROL_PC_USER@$CONTROL_PC_IP:"$remote_log" "$local_log"
             echo "Results saved to $local_log"
         else
+            # Run iperf3 with JSON output and timestamp for display
             sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE shell /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options"
+                "adb -s $ADB_DEVICE shell \"current_time=\$(date +\\\"%s\\\"); echo \\\"Test started at: \$(date)\\\"; /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options\""
         fi
     else
         echo "Error: mode must be server or client"

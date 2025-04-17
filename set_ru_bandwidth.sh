@@ -31,34 +31,34 @@
 #   - Creates output log at $OUTPUT_DIR/set_bandwidth.out
 
 source variable.sh
-# Check if expect is installed
-if ! command -v expect &> /dev/null; then
-    echo "expect could not be found. Please install it to proceed."
-    exit 1
-fi
-# Check if the required environment variables are set
-if [ -z "$RU_USER" ] || [ -z "$RU_IP" ] || [ -z "$RU_PASSWORD" ] || [ -z "$RU_ENABLE_PASSWORD" ]; then
-    echo "Error: Required environment variables are not set." >&2
-    exit 1
-fi
-# Check if the bandwidth argument is provided
-if [ -z "$1" ]; then
-    echo "Error: Bandwidth argument is missing." >&2
-    exit 1
-fi
-# Check if the bandwidth argument is a valid number
-if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-    echo "Error: Bandwidth argument must be a valid number." >&2
-    exit 1
-fi
-# Check if the bandwidth argument is within a valid range
-if [ "$1" -lt 1000000 ] || [ "$1" -gt 1000000000 ]; then
-    echo "Error: Bandwidth argument must be between 1Mbps and 1Gbps." >&2
-    exit 1
-fi
+# # Check if expect is installed
+# if ! command -v expect &> /dev/null; then
+#     echo "expect could not be found. Please install it to proceed."
+#     exit 1
+# fi
+# # Check if the required environment variables are set
+# if [ -z "$RU_USER" ] || [ -z "$RU_IP" ] || [ -z "$RU_PASSWORD" ] || [ -z "$RU_ENABLE_PASSWORD" ]; then
+#     echo "Error: Required environment variables are not set." >&2
+#     exit 1
+# fi
+# # Check if the bandwidth argument is provided
+# if [ -z "$1" ]; then
+#     echo "Error: Bandwidth argument is missing." >&2
+#     exit 1
+# fi
+# # Check if the bandwidth argument is a valid number
+# if ! [[ "$1" =~ ^[0-9]+$ ]]; then
+#     echo "Error: Bandwidth argument must be a valid number." >&2
+#     exit 1
+# fi
+# # Check if the bandwidth argument is within a valid range
+# if [ "$1" -lt 1000000 ] || [ "$1" -gt 1000000000 ]; then
+#     echo "Error: Bandwidth argument must be between 1Mbps and 1Gbps." >&2
+#     exit 1
+# fi
 
-# 創建輸出目錄
-mkdir -p "$OUTPUT_DIR"
+# # 創建輸出目錄
+# mkdir -p "$OUTPUT_DIR"
 
 set_ru_bandwidth() {
     local bw=$1
@@ -108,4 +108,4 @@ EOF
     fi
 }
 
-set_ru_bandwidth "$1"
+# set_ru_bandwidth "$1"
