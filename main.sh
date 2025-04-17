@@ -4,10 +4,16 @@ source variable.sh
 source collect_data_fromCN.sh
 source modify_UE.sh
 source run_gNB.sh
+source set_ru_bandwidth.sh
+
+set_ru_bandwidth "100000000"  # Set RU bandwidth to 100M
 
 # Stop and start split setup
 stop_split_setup "100M"
 start_split_setup "100M"
+
+# stop_single_setup "100M" "MONO"     # Stop 100M bandwidth MONO setup
+# start_single_setup "100M" "MONO"    # Start 100M bandwidth MONO setup
 
 # Toggle airplane mode to reset UE
 toggle_airplane_mode "on"
