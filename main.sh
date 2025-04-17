@@ -5,18 +5,19 @@ source collect_data_fromCN.sh
 source modify_UE.sh
 source run_gNB.sh
 
-# stop_split_setup "100M"
-# start_split_setup "100M"
-# toggle_airplane_mode "on"
-# sleep 10
-# toggle_airplane_mode "off"
+# Stop and start split setup
+stop_split_setup "100M"
+start_split_setup "100M"
 
+# Toggle airplane mode to reset UE
+toggle_airplane_mode "on"
+sleep 30
+toggle_airplane_mode "off"
+
+# Get UE IP if not already set
 if [ -z "$UE_IP" ]; then
     get_ue_ip
 fi
-
-ping-start $UE_IP
-sleep 10
 
 sleep 1
 # Define parameters
@@ -26,30 +27,29 @@ DL_STEP=100
 UL_START=10
 UL_END=20
 UL_STEP=10
-TEST_DURATION=3  # Duration in seconds
+TEST_DURATION=5  # Duration in seconds
 SERVER_IP="10.45.0.1"
 
 # Set to true to enable testing, false to disable
 TEST_UDP=true
 TEST_TCP=false
-ENABLE_UL=false  # 新增 uplink 開關
+ENABLE_UL=false  # Enable uplink testing
 
 # Create directory for results if it doesn't exist
 mkdir -p "./data/$(date +"%Y%m%d")"
 
-# 不用函數而是直接執行，合併上行下行測試邏輯
-# 定義測試類型
+# Define test protocols
 protocols=""
 [ "$TEST_UDP" = true ] && protocols+=" udp"
 [ "$TEST_TCP" = true ] && protocols+=" tcp"
 
-# 定義測試方向和參數
+# Define test directions
 directions="dl"
 [ "$ENABLE_UL" = true ] && directions+=" ul"
 
-# 執行所有測試組合
+# Execute all test combinations
 for direction in $directions; do
-    # 根據方向設定開始值、結束值和步進值
+    # Set parameters based on direction
     if [ "$direction" = "dl" ]; then
         start=$DL_START
         end=$DL_END
@@ -70,20 +70,27 @@ for direction in $directions; do
         for bw in $(seq $start $step $end); do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
             
-            # 設定參數
+            # Set iperf parameters
             params="$reverse -b ${bw}M -t $TEST_DURATION -J"
             [ "$protocol" = "udp" ] && params="-u $params"
             
-            # 設定檔案名稱
-            file_base="iperf-${direction}-${protocol}-${bw}M"
+            # Set file base name
+            file_base="${direction}-${protocol}-${bw}M"
             
-            # 執行測試
+            # Start ping and wait
+            ping-start $UE_IP
+            SLEEP_window=5
+            sleep $SLEEP_window
+            
+            # Start iperf test
             iperf-start
-            run_iperf "client" "$SERVER_IP" "$params" "${file_base}-UE"
-            iperf-stop "${file_base}-CN"
+            run_iperf "client" "$SERVER_IP" "$params" "iperf-${file_base}-UE"
+            iperf-stop "iperf-${file_base}-CN"
+            
+            # Stop ping and save results
+            sleep $SLEEP_window
+            ping-stop "ping-${file_base}"
             sleep 2
         done
     done
 done
-
-ping-stop "ping-value"
