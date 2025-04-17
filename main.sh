@@ -13,6 +13,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SER
 
 # Stop and start split setup
 stop_split_setup "100M"
+# exit 1
 start_split_setup "100M"
 
 # stop_single_setup "100M" "MONO"     # Stop 100M bandwidth MONO setup
@@ -64,7 +65,7 @@ DL_START=100
 DL_END=200
 DL_STEP=100
 
-ENABLE_UL=false  # Enable uplink testing
+ENABLE_UL=true  # Enable uplink testing
 UL_START=10
 UL_END=20
 UL_STEP=10
@@ -119,12 +120,12 @@ for direction in $directions; do
             
             # Start iperf test
             iperf-start
-            run_iperf "client" "$SERVER_IP" "$params" "./data/$(date +"%Y%m%d")/iperf-${file_base}-UE"
-            iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN"
+            run_iperf "client" "$SERVER_IP" "$params" "./data/$(date +"%Y%m%d")/iperf-${file_base}-UE.json"
+            iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
             
             # Stop ping and save results
             sleep $SLEEP_window
-            ping-stop "./data/$(date +"%Y%m%d")/ping-${file_base}"
+            ping-stop "./data/$(date +"%Y%m%d")/ping-${file_base}.log"
             sleep 2
         done
     done
