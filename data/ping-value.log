@@ -1,0 +1,12 @@
+2025-04-17 15:54:57: PING 10.45.0.6 (10.45.0.6) from 10.45.0.1 ogstun: 56(84) bytes of data.
+2025-04-17 15:54:57: 64 bytes from 10.45.0.6: icmp_seq=1 ttl=64 time=17.5 ms
+2025-04-17 15:54:58: 64 bytes from 10.45.0.6: icmp_seq=2 ttl=64 time=25.6 ms
+2025-04-17 15:54:59: 64 bytes from 10.45.0.6: icmp_seq=3 ttl=64 time=23.7 ms
+2025-04-17 15:55:00: 64 bytes from 10.45.0.6: icmp_seq=4 ttl=64 time=27.0 ms
+2025-04-17 15:55:01: 64 bytes from 10.45.0.6: icmp_seq=5 ttl=64 time=25.7 ms
+2025-04-17 15:55:02: 64 bytes from 10.45.0.6: icmp_seq=6 ttl=64 time=23.8 ms
+2025-04-17 15:55:03: 64 bytes from 10.45.0.6: icmp_seq=7 ttl=64 time=26.9 ms
+2025-04-17 15:55:04: 64 bytes from 10.45.0.6: icmp_seq=8 ttl=64 time=24.9 ms
+2025-04-17 15:55:05: 64 bytes from 10.45.0.6: icmp_seq=9 ttl=64 time=28.9 ms
+2025-04-17 15:55:06: 64 bytes from 10.45.0.6: icmp_seq=10 ttl=64 time=22.7 ms
+2025-04-17 15:55:07: 64 bytes from 10.45.0.6: icmp_seq=11 ttl=64 time=25.8 ms

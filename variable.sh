@@ -1,4 +1,5 @@
 #!/bin/bash
+export INTERFACE="ogstun"
 export RU_IP="192.168.8.77"
 export RU_USER="user"
 export RU_PASSWORD="user"

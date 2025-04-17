@@ -9,6 +9,26 @@
 
 source variable.sh
 
+ping-start() {
+    local TARGET_IP="$1"
+    # Start ping on remote server in a screen session
+    sshpass -p "$CN_SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
+    "screen -dmS ping-session bash -c 'ping -I ${INTERFACE} ${TARGET_IP} | while read line; do echo \"\$(date +\"%Y-%m-%d %H:%M:%S\"): \$line\"; done > ~/ping_value.log'"
+}
+
+ping-stop() {
+    # Kill the ping screen session
+    sshpass -p "$CN_SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
+    "screen -X -S ping-session quit"
+    
+    # Copy the ping results back to local machine
+    local output_file="$1"
+    if [ -z "$output_file" ]; then
+        output_file="ping_results"
+    fi
+    sshpass -p "$CN_SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/ping_value.log" "./data/${output_file}.log"
+}
+
 iperf-start() {
     # 在遠端伺服器上啟動 iperf server 並將輸出導向到日誌檔案
     sshpass -p "$CN_SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
