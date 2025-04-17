@@ -24,9 +24,9 @@ ping-stop() {
     # Copy the ping results back to local machine
     local output_file="$1"
     if [ -z "$output_file" ]; then
-        output_file="ping_results"
+        output_file="~/ping_results.log"
     fi
-    sshpass -p "$SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/ping_value.log" "./data/${output_file}.log"
+    sshpass -p "$SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/ping_value.log" "$output_file"
 }
 
 iperf-start() {
