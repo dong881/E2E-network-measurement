@@ -80,7 +80,7 @@ start_single_setup() {
 # Example usage of all possible function combinations
 
 # Split machine setup (VNF + PNF)
-start_split_setup "100M"    # 100M bandwidth
+# start_split_setup "100M"    # 100M bandwidth
 # start_split_setup "40M"     # 40M bandwidth
 
 # Single machine setup (NFAPI mode)
@@ -92,10 +92,47 @@ start_split_setup "100M"    # 100M bandwidth
 # start_single_setup "40M" "MONO"     # 40M bandwidth
 
 # Stop sessions
-# stop_session "VNF_100M" "$VNF_USER" "$VNF_HOST"
-# stop_session "VNF_40M" "$VNF_USER" "$VNF_HOST"
-# stop_session "PNF" "$Main_USER" "$Main_HOST"
-# stop_session "VNF_100M" "$Main_USER" "$Main_HOST"
-# stop_session "VNF_40M" "$Main_USER" "$Main_HOST"
-# stop_session "MONO_100M" "$Main_USER" "$Main_HOST"
-# stop_session "MONO_40M" "$Main_USER" "$Main_HOST"
+# Function to stop split machine setup
+stop_split_setup() {
+    local bandwidth=$1  # 100M or 40M
+    
+    if [ "$bandwidth" = "100M" ]; then
+        stop_session "VNF_100M" "$VNF_USER" "$VNF_HOST"
+        stop_session "PNF" "$Main_USER" "$Main_HOST"
+    elif [ "$bandwidth" = "40M" ]; then
+        stop_session "VNF_40M" "$VNF_USER" "$VNF_HOST"
+        stop_session "PNF" "$Main_USER" "$Main_HOST"
+    fi
+}
+
+# Function to stop single machine setup
+stop_single_setup() {
+    local bandwidth=$1  # 100M or 40M
+    local mode=$2      # NFAPI or MONO
+    
+    if [ "$bandwidth" = "100M" ]; then
+        if [ "$mode" = "NFAPI" ]; then
+            stop_session "VNF_100M" "$Main_USER" "$Main_HOST"
+            stop_session "PNF" "$Main_USER" "$Main_HOST"
+        else
+            stop_session "MONO_100M" "$Main_USER" "$Main_HOST"
+        fi
+    elif [ "$bandwidth" = "40M" ]; then
+        if [ "$mode" = "NFAPI" ]; then
+            stop_session "VNF_40M" "$Main_USER" "$Main_HOST"
+            stop_session "PNF" "$Main_USER" "$Main_HOST"
+        else
+            stop_session "MONO_40M" "$Main_USER" "$Main_HOST"
+        fi
+    fi
+}
+
+# Split machine setup stop examples
+# stop_split_setup "100M"    # Stop 100M bandwidth setup
+# stop_split_setup "40M"     # Stop 40M bandwidth setup
+
+# Single machine setup stop examples
+# stop_single_setup "100M" "NFAPI"    # Stop 100M bandwidth NFAPI setup
+# stop_single_setup "40M" "NFAPI"     # Stop 40M bandwidth NFAPI setup
+# stop_single_setup "100M" "MONO"     # Stop 100M bandwidth MONO setup
+# stop_single_setup "40M" "MONO"      # Stop 40M bandwidth MONO setup
