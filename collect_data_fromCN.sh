@@ -43,15 +43,16 @@ EOF
     # 設定腳本權限並在screen中啟動
     sshpass -p "$CN_SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
     "chmod +x ~/process_iperf.sh && screen -dmS iperf-server ~/process_iperf.sh"
+    sleep 1
 }
 
 iperf-stop() {
     # 當測試完成後，從遠端複製日誌檔案到本機
     local output_file="$1"
     if [ -z "$output_file" ]; then
-        output_file="iperf_results"
+        output_file="~/iperf_results.json"
     fi
-    sshpass -p "$CN_SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/iperf-server.json" "./data/${output_file}.json"
+    sshpass -p "$CN_SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/iperf-server.json" "$output_file"
 
     # 清理：關閉遠端的 screen session
     sshpass -p "$CN_SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \

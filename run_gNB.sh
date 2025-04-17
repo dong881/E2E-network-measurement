@@ -128,7 +128,7 @@ stop_single_setup() {
 }
 
 # Split machine setup stop examples
-# stop_split_setup "100M"    # Stop 100M bandwidth setup
+stop_split_setup "100M"    # Stop 100M bandwidth setup
 # stop_split_setup "40M"     # Stop 40M bandwidth setup
 
 # Single machine setup stop examples
