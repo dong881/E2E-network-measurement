@@ -1,23 +1,19 @@
 #!/bin/bash
 
 # Global variables
-VNF_USER="hpe"
-VNF_HOST="192.168.8.26"
-Main_USER="oai72"
-Main_HOST="192.168.8.43"
-PASSWORD="bmwlab"
+SERVER_PASSWORD="bmwlab"
 
 # Commands for Split Machine Setup (Two Machines)
-CMD_VNF_100M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
-CMD_VNF_40M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
-CMD_PNF_SPLIT="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf-twoMachine.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
+CMD_VNF_100M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+CMD_VNF_40M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
+CMD_PNF_SPLIT="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf-twoMachine.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
 
 # Commands for Single Machine Setup
-CMD_VNF_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
-CMD_MONO_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
-CMD_VNF_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
-CMD_MONO_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new --thread-pool 1,3,5,7,9,11,13,15"
-CMD_PNF_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
+CMD_VNF_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF"
+CMD_MONO_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15"
+CMD_VNF_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF"
+CMD_MONO_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new --thread-pool 1,3,5,7,9,11,13,15"
+CMD_PNF_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15"
 
 # PNF Command (Common)
 
@@ -28,7 +24,7 @@ start_session() {
     local target_user=$3
     local target_host=$4
     
-    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command'"
+    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command'"
 }
 
 # Function to stop a screen session
@@ -37,7 +33,7 @@ stop_session() {
     local target_user=$2
     local target_host=$3
     
-    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -X -S $session_name quit"
+    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -X -S $session_name quit"
 }
 
 # Function to start split machine setup
@@ -45,11 +41,11 @@ start_split_setup() {
     local bandwidth=$1  # 100M or 40M
     
     if [ "$bandwidth" = "100M" ]; then
-        start_session "VNF_100M" "$CMD_VNF_100M_SPLIT" "$VNF_USER" "$VNF_HOST"
-        start_session "PNF" "$CMD_PNF_SPLIT" "$Main_USER" "$Main_HOST"
+        start_session "VNF_100M" "$CMD_VNF_100M_SPLIT" "$VNF_GNB_SERVER_USER" "$VNF_GNB_SERVER_HOST"
+        start_session "PNF" "$CMD_PNF_SPLIT" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
     elif [ "$bandwidth" = "40M" ]; then
-        start_session "VNF_40M" "$CMD_VNF_40M_SPLIT" "$VNF_USER" "$VNF_HOST"
-        start_session "PNF" "$CMD_PNF_SPLIT" "$Main_USER" "$Main_HOST"
+        start_session "VNF_40M" "$CMD_VNF_40M_SPLIT" "$VNF_GNB_SERVER_USER" "$VNF_GNB_SERVER_HOST"
+        start_session "PNF" "$CMD_PNF_SPLIT" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
     fi
 }
 
@@ -60,17 +56,17 @@ start_single_setup() {
     
     if [ "$bandwidth" = "100M" ]; then
         if [ "$mode" = "NFAPI" ]; then
-            start_session "VNF_100M" "$CMD_VNF_100M_SINGLE" "$Main_USER" "$Main_HOST"
-            start_session "PNF" "$CMD_PNF_SINGLE" "$Main_USER" "$Main_HOST"
+            start_session "VNF_100M" "$CMD_VNF_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+            start_session "PNF" "$CMD_PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         else
-            start_session "MONO_100M" "$CMD_MONO_100M_SINGLE" "$Main_USER" "$Main_HOST"
+            start_session "MONO_100M" "$CMD_MONO_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     elif [ "$bandwidth" = "40M" ]; then
         if [ "$mode" = "NFAPI" ]; then
-            start_session "VNF_40M" "$CMD_VNF_40M_SINGLE" "$Main_USER" "$Main_HOST"
-            start_session "PNF" "$CMD_PNF_SINGLE" "$Main_USER" "$Main_HOST"
+            start_session "VNF_40M" "$CMD_VNF_40M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+            start_session "PNF" "$CMD_PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         else
-            start_session "MONO_40M" "$CMD_MONO_40M_SINGLE" "$Main_USER" "$Main_HOST"
+            start_session "MONO_40M" "$CMD_MONO_40M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     fi
 }
@@ -97,11 +93,11 @@ stop_split_setup() {
     local bandwidth=$1  # 100M or 40M
     
     if [ "$bandwidth" = "100M" ]; then
-        stop_session "VNF_100M" "$VNF_USER" "$VNF_HOST"
-        stop_session "PNF" "$Main_USER" "$Main_HOST"
+        stop_session "VNF_100M" "$VNF_GNB_SERVER_USER" "$VNF_GNB_SERVER_HOST"
+        stop_session "PNF" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
     elif [ "$bandwidth" = "40M" ]; then
-        stop_session "VNF_40M" "$VNF_USER" "$VNF_HOST"
-        stop_session "PNF" "$Main_USER" "$Main_HOST"
+        stop_session "VNF_40M" "$VNF_GNB_SERVER_USER" "$VNF_GNB_SERVER_HOST"
+        stop_session "PNF" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
     fi
 }
 
@@ -112,17 +108,17 @@ stop_single_setup() {
     
     if [ "$bandwidth" = "100M" ]; then
         if [ "$mode" = "NFAPI" ]; then
-            stop_session "VNF_100M" "$Main_USER" "$Main_HOST"
-            stop_session "PNF" "$Main_USER" "$Main_HOST"
+            stop_session "VNF_100M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+            stop_session "PNF" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         else
-            stop_session "MONO_100M" "$Main_USER" "$Main_HOST"
+            stop_session "MONO_100M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     elif [ "$bandwidth" = "40M" ]; then
         if [ "$mode" = "NFAPI" ]; then
-            stop_session "VNF_40M" "$Main_USER" "$Main_HOST"
-            stop_session "PNF" "$Main_USER" "$Main_HOST"
+            stop_session "VNF_40M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+            stop_session "PNF" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         else
-            stop_session "MONO_40M" "$Main_USER" "$Main_HOST"
+            stop_session "MONO_40M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     fi
 }

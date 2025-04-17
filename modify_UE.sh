@@ -16,9 +16,9 @@ toggle_airplane_mode() {
 
 # 函數：獲取 UE IP
 get_ue_ip() {
-    UE_IP=$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+    UE_IP=$(sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
              "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni0" | awk '/inet/ {print $2}' | cut -d/ -f1)
-    UE_IP=${UE_IP:-$(sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+    UE_IP=${UE_IP:-$(sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
              "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni1" | awk '/inet/ {print $2}' | cut -d/ -f1)}
     [ -z "$UE_IP" ] && { echo "Error: Unable to fetch UE IP." >&2; exit 1; }
     echo "UE IP: $UE_IP"
@@ -31,18 +31,18 @@ run_iperf() {
     [ -z "$UE_IP" ] && get_ue_ip
 
     # 確保 iperf3 binary 存在
-    if sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+    if sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
          "adb -s $ADB_DEVICE shell ls /data/local/tmp/iperf3 2>/dev/null" | grep -q not_exists; then
         echo "Uploading iperf3…"
-        sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+        sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
             "adb -s $ADB_DEVICE push \"$control_pc_iperf_path\" /data/local/tmp/iperf3"
     fi
 
-    sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+    sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
         "adb -s $ADB_DEVICE shell chmod +x /data/local/tmp/iperf3"
 
     if [ "$mode" = "server" ]; then
-        sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+        sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
             "adb -s $ADB_DEVICE shell /data/local/tmp/iperf3 -s $options" &
         echo "iperf3 server started"
     elif [ "$mode" = "client" ]; then
@@ -52,18 +52,18 @@ run_iperf() {
             local ue_log="/data/local/tmp/iperf3_${ts}.json"
             local remote_log="C:/Data/iperf3-temp.json"
             # Run iperf3 with JSON output and add timestamp at the beginning
-            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+            sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
                 "adb -s $ADB_DEVICE shell \"current_time=\$(date +\\\"%s\\\"); /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options -J > $ue_log.tmp && sed '1s|{|{\\\"start_timestamp\\\": '\$current_time',|' $ue_log.tmp > $ue_log && rm $ue_log.tmp\""
             # Pull the result file from device
-            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+            sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
                 "adb -s $ADB_DEVICE pull $ue_log $remote_log"
-            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+            sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
                 "adb -s $ADB_DEVICE shell rm $ue_log"
             scp $CONTROL_PC_USER@$CONTROL_PC_IP:"$remote_log" "$local_log"
             echo "Results saved to $local_log"
         else
             # Run iperf3 with JSON output and timestamp for display
-            sshpass -p "$CONTROL_PC_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+            sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
                 "adb -s $ADB_DEVICE shell \"current_time=\$(date +\\\"%s\\\"); echo \\\"Test started at: \$(date)\\\"; /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options\""
         fi
     else

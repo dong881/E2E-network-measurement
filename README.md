@@ -78,7 +78,7 @@ Before running the script, ensure the following are set up:
      GNB_SERVER="R750-OAI-BBU/CUDU"
      CONTROL_PC_IP="192.168.8.118"
      CONTROL_PC_USER="sshuser"
-     CONTROL_PC_PASSWORD="bmwlab"
+     SERVER_PASSWORD="bmwlab"
      SERVER_IP="192.168.70.135"
      ADB_DEVICE="0123456789ABCDEF"
      ```

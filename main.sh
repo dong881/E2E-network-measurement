@@ -6,7 +6,10 @@ source modify_UE.sh
 source run_gNB.sh
 source set_ru_bandwidth.sh
 
-set_ru_bandwidth "100000000"  # Set RU bandwidth to 100M
+# Execute remote script on main host
+sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS oaiLONvf bash -c '/home/oai72/Script/oaiLONvf.sh'"
+
+# set_ru_bandwidth "100000000"  # Set RU bandwidth to 100M
 
 # Stop and start split setup
 stop_split_setup "100M"
