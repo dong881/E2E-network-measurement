@@ -17,13 +17,20 @@ sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
 sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
     "screen -X -S ping-session quit"
 
-stop_split_setup "100M"
+start_gNB() {
+    # start_split_setup "100M"
+    start_single_setup "100M" "MONO"
+}
+stop_gNB() {
+    # stop_split_setup "100M"
+    stop_single_setup "100M" "MONO"
+}
+
+
+stop_gNB
 # exit 1
-start_split_setup "100M"
-
-# stop_single_setup "100M" "MONO"     # Stop 100M bandwidth MONO setup
-# start_single_setup "100M" "MONO"    # Start 100M bandwidth MONO setup
-
+start_gNB
+exit 1
 # Toggle airplane mode to reset UE with retry logic
 # MAX_RETRIES is now sourced from run_config.sh
 RETRY_COUNT=0
@@ -52,7 +59,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     
     if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
         echo "ERROR: Failed to get UE IP after $MAX_RETRIES attempts. Exiting script."
-        stop_split_setup "100M"
+        stop_gNB
         exit 1
     fi
     
@@ -120,5 +127,5 @@ for direction in $directions; do
     done
 done
 
-stop_split_setup "100M"
+stop_gNB
 toggle_airplane_mode "on"
