@@ -1,195 +1,174 @@
+import os
 import json
 import re
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
-from datetime import datetime
+import glob
 
-def parse_ping_log(ping_file):
-    """Parse ping log file to extract timestamp and latency data."""
-    ping_data = []
-    pattern = r'(\d+): 64 bytes from .+ time=(\d+\.?\d*) ms'
-    
-    with open(ping_file, 'r') as f:
-        for line in f:
-            match = re.search(pattern, line)
-            if match:
-                timestamp = int(match.group(1))
-                latency = float(match.group(2))
-                ping_data.append((timestamp, latency))
-    
-    return pd.DataFrame(ping_data, columns=['timestamp', 'latency'])
+# Define the root data directory
+DATA_DIR = "/home/ming/E2E-network-measurement/data/20250418"
+OUTPUT_DIR = "/home/ming/E2E-network-measurement/results/20250418"
 
-def parse_iperf_data(iperf_file):
-    """Parse iperf JSON file to extract throughput data."""
-    with open(iperf_file, 'r') as f:
+def parse_iperf_json(file_path):
+    """Parse iperf JSON files to extract throughput data"""
+    with open(file_path, 'r') as f:
         try:
             data = json.load(f)
-        except json.JSONDecodeError:
-            # Handle corrupted JSON files
-            with open(iperf_file, 'r') as f2:
-                content = f2.read()
-                # Find the first complete JSON object
-                first_json_end = content.find('}\n{')
-                if first_json_end > 0:
-                    data = json.loads(content[:first_json_end+1])
-                else:
-                    data = json.loads(content)
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON from {file_path}: {e}")
+            return pd.DataFrame(columns=["throughput"])
     
-    start_timestamp = data.get('start_timestamp')
+    throughputs = []
     
-    # Extract interval data
-    throughput_data = []
-    for interval in data.get('intervals', []):
-        start_time = interval['sum']['start']
-        end_time = interval['sum']['end']
-        mid_time = (start_time + end_time) / 2
-        abs_timestamp = start_timestamp + mid_time
-        
-        # Use bits_per_second directly
-        throughput = interval['sum']['bits_per_second'] / 1_000_000  # Convert to Mbps
-        
-        throughput_data.append((abs_timestamp, throughput))
+    if "intervals" in data:
+        for interval in data.get("intervals", []):
+            for stream in interval.get("streams", []):
+                throughput = stream.get("bits_per_second", 0) / 1_000_000  # Convert to Mbps
+                throughputs.append(throughput)
     
-    return pd.DataFrame(throughput_data, columns=['timestamp', 'throughput'])
+    return pd.DataFrame({"throughput": throughputs})
 
-def match_ping_iperf_data(ping_df, iperf_df):
-    """Match ping and iperf data based on closest timestamp."""
-    matched_data = []
+def parse_ping_log(file_path):
+    """Parse ping log files to extract latency data"""
+    ping_times = []
     
-    # For each iperf measurement, find the closest ping measurement
-    for _, iperf_row in iperf_df.iterrows():
-        iperf_time = iperf_row['timestamp']
-        
-        # Find closest ping data point
-        closest_idx = (ping_df['timestamp'] - iperf_time).abs().idxmin()
-        closest_ping = ping_df.loc[closest_idx]
-        
-        # Only match if within reasonable time threshold (e.g., 1 second)
-        if abs(closest_ping['timestamp'] - iperf_time) <= 1:
-            matched_data.append({
-                'timestamp': iperf_time,
-                'throughput': iperf_row['throughput'],
-                'latency': closest_ping['latency'],
-                'ping_timestamp': closest_ping['timestamp']
-            })
+    with open(file_path, 'r') as f:
+        for line in f:
+            ping_match = re.search(r'time=([\d.]+) ms', line)
+            if ping_match:
+                ping_times.append(float(ping_match.group(1)))
     
-    return pd.DataFrame(matched_data)
+    return pd.DataFrame({"ping_time": ping_times})
 
-def create_visualizations(matched_df, ping_df, iperf_df, output_dir):
-    """Create visualizations from the matched data."""
-    os.makedirs(output_dir, exist_ok=True)
+def extract_bandwidth(filename):
+    """Extract bandwidth value from filename"""
+    match = re.search(r'udp-(\d+M)', filename)
+    if match:
+        bw_str = match.group(1)
+        if bw_str.endswith('M'):
+            return int(bw_str[:-1])
+    return 0
+
+def analyze_test_group(cn_file, ue_file, ping_file):
+    """Analyze one test group (CN, UE, ping) to calculate throughput and latency statistics"""
+    bandwidth = extract_bandwidth(os.path.basename(cn_file))
     
-    # 1. Throughput vs Latency scatter plot
-    plt.figure(figsize=(10, 6))
-    plt.scatter(matched_df['latency'], matched_df['throughput'], alpha=0.7)
-    plt.title('Network Performance: Throughput vs Latency')
-    plt.xlabel('Latency (ms)')
-    plt.ylabel('Throughput (Mbps)')
-    plt.grid(True, alpha=0.3)
-    plt.savefig(os.path.join(output_dir, 'throughput_vs_latency.png'), dpi=300)
-    plt.close()
+    cn_data = parse_iperf_json(cn_file)
+    ue_data = parse_iperf_json(ue_file)
+    ping_data = parse_ping_log(ping_file)
     
-    # 2. Time series of both metrics
-    fig, ax1 = plt.subplots(figsize=(12, 7))
+    cn_throughput = cn_data["throughput"].mean() if not cn_data.empty else 0
+    ue_throughput = ue_data["throughput"].mean() if not ue_data.empty else 0
     
-    # Plot throughput on left y-axis
-    color = 'tab:blue'
-    ax1.set_xlabel('Time')
-    ax1.set_ylabel('Throughput (Mbps)', color=color)
-    ax1.plot(iperf_df['timestamp'], iperf_df['throughput'], 'o-', color=color, alpha=0.7, label='Throughput')
-    ax1.tick_params(axis='y', labelcolor=color)
+    min_ping = ping_data["ping_time"].min() if not ping_data.empty else 0
+    max_ping = ping_data["ping_time"].max() if not ping_data.empty else 0
+    avg_ping = ping_data["ping_time"].mean() if not ping_data.empty else 0
     
-    # Plot latency on right y-axis
-    ax2 = ax1.twinx()
-    color = 'tab:red'
-    ax2.set_ylabel('Latency (ms)', color=color)
-    ax2.plot(ping_df['timestamp'], ping_df['latency'], 'o-', color=color, alpha=0.7, label='Latency')
-    ax2.tick_params(axis='y', labelcolor=color)
+    return {
+        "target_bandwidth": bandwidth,
+        "cn_throughput": cn_throughput,
+        "ue_throughput": ue_throughput,
+        "min_ping": min_ping,
+        "max_ping": max_ping,
+        "avg_ping": avg_ping
+    }
+
+def get_test_groups():
+    """Find and group related test files"""
+    dl_groups = []
+    ul_groups = []
     
-    # Format x-axis as human-readable time
-    plt.title('Network Performance Over Time')
-    fig.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'time_series.png'), dpi=300)
-    plt.close()
+    ping_files = glob.glob(os.path.join(DATA_DIR, "ping-*.log"))
     
-    # 3. Latency distribution during data transfer
-    plt.figure(figsize=(10, 6))
-    min_iperf_time = iperf_df['timestamp'].min()
-    max_iperf_time = iperf_df['timestamp'].max()
+    for ping_file in ping_files:
+        basename = os.path.basename(ping_file)
+        dir_match = re.search(r'ping-(dl|ul)-udp-(\d+M)\.log', basename)
+        
+        if dir_match:
+            direction = dir_match.group(1)
+            bandwidth = dir_match.group(2)
+            
+            cn_file = os.path.join(DATA_DIR, f"iperf-{direction}-udp-{bandwidth}-CN.json")
+            ue_file = os.path.join(DATA_DIR, f"iperf-{direction}-udp-{bandwidth}-UE.json")
+            
+            if os.path.exists(cn_file) and os.path.exists(ue_file):
+                if direction == "dl":
+                    dl_groups.append((cn_file, ue_file, ping_file))
+                else:  # ul
+                    ul_groups.append((cn_file, ue_file, ping_file))
     
-    # Get ping data during iperf test
-    during_test = ping_df[(ping_df['timestamp'] >= min_iperf_time-1) & 
-                          (ping_df['timestamp'] <= max_iperf_time+1)]
-    before_test = ping_df[ping_df['timestamp'] < min_iperf_time-1]
+    return dl_groups, ul_groups
+
+def plot_results(groups, direction):
+    """Create plots for the given test groups and direction"""
+    # Ensure output directory exists
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     
-    plt.hist([before_test['latency'], during_test['latency']], bins=15, 
-             alpha=0.7, label=['Before Transfer', 'During Transfer'])
-    plt.title('Latency Distribution: Before vs. During Data Transfer')
-    plt.xlabel('Latency (ms)')
-    plt.ylabel('Frequency')
+    sorted_groups = sorted(groups, key=lambda x: extract_bandwidth(os.path.basename(x[0])))
+    
+    results = []
+    for cn_file, ue_file, ping_file in sorted_groups:
+        result = analyze_test_group(cn_file, ue_file, ping_file)
+        results.append(result)
+    
+    bandwidths = [r["target_bandwidth"] for r in results]
+    min_pings = [r["min_ping"] for r in results]
+    max_pings = [r["max_ping"] for r in results]
+    avg_pings = [r["avg_ping"] for r in results]
+    
+    # Create figure for ping latency
+    plt.figure(figsize=(15, 10))
+    
+    bar_width = 0.6
+    x = np.arange(len(bandwidths))
+    
+    # Plot min to avg as one color
+    plt.bar(x, [avg - min_val for avg, min_val in zip(avg_pings, min_pings)], 
+            bottom=min_pings, width=bar_width, color='skyblue', label='Min to Avg Range')
+    
+    # Plot avg to max as another color
+    plt.bar(x, [max_val - avg for max_val, avg in zip(max_pings, avg_pings)], 
+            bottom=avg_pings, width=bar_width, color='lightcoral', label='Avg to Max Range')
+    
+    # Plot average line
+    plt.plot(x, avg_pings, 'ko-', linewidth=2, label='Average Ping')
+    
+    # Add value labels
+    for i, (min_val, avg_val, max_val) in enumerate(zip(min_pings, avg_pings, max_pings)):
+        plt.text(i, min_val - 1, f"{min_val:.1f}", ha='center', fontsize=8)
+        plt.text(i, avg_val, f"{avg_val:.1f}", ha='center', fontsize=8)
+        plt.text(i, max_val + 1, f"{max_val:.1f}", ha='center', fontsize=8)
+    
+    plt.xticks(x, [f"{bw}M" for bw in bandwidths])
+    plt.xlabel('Target Bandwidth (Mbps)', fontsize=12)
+    plt.ylabel('Ping Latency (ms)', fontsize=12)
+    
+    # Set title and add test environment info
+    direction_text = "Downlink" if direction == "dl" else "Uplink"
+    plt.title(f'Ping Latency vs Bandwidth - UDP {direction_text}\nTest Environment: UDP {direction_text.upper()}', 
+              fontsize=16)
+    
     plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.savefig(os.path.join(output_dir, 'latency_distribution.png'), dpi=300)
-    plt.close()
+    plt.grid(True, linestyle='--', alpha=0.7)
     
-    # 4. Throughput vs time with latency color mapping
-    plt.figure(figsize=(12, 7))
-    scatter = plt.scatter(matched_df['timestamp'], matched_df['throughput'], 
-                c=matched_df['latency'], cmap='viridis', 
-                alpha=0.8, s=50, edgecolors='k', linewidth=0.5)
-    plt.colorbar(scatter, label='Latency (ms)')
-    plt.title('Throughput Over Time (Colored by Latency)')
-    plt.xlabel('Time')
-    plt.ylabel('Throughput (Mbps)')
-    plt.grid(True, alpha=0.3)
-    plt.savefig(os.path.join(output_dir, 'throughput_time_latency_color.png'), dpi=300)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUT_DIR, f"ping_latency_{direction}_udp.png"), dpi=300, bbox_inches='tight')
     plt.close()
 
-def analyze_network_performance(ping_file, iperf_file, output_dir):
-    """Main function to analyze network performance."""
-    print(f"Analyzing files:\n- {ping_file}\n- {iperf_file}")
+def main():
+    """Main function to execute the analysis"""
+    dl_groups, ul_groups = get_test_groups()
     
-    # Parse data
-    ping_df = parse_ping_log(ping_file)
-    iperf_df = parse_iperf_data(iperf_file)
+    if dl_groups:
+        plot_results(dl_groups, "dl")
+        print(f"Processed {len(dl_groups)} downlink test groups.")
     
-    if ping_df.empty or iperf_df.empty:
-        print("Error: No data found in input files")
-        return
+    if ul_groups:
+        plot_results(ul_groups, "ul")
+        print(f"Processed {len(ul_groups)} uplink test groups.")
     
-    print(f"Found {len(ping_df)} ping data points and {len(iperf_df)} iperf intervals")
-    
-    # Match data points
-    matched_df = match_ping_iperf_data(ping_df, iperf_df)
-    
-    if matched_df.empty:
-        print("Error: Could not match ping and iperf data. Check timestamps.")
-        return
-    
-    print(f"Successfully matched {len(matched_df)} data points")
-    
-    # Create visualizations
-    create_visualizations(matched_df, ping_df, iperf_df, output_dir)
-    print(f"Visualizations saved to {output_dir}")
-    
-    # Print correlation coefficient
-    corr = matched_df['throughput'].corr(matched_df['latency'])
-    print(f"Correlation between throughput and latency: {corr:.4f}")
-    
-    # Print summary statistics
-    print("\nSummary Statistics:")
-    print("\nThroughput (Mbps):")
-    print(matched_df['throughput'].describe())
-    print("\nLatency (ms):")
-    print(matched_df['latency'].describe())
+    print(f"Analysis complete. Output images saved to {OUTPUT_DIR}")
 
 if __name__ == "__main__":
-    data_dir = "/home/ming/E2E-network-measurement/data/20250417"
-    output_dir = "/home/ming/E2E-network-measurement/results/20250417"
-    
-    ping_file = os.path.join(data_dir, "ping-dl-udp-100M.log")
-    iperf_file = os.path.join(data_dir, "iperf-dl-udp-100M-UE.json")
-    
-    analyze_network_performance(ping_file, iperf_file, output_dir)
+    main()
