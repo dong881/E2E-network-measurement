@@ -109,7 +109,7 @@ for direction in $directions; do
             
             # Set file base name
             file_base="${direction}-${protocol}-${bw}M"
-            
+            sleep $SLEEP_WINDOW
             # Start ping and wait
             ping-start $UE_IP
             sleep $SLEEP_WINDOW
