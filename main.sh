@@ -12,6 +12,11 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SER
 # set_ru_bandwidth "100000000"  # Set RU bandwidth to 100M
 
 # Stop and start split setup
+sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
+    "screen -X -S iperf-server quit"
+sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
+    "screen -X -S ping-session quit"
+
 stop_split_setup "100M"
 # exit 1
 start_split_setup "100M"
@@ -24,6 +29,8 @@ MAX_RETRIES=6
 RETRY_COUNT=0
 UE_IP=""
 
+toggle_airplane_mode "on"
+sleep 15
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     echo "Attempt $(($RETRY_COUNT + 1)) of $MAX_RETRIES to reset UE connection"
     toggle_airplane_mode "on"
@@ -55,19 +62,19 @@ done
 
 sleep 1
 # Define parameters
-TEST_DURATION=5  # Duration in seconds
+TEST_DURATION=30  # Duration in seconds
 
 # Set to true to enable testing, false to disable
 TEST_UDP=true
 TEST_TCP=false
 
 DL_START=100
-DL_END=200
+DL_END=1000
 DL_STEP=100
 
 ENABLE_UL=true  # Enable uplink testing
 UL_START=10
-UL_END=20
+UL_END=120
 UL_STEP=10
 
 SERVER_IP="10.45.0.1"
