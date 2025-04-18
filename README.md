@@ -1,163 +1,123 @@
 # E2E Network Measurement
 
+## Project Summary
+
+This framework automates End-to-End (E2E) network performance testing using shell scripts. It coordinates actions across multiple devices (Control PC, RU, gNB, CN, UE) via SSH and ADB. Key features include configurable test parameters (bandwidth, protocol, direction), automated setup/teardown of network components (gNB, iPerf server), UE connection management, and collection of iPerf/ping results. Configuration is separated into `variable.sh` (environment) and `run_config.sh` (test parameters) for easy management. The `main.sh` script orchestrates the entire process.
+
 ## Overview
 
-This project provides an automated, end-to-end (E2E) network measurement tool designed to evaluate network performance across various configurations. It integrates SSH, ADB, iPerf3, and ping to measure throughput and round-trip time (RTT) under different bandwidth settings, protocols (TCP/UDP), directions (Uplink/Downlink), and packet sizes. The tool generates comprehensive data, visualizes results in a scatter plot (Throughput vs. RTT), and produces a Markdown report.
+This project provides an automated framework for end-to-end (E2E) network performance measurement. It leverages SSH, ADB, iPerf3, and ping to systematically evaluate network throughput and latency across various configurations. The framework is designed to be modular, allowing for easy configuration and execution of complex test scenarios involving Radio Units (RU), gNodeB (gNB), Core Network (CN), and User Equipment (UE).
 
-The workflow includes configuring a Radio Unit (RU), starting a gNB server, controlling a User Equipment (UE) via ADB, running performance tests, and analyzing results—all in a single script for a seamless "one-click" experience.
+The core workflow involves setting up the network components (RU bandwidth, gNB), managing the UE connection, executing performance tests (iPerf3 and ping) based on defined parameters, collecting results, and cleaning up the environment. Configuration is managed through separate files (`variable.sh`, `run_config.sh`) for clarity and ease of modification.
 
 ## Features
 
-- **Automated Configuration**: Configures RU bandwidth (e.g., 40M, 100M) via SSH and reboots the device.
-- **gNB Server Control**: Starts gNB in nFAPI or FAPI mode on a remote server.
-- **UE Management**: Uses ADB to toggle airplane mode and fetch UE IP dynamically.
-- **Performance Testing**:
-  - Measures throughput with iPerf3 (TCP/UDP, Uplink/Downlink, varying packet sizes).
-  - Measures RTT with `ping -I ogstun` for precise latency tracking.
-- **Comprehensive Analysis**: Generates a CSV file with test results, a scatter plot, and a Markdown report.
-- **Error Handling**: Includes detailed logging and status checks to ensure uninterrupted execution.
+- **Modular Design**: Scripts are separated by function (`set_ru_bandwidth.sh`, `run_gNB.sh`, `modify_UE.sh`, `collect_data_fromCN.sh`).
+- **Centralized Configuration**:
+    - `variable.sh`: Stores network addresses, user credentials, and device identifiers.
+    - `run_config.sh`: Stores test execution parameters like duration, bandwidth ranges, protocols, and retry counts.
+- **Automated Setup**:
+    - Configures RU bandwidth via SSH (`set_ru_bandwidth.sh`).
+    - Starts/stops gNB processes on remote servers (`run_gNB.sh`).
+    - Manages CN-side processes like iPerf server and ping (`collect_data_fromCN.sh`).
+- **UE Control**: Uses ADB to toggle airplane mode, retrieve UE IP address, and run iPerf client (`modify_UE.sh`).
+- **Parametric Testing**: `main.sh` orchestrates tests across specified ranges of bandwidth, protocols (TCP/UDP), and directions (Uplink/Downlink).
+- **Data Collection**: Saves iPerf JSON results and ping logs for each test run.
+- **Robust Execution**: Includes retry logic for establishing UE connection.
 
 ## Prerequisites
-
-Before running the script, ensure the following are set up:
 
 ### Software Requirements
 - **Linux Environment**: Tested on Ubuntu or similar distributions.
 - **Installed Tools**:
-  - `expect`: For SSH automation (`sudo apt install expect`).
+  - `sshpass`: For non-interactive SSH password authentication (`sudo apt install sshpass`).
   - `adb`: Android Debug Bridge, added to PATH ([Download](https://dl.google.com/android/repository/platform-tools-latest-linux.zip)).
-  - `python3` and `python3-venv`: For virtual environment and plotting (`sudo apt install python3 python3-venv`).
-- **Network Tools**: `ping` (pre-installed on most systems).
+  - `iperf3`: Network performance tool (`sudo apt install iperf3`).
+  - `ping`: Standard network utility (usually pre-installed).
+  - `screen`: Terminal multiplexer (`sudo apt install screen`).
+  - `expect`: For automating interactive SSH sessions (e.g., RU configuration) (`sudo apt install expect`).
 
 ### Hardware Requirements
-- **RU Device**: Accessible via SSH at `192.168.8.77` (configurable).
-- **gNB Server**: Accessible via SSH at `R750-OAI-BBU/CUDU` (configurable).
-- **UE Device**: Connected via ADB with iPerf3 binary installed (`/data/local/tmp/iperf3`).
-- **Control PC**: Running iPerf3 server at `192.168.70.135` (configurable).
+- **Control PC**: The machine running these scripts.
+- **RU Device**: Accessible via SSH.
+- **gNB Server(s)**: Accessible via SSH (supports separate VNF and PNF servers if needed).
+- **CN Server**: Accessible via SSH, runs iPerf3 server and potentially ping target.
+- **UE Device**: Connected via ADB to the Control PC, with iPerf3 binary installed (`/data/local/tmp/iperf3`).
 
 ### Pre-Configuration
-1. **SSH Key Authentication**:
-   - Set up passwordless SSH for RU and gNB server:
-     ```bash
-     ssh-keygen -t rsa
-     ssh-copy-id user@192.168.8.77
-     ssh-copy-id R750-OAI-BBU/CUDU
-     ```
-   - If not using keys, modify the script to handle passwords with `expect`.
+1.  **SSH Access**: Ensure the Control PC can SSH into the RU, gNB, and CN servers using `sshpass` (password provided in `variable.sh`) or passwordless SSH keys.
+2.  **ADB Setup**:
+    - Connect UE to the Control PC and enable USB debugging.
+    - Verify connection: `adb devices`. Update `ADB_DEVICE` in `run_config.sh` if necessary.
+    - Install iPerf3 on UE:
+      ```bash
+      adb push /path/to/iperf3 /data/local/tmp/iperf3
+      adb shell chmod +x /data/local/tmp/iperf3
+      ```
+3.  **iPerf3 Server on CN**: Ensure iPerf3 can be started on the CN server (script handles starting/stopping via `screen`).
+4.  **Network Interfaces**: Ensure the network interfaces used (e.g., `ogstun` for ping, specified in `variable.sh`) are correctly configured on the relevant machines.
 
-2. **ADB Setup**:
-   - Connect UE to the host machine and enable USB debugging.
-   - Verify connection: `adb devices` (update `ADB_DEVICE` in script with the serial number).
-   - Install iPerf3 on UE:
-     ```bash
-     adb push /path/to/iperf3 /data/local/tmp/iperf3
-     adb shell chmod +x /data/local/tmp/iperf3
-     ```
+## Configuration
 
-3. **iPerf3 Server**:
-   - Start iPerf3 server on `192.168.70.135`:
-     ```bash
-     iperf3 -s
-     ```
+Modify the following files to match your environment:
 
-4. **Network Interface**:
-   - Ensure `ogstun` is a valid interface on the machine running the script. If not, adjust the `ping` command accordingly.
+1.  **`/home/ming/E2E-network-measurement/variable.sh`**:
+    - Set IP addresses, usernames, and passwords for RU, gNB, CN servers, and the Control PC.
+    - Define the network interface (`INTERFACE`) used for specific tests (e.g., ping).
+    - Set the main `SERVER_IP` (likely the Control PC's IP on the test network) and `TEST_SERVER_IP` (IP address for iPerf/ping tests, often the CN server).
+
+2.  **`/home/ming/E2E-network-measurement/run_config.sh`**:
+    - Set `ADB_DEVICE` serial number.
+    - Configure test parameters: `TEST_DURATION`, `MAX_RETRIES` (for UE connection), protocol flags (`TEST_UDP`, `TEST_TCP`), bandwidth ranges (`DL_START`, `DL_END`, `DL_STEP`, `UL_START`, `UL_END`, `UL_STEP`), uplink enable flag (`ENABLE_UL`), and wait times (`WAIT_AFTER_REBOOT`, `WAIT_AFTER_GNB`, `SLEEP_WINDOW`).
 
 ## Usage
 
-1. **Download the Script**:
-   - Save the script as `run_network_test.sh` from this repository.
+1.  **Navigate to Directory**:
+    ```bash
+    cd /home/ming/E2E-network-measurement
+    ```
+2.  **Ensure Scripts are Executable**:
+    ```bash
+    chmod +x *.sh
+    ```
+3.  **Run the Main Script**:
+    ```bash
+    ./main.sh
+    ```
+    The script will:
+    - Source configuration variables.
+    - Set RU bandwidth (if implemented in `set_ru_bandwidth.sh`).
+    - Stop any existing test processes on the CN server.
+    - Start the gNB components (`run_gNB.sh`).
+    - Attempt to connect the UE (`modify_UE.sh`).
+    - Execute the iPerf3 and ping test loop defined in `main.sh`.
+    - Save results to `./data/YYYYMMDD/`.
+    - Stop gNB components and clean up CN processes.
+    - Turn off UE radio (airplane mode).
 
-2. **Configure Parameters**:
-   - Edit the top section of `run_network_test.sh` to match your environment:
-     ```bash
-     RU_IP="192.168.8.77"
-     RU_USER="user"
-     RU_PASSWORD="user"
-     RU_ENABLE_PASSWORD="liteon168"
-     GNB_SERVER="R750-OAI-BBU/CUDU"
-     CONTROL_PC_IP="192.168.8.118"
-     CONTROL_PC_USER="sshuser"
-     SERVER_PASSWORD="bmwlab"
-     SERVER_IP="192.168.70.135"
-     ADB_DEVICE="0123456789ABCDEF"
-     ```
-   - Adjust `TEST_DURATION`, `WAIT_AFTER_REBOOT`, and `WAIT_AFTER_GNB` if needed.
-
-3. **Run the Script**:
-   ```bash
-   chmod +x run_network_test.sh
-   ./run_network_test.sh
-   ```
-
-4. **Output**:
-   - Results are saved in a directory named `test_results_YYYYMMDD_HHMMSS` (e.g., `test_results_20250409_123456`), containing:
-     - `results.csv`: Test data (Test ID, Bandwidth, Protocol, Direction, Settings, Throughput, RTT).
-     - `scatter_plot.png`: Throughput vs. RTT scatter plot.
-     - `report.md`: Summary report with plot and data table.
-     - `test.log`: Detailed execution log.
-     - Individual iPerf3 and ping logs for each test.
+4.  **Output**:
+    - Test results (iPerf JSON files, ping logs) are saved in `./data/YYYYMMDD/`, organized by test parameters (e.g., `iperf-dl-udp-100M-UE.json`, `ping-ul-tcp-50M.log`).
+    - Console output provides real-time status updates.
 
 ## Script Details
 
-### Workflow
-1. **RU Configuration**: Sets bandwidth (40M or 100M bps) via SSH and reboots the RU.
-2. **gNB Startup**: Launches gNB in nFAPI mode (VNF then PNF).
-3. **UE Preparation**: Disables airplane mode and retrieves UE IP via ADB.
-4. **Testing Loop**:
-   - Runs iPerf3 and ping for each combination:
-     - TCP: Uplink/Downlink, full speed.
-     - UDP: Uplink/Downlink, small (256B) and large (1470B) packets, 1Gbps bandwidth.
-   - Extracts throughput and RTT, saving to CSV.
-5. **Cleanup**: Enables airplane mode after tests.
-6. **Analysis**: Sets up a Python virtual environment, installs dependencies, generates a scatter plot, and creates a Markdown report.
-
-### Test Combinations
-| Protocol | Direction | Settings             |
-|----------|-----------|----------------------|
-| TCP      | Downlink  | Full speed           |
-| TCP      | Uplink    | Full speed           |
-| UDP      | Downlink  | 256B packet, 1Gbps   |
-| UDP      | Downlink  | 1470B packet, 1Gbps  |
-| UDP      | Uplink    | 256B packet, 1Gbps   |
-| UDP      | Uplink    | 1470B packet, 1Gbps  |
+- **`main.sh`**: Orchestrates the entire test flow. Defines the test matrix (protocols, directions, bandwidths) and calls helper scripts.
+- **`variable.sh`**: Stores environment-specific variables (IPs, credentials). Sourced by `main.sh`.
+- **`run_config.sh`**: Stores test execution parameters (duration, ranges, flags). Sourced by `variable.sh`.
+- **[`set_ru_bandwidth.sh`](docs/set_ru_bandwidth_details.md)**: Contains functions to configure the RU (e.g., set bandwidth via SSH/expect). Called by `main.sh`. [See Details](docs/set_ru_bandwidth_details.md)
+- **[`run_gNB.sh`](docs/run_gNB_details.md)**: Contains functions (`start_split_setup`, `stop_split_setup`, etc.) to manage gNB processes on remote servers via SSH. Called by `main.sh`. [See Details](docs/run_gNB_details.md)
+- **[`modify_UE.sh`](docs/modify_UE_details.md)**: Contains functions (`toggle_airplane_mode`, `get_ue_ip`, `run_iperf`) to interact with the UE via ADB. Called by `main.sh`. [See Details](docs/modify_UE_details.md)
+- **[`collect_data_fromCN.sh`](docs/collect_data_fromCN_details.md)**: Contains functions (`ping-start`, `ping-stop`, `iperf-start`, `iperf-stop`) to manage test processes (ping, iperf3 server) on the CN server via SSH. Called by `main.sh`. [See Details](docs/collect_data_fromCN_details.md)
 
 ## Notes and Troubleshooting
 
-- **SSH Issues**: If SSH connections fail, ensure keys are set up or modify the script to handle passwords.
-- **ADB Connection**: Verify UE is detected (`adb devices`) and iPerf3 is executable.
-- **Ping Interface**: If `ogstun` is not on the host machine, modify the `run_test` function to run ping on the appropriate device (e.g., via `adb shell`).
-- **Python Errors**: Ensure `python3-venv` is installed; check `test.log` for pip installation issues.
-- **Network Stability**: Unstable networks may lead to missing data points; review `test.log` for warnings.
-
-## Example Output
-
-### `results.csv`
-```
-Test_ID,Bandwidth,Protocol,Direction,Settings,Throughput,RTT
-40000000_TCP_DL_,40000000,TCP,DL,,500,10
-40000000_UDP_DL_-l_256_-b_1G,40000000,UDP,DL,-l 256 -b 1G,450,12
-...
-```
-
-### `scatter_plot.png`
-![Sample Scatter Plot](example/scatter_plot.png)
-
-### `report.md`
-```markdown
-# Network Test Report
-Generated on: Wed Apr 09 12:34:56 2025
-
-## Test Results
-![Scatter Plot](scatter_plot.png)
-
-## Data
-Test_ID                       Bandwidth  Protocol  Direction  Settings      Throughput  RTT
-40000000_TCP_DL_             40000000   TCP       DL                    500         10
-40000000_UDP_DL_-l_256_-b_1G 40000000   UDP       DL         -l 256 -b 1G  450         12
-...
-```
+- **Dependencies**: Ensure all required tools (`sshpass`, `adb`, `iperf3`, `screen`, `expect`) are installed and in the system's PATH.
+- **Permissions**: Scripts need execute permissions (`chmod +x *.sh`).
+- **SSH Failures**: Verify credentials in `variable.sh` and network connectivity. Check if `sshpass` is installed or configure passwordless SSH.
+- **ADB Issues**: Ensure the UE is connected, authorized, and the correct `ADB_DEVICE` is set in `run_config.sh`. Check if iPerf3 binary exists and is executable on the UE at `/data/local/tmp/iperf3`.
+- **Configuration Errors**: Double-check IP addresses, usernames, passwords, and interface names in `variable.sh` and `run_config.sh`.
+- **Screen Sessions**: If scripts fail unexpectedly, check for lingering `screen` sessions on the CN and gNB servers (`screen -ls`) and terminate them (`screen -X -S <session_name> quit`).
 
 ## Contributing
 
-Feel free to fork this repository, submit issues, or contribute improvements via pull requests. For specific feature requests, please detail your use case.
+Contributions, bug reports, and feature requests are welcome. Please open an issue or submit a pull request.
