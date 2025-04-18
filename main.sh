@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source variable.sh
+source variable.sh # This already sources run_config.sh
 source collect_data_fromCN.sh
 source modify_UE.sh
 source run_gNB.sh
@@ -25,7 +25,7 @@ start_split_setup "100M"
 # start_single_setup "100M" "MONO"    # Start 100M bandwidth MONO setup
 
 # Toggle airplane mode to reset UE with retry logic
-MAX_RETRIES=6
+# MAX_RETRIES is now sourced from run_config.sh
 RETRY_COUNT=0
 UE_IP=""
 
@@ -61,23 +61,6 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
 done
 
 sleep 1
-# Define parameters
-TEST_DURATION=30  # Duration in seconds
-
-# Set to true to enable testing, false to disable
-TEST_UDP=true
-TEST_TCP=false
-
-DL_START=100
-DL_END=1000
-DL_STEP=100
-
-ENABLE_UL=true  # Enable uplink testing
-UL_START=10
-UL_END=120
-UL_STEP=10
-
-SERVER_IP="10.45.0.1"
 # Create directory for results if it doesn't exist
 mkdir -p "./data/$(date +"%Y%m%d")"
 
@@ -113,7 +96,7 @@ for direction in $directions; do
         for bw in $(seq $start $step $end); do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
             
-            # Set iperf parameters
+            # Set iperf parameters - TEST_DURATION is sourced
             params="$reverse -b ${bw}M -t $TEST_DURATION -J"
             [ "$protocol" = "udp" ] && params="-u $params"
             
@@ -122,16 +105,15 @@ for direction in $directions; do
             
             # Start ping and wait
             ping-start $UE_IP
-            SLEEP_window=5
-            sleep $SLEEP_window
+            sleep $SLEEP_WINDOW
             
             # Start iperf test
             iperf-start
-            run_iperf "client" "$SERVER_IP" "$params" "./data/$(date +"%Y%m%d")/iperf-${file_base}-UE.json"
+            run_iperf "client" "$TEST_SERVER_IP" "$params" "./data/$(date +"%Y%m%d")/iperf-${file_base}-UE.json"
             iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
             
             # Stop ping and save results
-            sleep $SLEEP_window
+            sleep $SLEEP_WINDOW
             ping-stop "./data/$(date +"%Y%m%d")/ping-${file_base}.log"
             sleep 2
         done

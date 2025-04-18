@@ -14,13 +14,10 @@ export CONTROL_PC_USER="sshuser"
 export CN_SERVER_USER="oai-cn"
 export CN_SERVER_HOST="192.168.8.108"
 export SERVER_IP="192.168.70.135"
-export ADB_DEVICE="0123456789ABCDEF"
-export TEST_DURATION=5
-export WAIT_AFTER_REBOOT=60
-export WAIT_AFTER_GNB=18
+export TEST_SERVER_IP="10.45.0.1" # IP for iperf/ping tests
 export OUTPUT_DIR="test_results_$(date +%Y%m%d)"
-export CSV_FILE="$OUTPUT_DIR/results.csv"
-export LOG_FILE="$OUTPUT_DIR/test.log"
-export VENV_DIR="$OUTPUT_DIR/venv"
+
+# Source the run configuration
+source "$(dirname "$0")/run_config.sh"
 
 # mkdir -p "$OUTPUT_DIR"

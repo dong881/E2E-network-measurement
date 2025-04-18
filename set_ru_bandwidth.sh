@@ -19,8 +19,6 @@
 #   RU_IP - IP address of the RU
 #   RU_PASSWORD - Password for RU SSH login
 #   RU_ENABLE_PASSWORD - Enable password for privileged mode
-#   OUTPUT_DIR - Directory for output files
-#   LOG_FILE - Path to log file
 #   WAIT_AFTER_REBOOT - Time to wait after reboot in seconds
 #
 # Returns:
