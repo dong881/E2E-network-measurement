@@ -30,7 +30,7 @@ stop_gNB() {
 stop_gNB
 # exit 1
 start_gNB
-exit 1
+# exit 1
 # Toggle airplane mode to reset UE with retry logic
 # MAX_RETRIES is now sourced from run_config.sh
 RETRY_COUNT=0
