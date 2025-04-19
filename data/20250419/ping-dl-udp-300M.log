@@ -1,0 +1,26 @@
+1745004961: PING 10.45.0.29 (10.45.0.29) from 10.45.0.1 ogstun: 56(84) bytes of data.
+1745004961: 64 bytes from 10.45.0.29: icmp_seq=1 ttl=64 time=14.7 ms
+1745004962: 64 bytes from 10.45.0.29: icmp_seq=2 ttl=64 time=19.0 ms
+1745004963: 64 bytes from 10.45.0.29: icmp_seq=3 ttl=64 time=18.3 ms
+1745004964: 64 bytes from 10.45.0.29: icmp_seq=4 ttl=64 time=8.42 ms
+1745004965: 64 bytes from 10.45.0.29: icmp_seq=5 ttl=64 time=17.5 ms
+1745004966: 64 bytes from 10.45.0.29: icmp_seq=6 ttl=64 time=17.6 ms
+1745004967: 64 bytes from 10.45.0.29: icmp_seq=7 ttl=64 time=17.7 ms
+1745004968: 64 bytes from 10.45.0.29: icmp_seq=8 ttl=64 time=17.3 ms
+1745004969: 64 bytes from 10.45.0.29: icmp_seq=9 ttl=64 time=16.5 ms
+1745004970: 64 bytes from 10.45.0.29: icmp_seq=10 ttl=64 time=16.3 ms
+1745004971: 64 bytes from 10.45.0.29: icmp_seq=11 ttl=64 time=15.8 ms
+1745004972: 64 bytes from 10.45.0.29: icmp_seq=12 ttl=64 time=14.9 ms
+1745004974: 64 bytes from 10.45.0.29: icmp_seq=13 ttl=64 time=999 ms
+1745004979: 64 bytes from 10.45.0.29: icmp_seq=19 ttl=64 time=18.5 ms
+1745004980: 64 bytes from 10.45.0.29: icmp_seq=20 ttl=64 time=16.9 ms
+1745004981: 64 bytes from 10.45.0.29: icmp_seq=21 ttl=64 time=14.9 ms
+1745004982: 64 bytes from 10.45.0.29: icmp_seq=22 ttl=64 time=22.8 ms
+1745004983: 64 bytes from 10.45.0.29: icmp_seq=23 ttl=64 time=21.0 ms
+1745004984: 64 bytes from 10.45.0.29: icmp_seq=24 ttl=64 time=19.7 ms
+1745004985: 64 bytes from 10.45.0.29: icmp_seq=25 ttl=64 time=17.8 ms
+1745004986: 64 bytes from 10.45.0.29: icmp_seq=26 ttl=64 time=16.0 ms
+1745004987: 64 bytes from 10.45.0.29: icmp_seq=27 ttl=64 time=14.8 ms
+1745004988: 64 bytes from 10.45.0.29: icmp_seq=28 ttl=64 time=17.8 ms
+1745004989: 64 bytes from 10.45.0.29: icmp_seq=29 ttl=64 time=15.8 ms
+1745004990: 64 bytes from 10.45.0.29: icmp_seq=30 ttl=64 time=18.8 ms
