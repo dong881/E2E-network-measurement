@@ -9,6 +9,8 @@ import glob
 # Define the base directories
 BASE_DATA_DIR = "/home/ming/E2E-network-measurement/data"
 BASE_OUTPUT_DIR = "/home/ming/E2E-network-measurement/results"
+# Define buffer time in seconds to exclude from start/end of ping data
+PING_BUFFER_SECONDS = 5  # Adjust as needed
 
 def parse_iperf_json(file_path):
     """Parse iperf JSON files to extract throughput data"""
@@ -30,7 +32,7 @@ def parse_iperf_json(file_path):
     return pd.DataFrame({"throughput": throughputs})
 
 def parse_ping_log(file_path):
-    """Parse ping log files to extract latency data"""
+    """Parse ping log files to extract latency data as a list"""
     ping_times = []
     
     with open(file_path, 'r') as f:
@@ -39,7 +41,7 @@ def parse_ping_log(file_path):
             if ping_match:
                 ping_times.append(float(ping_match.group(1)))
     
-    return pd.DataFrame({"ping_time": ping_times})
+    return ping_times  # Return list instead of DataFrame
 
 def extract_target_throughput(filename):
     """Extract target throughput value from filename"""
@@ -56,11 +58,27 @@ def analyze_test_group(cn_file, ue_file, ping_file):
     
     cn_data = parse_iperf_json(cn_file)
     ue_data = parse_iperf_json(ue_file)
-    ping_data = parse_ping_log(ping_file)
+    all_ping_times = parse_ping_log(ping_file)  # Get the full list of ping times
+    
+    # Filter ping times to exclude buffer periods at start and end
+    start_index = PING_BUFFER_SECONDS
+    end_index = len(all_ping_times) - PING_BUFFER_SECONDS
+    
+    relevant_ping_times = []
+    if start_index < end_index and start_index >= 0:
+        relevant_ping_times = all_ping_times[start_index:end_index]
+    elif len(all_ping_times) > 0:
+        # If buffer is too large or data too short, use all data but warn
+        print(f"Warning: Ping data for {os.path.basename(ping_file)} is shorter than buffer. Using all {len(all_ping_times)} measurements.")
+        relevant_ping_times = all_ping_times
+
+    # Create DataFrame from the filtered list
+    ping_data = pd.DataFrame({"ping_time": relevant_ping_times})
     
     cn_throughput = cn_data["throughput"].mean() if not cn_data.empty else 0
     ue_throughput = ue_data["throughput"].mean() if not ue_data.empty else 0
     
+    # Calculate stats only on relevant ping times
     min_ping = ping_data["ping_time"].min() if not ping_data.empty else 0
     max_ping = ping_data["ping_time"].max() if not ping_data.empty else 0
     avg_ping = ping_data["ping_time"].mean() if not ping_data.empty else 0
