@@ -102,7 +102,10 @@ for direction in $directions; do
         
         for bw in $(seq $start $step $end); do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
-            
+            ping-start $UE_IP
+            sleep $SLEEP_WINDOW
+            ping-stop "./data/$(date +"%Y%m%d")/ping-${direction}-${protocol}-idle.log"
+
             # Set iperf parameters - TEST_DURATION is sourced
             params="$reverse -b ${bw}M -t $TEST_DURATION -J"
             [ "$protocol" = "udp" ] && params="-u $params"
@@ -117,7 +120,12 @@ for direction in $directions; do
             # Start iperf test
             iperf-start
             run_iperf "client" "$TEST_SERVER_IP" "$params" "./data/$(date +"%Y%m%d")/iperf-${file_base}-UE.json"
-            iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
+            
+            if [ "$direction" = "ul" ]; then
+                iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
+            else
+                iperf-stop
+            fi
             
             # Stop ping and save results
             sleep $SLEEP_WINDOW

@@ -49,10 +49,9 @@ EOF
 iperf-stop() {
     # 當測試完成後，從遠端複製日誌檔案到本機
     local output_file="$1"
-    if [ -z "$output_file" ]; then
-        output_file="~/iperf_results.json"
+    if [ ! -z "$output_file" ]; then
+        sshpass -p "$SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/iperf-server.json" "$output_file"
     fi
-    sshpass -p "$SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/iperf-server.json" "$output_file"
 
     # 清理：關閉遠端的 screen session
     sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
