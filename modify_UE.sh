@@ -8,7 +8,7 @@ source variable.sh
 toggle_airplane_mode() {
     local state=$1
     echo "Setting airplane mode to $state on $CONTROL_PC_USER@$CONTROL_PC_IP"
-    ssh "$CONTROL_PC_USER@$CONTROL_PC_IP" \
+    sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
         "adb -s $ADB_DEVICE shell \"settings put global airplane_mode_on $([ \"$state\" = \"off\" ] && echo 0 || echo 1)\" \
          && adb -s $ADB_DEVICE shell \"am broadcast -a android.intent.action.AIRPLANE_MODE --ez state $([ \"$state\" = \"off\" ] && echo false || echo true)\""
     sleep 5

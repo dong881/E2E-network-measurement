@@ -88,13 +88,13 @@ for direction in $directions; do
         end=$DL_END
         step=$DL_STEP
         dir_name="Downlink"
-        reverse=""
+        reverse="-R"
     else
         start=$UL_START
         end=$UL_END
         step=$UL_STEP
         dir_name="Uplink"
-        reverse="-R"
+        reverse=""
     fi
     
     for protocol in $protocols; do
