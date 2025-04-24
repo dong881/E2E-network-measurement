@@ -16,6 +16,7 @@ export CN_SERVER_HOST="192.168.8.108"
 export SERVER_IP="192.168.70.135"
 export TEST_SERVER_IP="10.45.0.1" # IP for iperf/ping tests
 export OUTPUT_DIR="test_results_$(date +%Y%m%d)"
+export control_pc_iperf_path="C:\Users\sshuser\Desktop\MTK\iperf3"
 
 # Source the run configuration
 source "$(dirname "$0")/run_config.sh"
