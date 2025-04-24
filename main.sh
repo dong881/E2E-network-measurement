@@ -99,15 +99,17 @@ for direction in $directions; do
     
     for protocol in $protocols; do
         echo "Running ${dir_name} ${protocol} tests (${start}M-${end}M)"
-        
+        # Check if UE_IP exists and is not empty, if not get it
+        [ -z "$UE_IP" ] && get_ue_ip
+        ping-start $UE_IP
+        sleep $SLEEP_WINDOW
+        ping-stop "./data/$(date +"%Y%m%d")/ping-${direction}-${protocol}-idle.log"
+
         for bw in $(seq $start $step $end); do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
-            ping-start $UE_IP
-            sleep $SLEEP_WINDOW
-            ping-stop "./data/$(date +"%Y%m%d")/ping-${direction}-${protocol}-idle.log"
 
             # Set iperf parameters - TEST_DURATION is sourced
-            params="$reverse -b ${bw}M -t $TEST_DURATION -J"
+            params="-b ${bw}M -t $TEST_DURATION -p 5201 $reverse -J"
             [ "$protocol" = "udp" ] && params="-u $params"
             
             # Set file base name
