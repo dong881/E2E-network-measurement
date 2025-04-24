@@ -12,7 +12,7 @@ CMD_PNF_SPLIT="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build 
 CMD_VNF_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF -q"
 CMD_MONO_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15 -q"
 CMD_VNF_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF -q"
-CMD_MONO_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new --thread-pool 1,3,5,7,9,11,13,15 -q"
+CMD_MONO_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15 -q"
 CMD_PNF_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15 -q"
 
 # PNF Command (Common)

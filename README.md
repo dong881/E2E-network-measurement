@@ -121,3 +121,49 @@ Modify the following files to match your environment:
 ## Contributing
 
 Contributions, bug reports, and feature requests are welcome. Please open an issue or submit a pull request.
+
+## Manual ADB Command Reference
+
+For debugging or manual testing, you can use these ADB commands directly:
+
+### List Files in UE's Temp Directory
+```bash
+adb -s 0123456789ABCDEF shell ls /data/local/tmp/
+```
+
+### Manually Run iPerf3 on UE
+```bash
+adb -s 0123456789ABCDEF shell "/data/local/tmp/iperf3 -c 10.45.0.1 -u -b 100M -t 15 -p 5201"
+```
+
+### Clean Up Temporary Files on UE
+To delete all files in the `/data/local/tmp/` directory except the iperf3 executable:
+```bash
+adb -s 0123456789ABCDEF shell 'cd /data/local/tmp/ && ls | grep -v "^iperf3$" | xargs rm -f'
+```
+
+### Common UE IP Address Commands
+```bash
+# Get IP address from ccmni0 interface
+adb -s 0123456789ABCDEF shell ip -f inet addr show ccmni0
+
+# Get IP address from rmnet_data interface
+adb -s 0123456789ABCDEF shell ip -f inet addr show rmnet_data0
+```
+
+### Check UE Network Connection Status
+```bash
+adb -s 0123456789ABCDEF shell ping -c 4 8.8.8.8
+adb -s 0123456789ABCDEF shell getprop | grep -e net -e dns
+```
+
+### Toggle Airplane Mode Manually
+```bash
+# Turn airplane mode ON
+adb -s 0123456789ABCDEF shell settings put global airplane_mode_on 1
+adb -s 0123456789ABCDEF shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
+
+# Turn airplane mode OFF
+adb -s 0123456789ABCDEF shell settings put global airplane_mode_on 0
+adb -s 0123456789ABCDEF shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state false
+```

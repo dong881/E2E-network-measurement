@@ -22,23 +22,27 @@ This script contains functions for interacting with the connected Android User E
 *   **Purpose**: Retrieves the IP address assigned to the UE's mobile data interface (typically `rmnet_data0` or similar).
 *   **Actions**:
     1.  Uses `adb -s $ADB_DEVICE shell ip addr show` to list network interfaces and their addresses on the UE.
-    2.  Parses the output (e.g., using `grep` and `awk` or `sed`) to find the IP address associated with the mobile data interface.
-    3.  Exports the found IP address to the `UE_IP` environment variable, making it available to the calling script (`main.sh`). If no IP is found, `UE_IP` remains empty or is explicitly cleared.
+    2.  Filters the output to find and extract the IP address associated with the mobile data interface.
+    3.  Stores the found IP address in the `UE_IP` environment variable.
+    4.  If no IP is found, displays an error message.
 *   **Called By**: `main.sh`.
 *   **Environment Variables Used**: `ADB_DEVICE`.
 *   **Environment Variables Set**: `UE_IP`.
 
 ### `run_iperf <client|server> <target_ip> "<params>" <output_file>`
 
-*   **Purpose**: Executes the iPerf3 client on the UE.
+*   **Purpose**: Executes the iPerf3 client or server on the UE device.
 *   **Parameters**:
-    *   `$1`: Mode - Should be "client" when called from `main.sh` to run the UE as the iPerf client.
-    *   `$2` (target\_ip): The IP address of the iPerf3 server (e.g., `TEST_SERVER_IP` from `variable.sh`).
-    *   `$3` (params): A string containing the iPerf3 command-line parameters (e.g., `-b 100M -t 30 -J -R`).
-    *   `$4` (output\_file): The path on the **Control PC** where the iPerf3 JSON output should be saved.
+    *   `$1`: Mode - "client" to run as an iPerf client, "server" to run as an iPerf server.
+    *   `$2` (target\_ip): The IP address of the iPerf3 server when in client mode.
+    *   `$3` (params): String containing iPerf3 command-line parameters.
+    *   `$4` (output\_file): Path on the Control PC where to save the iPerf3 output (optional).
 *   **Actions**:
-    1.  Constructs the iPerf3 command to be run on the UE: `/data/local/tmp/iperf3 -c <target_ip> <params>`.
-    2.  Uses `adb -s $ADB_DEVICE shell` to execute the iPerf3 command on the UE.
-    3.  Redirects the standard output (which contains the JSON results when `-J` is used) from the `adb shell` command to the specified local output file (`> "$output_file"`).
+    1.  Checks if the iPerf3 binary exists on the UE at `/data/local/tmp/iperf3`.
+    2.  If not found, uploads it from the control PC to the UE.
+    3.  Makes the binary executable on the UE.
+    4.  If in server mode, starts the iPerf3 server on the UE.
+    5.  If in client mode, runs the iPerf3 client against the specified server IP.
+    6.  If an output file is specified, saves the results to that file on the control PC.
 *   **Called By**: `main.sh`.
-*   **Environment Variables Used**: `ADB_DEVICE`.
+*   **Environment Variables Used**: `ADB_DEVICE`, `UE_IP`.
