@@ -49,17 +49,25 @@ run_iperf() {
         [ -z "$server_ip" ] && { echo "Error: Server IP required"; return 1; }
         if [ -n "$local_log" ]; then
             local ts=$(date +%Y%m%d_%H%M%S)
-            local ue_log="/data/local/tmp/iperf3_${ts}.json"
-            local remote_log="C:/Data/iperf3-temp.json"
-            # Run iperf3 with JSON output and add timestamp at the beginning
+            local ue_log="/data/local/tmp/iperf3_${ts}.log"
+            local remote_log="C:/Data/iperf3-temp.log"
+            
+            # Run iperf directly on the UE and save output to UE's storage
+            echo "Running iperf3 client on UE device..."
             sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE shell \"current_time=\$(date +\\\"%s\\\"); /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options -J > $ue_log.tmp && sed '1s|{|{\\\"start_timestamp\\\": '\$current_time',|' $ue_log.tmp > $ue_log && rm $ue_log.tmp\""
-            # Pull the result file from device
+                "adb -s $ADB_DEVICE shell \"/data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options > $ue_log\""
+            
+            # Pull the result from UE to Windows control PC
             sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE pull $ue_log $remote_log"
+                "adb -s $ADB_DEVICE pull $ue_log \"$remote_log\""
+            
+            # Copy from Windows control PC to local Linux machine
+            sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$CONTROL_PC_USER@$CONTROL_PC_IP:$remote_log" "$local_log"
+            
+            # Clean up on device
             sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE shell rm $ue_log"
-            scp $CONTROL_PC_USER@$CONTROL_PC_IP:"$remote_log" "$local_log"
+                "adb -s $ADB_DEVICE shell rm -f $ue_log"
+            
             echo "Results saved to $local_log"
         else
             # Run iperf3 with JSON output and timestamp for display
