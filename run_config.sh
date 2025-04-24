@@ -1,6 +1,6 @@
 #!/bin/bash
 export ADB_DEVICE="0123456789ABCDEF"
-export TEST_DURATION=5 # Duration in seconds (updated from main.sh)
+export TEST_DURATION=30 # Duration in seconds (updated from main.sh)
 export WAIT_AFTER_REBOOT=60
 export WAIT_AFTER_GNB=18
 
