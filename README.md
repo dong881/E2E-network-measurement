@@ -24,6 +24,8 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
 - **Parametric Testing**: `main.sh` orchestrates tests across specified ranges of bandwidth, protocols (TCP/UDP), and directions (Uplink/Downlink).
 - **Data Collection**: Saves iPerf JSON results and ping logs for each test run.
 - **Robust Execution**: Includes retry logic for establishing UE connection.
+- **Data Analysis**: A Python script (`network_analysis.py`) processes the collected data and generates comprehensive visualizations. [See Python Analysis Documentation](docs/python_analysis.md)
+- **Visualization**: Various plots and charts help interpret test results. [See Visualization Guide](docs/visualization_guide.md)
 
 ## Prerequisites
 
@@ -36,6 +38,7 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
   - `ping`: Standard network utility (usually pre-installed).
   - `screen`: Terminal multiplexer (`sudo apt install screen`).
   - `expect`: For automating interactive SSH sessions (e.g., RU configuration) (`sudo apt install expect`).
+  - **For Analysis**: Python with matplotlib, numpy, pandas libraries. Install with: `pip install matplotlib numpy pandas`.
 
 ### Hardware Requirements
 - **Control PC**: The machine running these scripts.
@@ -72,6 +75,8 @@ Modify the following files to match your environment:
 
 ## Usage
 
+### Data Collection
+
 1.  **Navigate to Directory**:
     ```bash
     cd /home/ming/E2E-network-measurement
@@ -99,6 +104,26 @@ Modify the following files to match your environment:
     - Test results (iPerf JSON files, ping logs) are saved in `./data/YYYYMMDD/`, organized by test parameters (e.g., `iperf-dl-udp-100M-UE.json`, `ping-ul-tcp-50M.log`).
     - Console output provides real-time status updates.
 
+### Data Analysis
+
+After collecting test data, you can analyze the results using the provided Python script:
+
+1. **Run the Analysis Script**:
+   ```bash
+   python3 network_analysis.py
+   ```
+
+2. **Select a Test Directory** when prompted. The script will:
+   - Process all test files in the selected directory
+   - Generate visualizations and statistics
+   - Save results to `./results/YYYYMMDD/`
+
+3. **Review the Results**:
+   - Summary plots show ping latency vs. throughput trends
+   - Detailed plots show per-test performance
+   - CSV files contain comprehensive metrics
+   - For detailed interpretation, refer to the [Visualization Guide](docs/visualization_guide.md)
+
 ## Script Details
 
 - **`main.sh`**: Orchestrates the entire test flow. Defines the test matrix (protocols, directions, bandwidths) and calls helper scripts.
@@ -108,6 +133,7 @@ Modify the following files to match your environment:
 - **[`run_gNB.sh`](docs/run_gNB_details.md)**: Contains functions (`start_split_setup`, `stop_split_setup`, etc.) to manage gNB processes on remote servers via SSH. Called by `main.sh`. [See Details](docs/run_gNB_details.md)
 - **[`modify_UE.sh`](docs/modify_UE_details.md)**: Contains functions (`toggle_airplane_mode`, `get_ue_ip`, `run_iperf`) to interact with the UE via ADB. Called by `main.sh`. [See Details](docs/modify_UE_details.md)
 - **[`collect_data_fromCN.sh`](docs/collect_data_fromCN_details.md)**: Contains functions (`ping-start`, `ping-stop`, `iperf-start`, `iperf-stop`) to manage test processes (ping, iperf3 server) on the CN server via SSH. Called by `main.sh`. [See Details](docs/collect_data_fromCN_details.md)
+- **`network_analysis.py`**: Python script for post-processing test results and generating visualizations. [See Details](docs/python_analysis.md)
 
 ## Notes and Troubleshooting
 
@@ -117,6 +143,7 @@ Modify the following files to match your environment:
 - **ADB Issues**: Ensure the UE is connected, authorized, and the correct `ADB_DEVICE` is set in `run_config.sh`. Check if iPerf3 binary exists and is executable on the UE at `/data/local/tmp/iperf3`.
 - **Configuration Errors**: Double-check IP addresses, usernames, passwords, and interface names in `variable.sh` and `run_config.sh`.
 - **Screen Sessions**: If scripts fail unexpectedly, check for lingering `screen` sessions on the CN and gNB servers (`screen -ls`) and terminate them (`screen -X -S <session_name> quit`).
+- **Python Dependencies**: For the analysis script, make sure you have the required Python libraries installed (`pip install matplotlib numpy pandas`).
 
 ## Contributing
 
