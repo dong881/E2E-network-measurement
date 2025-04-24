@@ -1,0 +1,7 @@
+1745473437: PING 10.45.0.12 (10.45.0.12) from 10.45.0.1 ogstun: 56(84) bytes of data.
+1745473437: 64 bytes from 10.45.0.12: icmp_seq=1 ttl=64 time=22.9 ms
+1745473439: 64 bytes from 10.45.0.12: icmp_seq=2 ttl=64 time=237 ms
+1745473439: 64 bytes from 10.45.0.12: icmp_seq=3 ttl=64 time=27.1 ms
+1745473440: 64 bytes from 10.45.0.12: icmp_seq=4 ttl=64 time=25.9 ms
+1745473441: 64 bytes from 10.45.0.12: icmp_seq=5 ttl=64 time=17.3 ms
+1745473442: 64 bytes from 10.45.0.12: icmp_seq=6 ttl=64 time=23.3 ms
