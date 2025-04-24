@@ -287,6 +287,86 @@ def correlate_throughput_ping(throughput_data, ping_data, ping_file):
     
     return ping_df
 
+def analyze_test_group(cn_file, ue_file, ping_file):
+    """Analyze one test group (CN, UE, ping) to calculate throughput and latency statistics"""
+    target_throughput = extract_target_throughput(os.path.basename(ue_file))  # Use UE file for target
+    direction = "dl" if "dl" in os.path.basename(ping_file) else "ul"
+    
+    print(f"Analyzing test group with target throughput {target_throughput}M")
+    print(f"  UE file: {os.path.basename(ue_file)}")
+    if cn_file != ue_file and direction == "ul":
+        print(f"  CN file: {os.path.basename(cn_file)}")
+    elif cn_file != ue_file:
+        print(f"  CN file: [not used in downlink mode]")
+    else:
+        print(f"  CN file: [using UE file]")
+    print(f"  Ping file: {os.path.basename(ping_file)}")
+    
+    # Parse the JSON files - for downlink, we only need UE data
+    ue_data = parse_iperf_json(ue_file)
+    
+    # Parse CN data only if needed (uplink mode)
+    if direction == "ul":
+        if cn_file == ue_file:
+            cn_data = ue_data  # Use the same data for both
+        else:
+            cn_data = parse_iperf_json(cn_file)
+    else:
+        # For downlink mode, we don't need CN data, create a minimal structure
+        cn_data = {
+            "avg_throughput": 0,
+            "min_throughput": 0,
+            "max_throughput": 0,
+            "intervals": [],
+            "cpu_utilization": {}
+        }
+        
+    ping_data = parse_ping_log(ping_file)
+    
+    # Skip if any data is missing
+    if not ue_data:
+        print(f"  Error: Failed to parse UE data from {os.path.basename(ue_file)}")
+        return None
+    
+    # Correlate ping data with throughput test periods
+    correlated_ping_df = correlate_throughput_ping(ue_data, ping_data, ping_file)
+    
+    # Calculate statistics for ping data during test period
+    test_period_ping = correlated_ping_df[correlated_ping_df["in_test_period"]] if not correlated_ping_df.empty else pd.DataFrame()
+    
+    if test_period_ping.empty:
+        print(f"  Warning: No ping data within test period for {os.path.basename(ping_file)}")
+        min_ping, max_ping, avg_ping = 0, 0, 0
+    else:
+        min_ping = test_period_ping["ping_ms"].min()
+        max_ping = test_period_ping["ping_ms"].max()
+        avg_ping = test_period_ping["ping_ms"].mean()
+        print(f"  Ping stats: min={min_ping:.2f}ms, avg={avg_ping:.2f}ms, max={max_ping:.2f}ms")
+    
+    # Extract comprehensive test info
+    result = {
+        "target_throughput": target_throughput,
+        "direction": direction,
+        "cn_avg_throughput": cn_data["avg_throughput"],
+        "cn_min_throughput": cn_data["min_throughput"],
+        "cn_max_throughput": cn_data["max_throughput"],
+        "ue_avg_throughput": ue_data["avg_throughput"],
+        "ue_min_throughput": ue_data["min_throughput"],
+        "ue_max_throughput": ue_data["max_throughput"],
+        "min_ping": min_ping,
+        "max_ping": max_ping,
+        "avg_ping": avg_ping,
+        "correlated_ping_data": correlated_ping_df,
+        "cn_intervals": cn_data["intervals"] if direction == "ul" else [],
+        "ue_intervals": ue_data["intervals"],
+        "cn_cpu": cn_data.get("cpu_utilization", {}),
+        "ue_cpu": ue_data.get("cpu_utilization", {})
+    }
+    
+    print(f"  Analysis complete: UE avg={ue_data['avg_throughput']:.2f}Mbps")
+    
+    return result
+
 def plot_detailed_test_results(result, direction, output_dir):
     """Create detailed plots for a single test showing ping vs throughput over time"""
     target_throughput = result["target_throughput"]
@@ -332,20 +412,29 @@ def plot_detailed_test_results(result, direction, output_dir):
     ax1.legend()
     
     # Plot throughput data on bottom subplot
-    cn_intervals = result.get("cn_intervals", [])
     ue_intervals = result.get("ue_intervals", [])
     
-    if cn_intervals:
-        # CN throughput
-        cn_times = [interval["start_time"] for interval in cn_intervals]
-        cn_throughputs = [interval["throughput"] for interval in cn_intervals]
-        ax2.plot(cn_times, cn_throughputs, 'g.-', label='CN Throughput')
-    
-    if ue_intervals:
-        # UE throughput
-        ue_times = [interval["start_time"] for interval in ue_intervals]
-        ue_throughputs = [interval["throughput"] for interval in ue_intervals]
-        ax2.plot(ue_times, ue_throughputs, 'b.-', label='UE Throughput')
+    # For downlink mode, only plot UE throughput
+    if direction == "dl":
+        if ue_intervals:
+            # UE throughput
+            ue_times = [interval["start_time"] for interval in ue_intervals]
+            ue_throughputs = [interval["throughput"] for interval in ue_intervals]
+            ax2.plot(ue_times, ue_throughputs, 'b.-', label='UE Throughput')
+    else:
+        # For uplink mode, plot both CN and UE throughput
+        cn_intervals = result.get("cn_intervals", [])
+        if cn_intervals:
+            # CN throughput
+            cn_times = [interval["start_time"] for interval in cn_intervals]
+            cn_throughputs = [interval["throughput"] for interval in cn_intervals]
+            ax2.plot(cn_times, cn_throughputs, 'g.-', label='CN Throughput')
+        
+        if ue_intervals:
+            # UE throughput
+            ue_times = [interval["start_time"] for interval in ue_intervals]
+            ue_throughputs = [interval["throughput"] for interval in ue_intervals]
+            ax2.plot(ue_times, ue_throughputs, 'b.-', label='UE Throughput')
     
     # Add target throughput reference line
     ax2.axhline(y=target_throughput, color='r', linestyle='-', alpha=0.7, label='Target Throughput')
@@ -363,71 +452,6 @@ def plot_detailed_test_results(result, direction, output_dir):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, f"{direction}_udp_{target_throughput}M_detailed.png"), dpi=300, bbox_inches='tight')
     plt.close()
-
-def analyze_test_group(cn_file, ue_file, ping_file):
-    """Analyze one test group (CN, UE, ping) to calculate throughput and latency statistics"""
-    target_throughput = extract_target_throughput(os.path.basename(ue_file))  # Use UE file for target
-    
-    print(f"Analyzing test group with target throughput {target_throughput}M")
-    print(f"  UE file: {os.path.basename(ue_file)}")
-    if cn_file != ue_file:
-        print(f"  CN file: {os.path.basename(cn_file)}")
-    else:
-        print(f"  CN file: [using UE file]")
-    print(f"  Ping file: {os.path.basename(ping_file)}")
-    
-    # Parse the JSON files - if CN file is the same as UE file, only parse once
-    if cn_file == ue_file:
-        ue_data = parse_iperf_json(ue_file)
-        cn_data = ue_data  # Use the same data for both
-    else:
-        ue_data = parse_iperf_json(ue_file)
-        cn_data = parse_iperf_json(cn_file)
-        
-    ping_data = parse_ping_log(ping_file)
-    
-    # Skip if any data is missing
-    if not ue_data:
-        print(f"  Error: Failed to parse UE data from {os.path.basename(ue_file)}")
-        return None
-    
-    # Correlate ping data with throughput test periods
-    correlated_ping_df = correlate_throughput_ping(ue_data, ping_data, ping_file)
-    
-    # Calculate statistics for ping data during test period
-    test_period_ping = correlated_ping_df[correlated_ping_df["in_test_period"]] if not correlated_ping_df.empty else pd.DataFrame()
-    
-    if test_period_ping.empty:
-        print(f"  Warning: No ping data within test period for {os.path.basename(ping_file)}")
-        min_ping, max_ping, avg_ping = 0, 0, 0
-    else:
-        min_ping = test_period_ping["ping_ms"].min()
-        max_ping = test_period_ping["ping_ms"].max()
-        avg_ping = test_period_ping["ping_ms"].mean()
-        print(f"  Ping stats: min={min_ping:.2f}ms, avg={avg_ping:.2f}ms, max={max_ping:.2f}ms")
-    
-    # Extract comprehensive test info
-    result = {
-        "target_throughput": target_throughput,
-        "cn_avg_throughput": cn_data["avg_throughput"],
-        "cn_min_throughput": cn_data["min_throughput"],
-        "cn_max_throughput": cn_data["max_throughput"],
-        "ue_avg_throughput": ue_data["avg_throughput"],
-        "ue_min_throughput": ue_data["min_throughput"],
-        "ue_max_throughput": ue_data["max_throughput"],
-        "min_ping": min_ping,
-        "max_ping": max_ping,
-        "avg_ping": avg_ping,
-        "correlated_ping_data": correlated_ping_df,
-        "cn_intervals": cn_data["intervals"],
-        "ue_intervals": ue_data["intervals"],
-        "cn_cpu": cn_data.get("cpu_utilization", {}),
-        "ue_cpu": ue_data.get("cpu_utilization", {})
-    }
-    
-    print(f"  Analysis complete: UE avg={ue_data['avg_throughput']:.2f}Mbps")
-    
-    return result
 
 def plot_results(groups, direction, output_dir):
     """Create plots for the given test groups and direction, saving to the specified output directory"""
@@ -513,6 +537,89 @@ def plot_results(groups, direction, output_dir):
     plt.savefig(os.path.join(output_dir, f"ping_latency_{direction}_udp.png"), dpi=300, bbox_inches='tight')
     plt.close()
     
+    # Create plot with limited y-axis to 100ms - UPDATED VERSION
+    plt.figure(figsize=(15, 10))
+    
+    # Plot min to avg as one color
+    plt.bar(x, [min(avg - min_val, 100 - min_val) for avg, min_val in zip(avg_pings, min_pings)], 
+            bottom=[min(min_val, 100) for min_val in min_pings], 
+            width=bar_width, color='skyblue', label='Min to Avg Range')
+    
+    # Plot avg to max as another color (only if avg is within range)
+    for i, (avg_val, max_val) in enumerate(zip(avg_pings, max_pings)):
+        if avg_val <= 100:
+            height = min(max_val - avg_val, 100 - avg_val)
+            plt.bar(i, height, bottom=avg_val, width=bar_width, color='lightcoral')
+    
+    # Plot average line (clipped at 100)
+    plt.plot(x, [min(avg, 100) for avg in avg_pings], 'ko-', linewidth=2, label='Average Ping')
+    
+    # Improved label positioning for values
+    for i, (min_val, avg_val, max_val) in enumerate(zip(min_pings, avg_pings, max_pings)):
+        # Calculate horizontal offsets to prevent overlapping
+        left_offset = -0.15
+        center_offset = 0
+        right_offset = 0.15
+        
+        # For min values
+        if min_val > 100:
+            # Place values that exceed limit at the top with an arrow
+            plt.annotate(f"↑{min_val:.1f}", 
+                        xy=(i + left_offset, 90), 
+                        ha='center', va='center',
+                        fontsize=8,
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="blue", alpha=0.7))
+        else:
+            # Place values normally with a bit of offset
+            plt.text(i + left_offset, max(0, min_val - 5), 
+                    f"{min_val:.1f}", 
+                    ha='center', va='bottom', fontsize=8)
+            
+        # For avg values
+        if avg_val > 100:
+            # Place values that exceed limit at the top with an arrow
+            plt.annotate(f"↑{avg_val:.1f}", 
+                        xy=(i + center_offset, 95), 
+                        ha='center', va='center',
+                        fontsize=8, fontweight='bold',
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", alpha=0.7))
+        else:
+            plt.text(i + center_offset, avg_val + 2, 
+                    f"{avg_val:.1f}", 
+                    ha='center', va='bottom', fontsize=8)
+            
+        # For max values
+        if max_val > 100:
+            # Place values that exceed limit at the top with an arrow
+            plt.annotate(f"↑{max_val:.1f}", 
+                        xy=(i + right_offset, 85), 
+                        ha='center', va='center',
+                        fontsize=8,
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="red", alpha=0.7))
+        elif max_val > avg_val + 5:  # Only add label if there's enough space
+            plt.text(i + right_offset, max_val + 1, 
+                    f"{max_val:.1f}", 
+                    ha='center', va='bottom', fontsize=8)
+    
+    plt.xticks(x, [f"{bw}M" for bw in target_throughputs])
+    plt.xlabel('Target Throughput (Mbps)', fontsize=12)
+    plt.ylabel('Ping Latency (ms)', fontsize=12)
+    plt.ylim(0, 100)  # Limit y-axis to 100ms
+    
+    # Add a text box explaining the arrows
+    plt.figtext(0.01, 0.01, "↑ Values exceed 100ms limit", fontsize=10, 
+                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.7))
+    
+    plt.title(f'Ping Latency vs Target Throughput - UDP {direction_text} (max 100ms)\nTest Environment: UDP {direction_text.upper()}', 
+              fontsize=16)
+    
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.7)
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f"ping_latency_{direction}_udp-max100ms.png"), dpi=300, bbox_inches='tight')
+    plt.close()
+    
     # Create detailed plots for each test case
     for result in results:
         try:
@@ -528,20 +635,25 @@ def create_comparison_table(results, direction, output_dir):
     # Extract data for table
     data = []
     for r in results:
+        # Base data to include regardless of direction
         row = {
             "Target (Mbps)": r["target_throughput"],
-            "CN Avg (Mbps)": round(r["cn_avg_throughput"], 2),
-            "CN Min (Mbps)": round(r["cn_min_throughput"], 2),
-            "CN Max (Mbps)": round(r["cn_max_throughput"], 2),
             "UE Avg (Mbps)": round(r["ue_avg_throughput"], 2),
             "UE Min (Mbps)": round(r["ue_min_throughput"], 2),
             "UE Max (Mbps)": round(r["ue_max_throughput"], 2),
             "Ping Avg (ms)": round(r["avg_ping"], 2),
             "Ping Min (ms)": round(r["min_ping"], 2),
             "Ping Max (ms)": round(r["max_ping"], 2),
-            "Host CPU (%)": round(r["cn_cpu"].get("host_total", 0), 2),
-            "Remote CPU (%)": round(r["ue_cpu"].get("remote_total", 0), 2)
+            "Remote CPU (%)": round(r["ue_cpu"].get("remote_total", 0), 2),
         }
+        
+        # Add CN data only for uplink mode
+        if direction == "ul":
+            row["CN Avg (Mbps)"] = round(r["cn_avg_throughput"], 2)
+            row["CN Min (Mbps)"] = round(r["cn_min_throughput"], 2)
+            row["CN Max (Mbps)"] = round(r["cn_max_throughput"], 2)
+            row["Host CPU (%)"] = round(r["cn_cpu"].get("host_total", 0), 2)
+        
         data.append(row)
     
     # Create DataFrame
@@ -555,12 +667,18 @@ def create_comparison_table(results, direction, output_dir):
     fig, axes = plt.subplots(2, 2, figsize=(20, 15))
     
     # Throughput comparison
-    axes[0, 0].plot(df["Target (Mbps)"], df["CN Avg (Mbps)"], 'go-', label='CN Throughput')
+    if direction == "ul":
+        axes[0, 0].plot(df["Target (Mbps)"], df["CN Avg (Mbps)"], 'go-', label='CN Throughput')
     axes[0, 0].plot(df["Target (Mbps)"], df["UE Avg (Mbps)"], 'bo-', label='UE Throughput')
     axes[0, 0].plot(df["Target (Mbps)"], df["Target (Mbps)"], 'r--', label='Target')
     axes[0, 0].set_xlabel('Target Throughput (Mbps)')
     axes[0, 0].set_ylabel('Achieved Throughput (Mbps)')
-    axes[0, 0].set_title('Throughput Comparison')
+    
+    if direction == "dl":
+        axes[0, 0].set_title('Throughput Comparison (Downlink)')
+    else:
+        axes[0, 0].set_title('Throughput Comparison (Uplink)')
+    
     axes[0, 0].grid(True)
     axes[0, 0].legend()
     
@@ -575,11 +693,17 @@ def create_comparison_table(results, direction, output_dir):
     axes[0, 1].legend()
     
     # CPU utilization
-    axes[1, 0].plot(df["Target (Mbps)"], df["Host CPU (%)"], 'mo-', label='Host CPU')
+    if direction == "ul":
+        axes[1, 0].plot(df["Target (Mbps)"], df["Host CPU (%)"], 'mo-', label='Host CPU')
     axes[1, 0].plot(df["Target (Mbps)"], df["Remote CPU (%)"], 'co-', label='Remote CPU')
     axes[1, 0].set_xlabel('Target Throughput (Mbps)')
     axes[1, 0].set_ylabel('CPU Utilization (%)')
-    axes[1, 0].set_title('CPU Utilization vs Throughput')
+    
+    if direction == "dl":
+        axes[1, 0].set_title('CPU Utilization vs Throughput (UE only)')
+    else:
+        axes[1, 0].set_title('CPU Utilization vs Throughput')
+        
     axes[1, 0].grid(True)
     axes[1, 0].legend()
     
