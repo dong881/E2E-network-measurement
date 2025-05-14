@@ -26,7 +26,7 @@ CONF_VNF_100M="gnb-vnf.sa.band78.273prb.nfapi.conf"
 CONF_VNF_40M="gnb-vnf.sa.band78.106prb.nfapi.conf"
 CONF_MONO_100M="gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf"
 CONF_MONO_40M="gnb.sa.band78.106prb.fhi72.4x4-liteon_new.conf"
-CONF_MONO_100M_JURA="gnb.sa.band78.273prb.fhi72.4x4-metanoia-new.conf"
+CONF_MONO_100M_JURA="gnb.sa.band78.273prb.fhi72.4x4-metanoia.conf"
 # CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
 CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
 
@@ -161,6 +161,24 @@ stop_single_setup() {
     fi
 }
 
+start_gNB() {
+    local mode=${1:-$CURRENT_MODE}  # Use provided mode or default to CURRENT_MODE
+    if [ "$mode" = "MONO" ]; then
+        start_single_setup "100M" "MONO"
+    else
+        start_split_setup "100M"
+    fi
+}
+
+stop_gNB() {
+    local mode=${1:-$CURRENT_MODE}  # Use provided mode or default to CURRENT_MODE
+    if [ "$mode" = "MONO" ]; then
+        stop_single_setup "100M" "MONO"
+    else
+        stop_split_setup "100M"
+    fi
+}
+
 # Function to fetch log files and analyze them
 fetch_and_analyze_logs() {
     local mode=$1  # "MONO" or "NFAPI"
@@ -224,7 +242,8 @@ clean_log_files() {
         local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         
         echo "Removing VNF and PNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo '$SERVER_PASSWORD' | sudo -S rm -f $vnf_remote_log $pnf_remote_log"
+        # Execute with a direct command string that handles the password prompt
+        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log $pnf_remote_log"
         
     elif [ "$mode" = "NFAPI" ]; then
         # For NFAPI mode, logs are on different servers
@@ -232,14 +251,66 @@ clean_log_files() {
         local pnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         
         echo "Removing VNF log from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo '$SERVER_PASSWORD' | sudo -S rm -f $vnf_remote_log"
+        # Adding -t option to allocate a pseudo-terminal
+        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log"
         
         echo "Removing PNF log from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo '$SERVER_PASSWORD' | sudo -S rm -f $pnf_remote_log"
+        # Adding -t option to allocate a pseudo-terminal
+        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $pnf_remote_log"
         
     else
         echo "Invalid mode. Please specify either 'MONO' or 'NFAPI'."
     fi
+}
+
+# Function to reset all states and prepare for a clean start
+reset_all() {
+    local mode=${1:-$CURRENT_MODE}
+    echo "Resetting all system states..."
+    
+    # Stop any running sessions on the gNB server
+    if [ -n "$mode" ]; then
+        echo "Stopping gNB in $mode mode..."
+        stop_gNB "$mode"
+        clean_log_files "$mode"
+    else
+        # If no mode is specified, try to stop both modes
+        echo "Stopping gNB in both MONO and NFAPI modes..."
+        stop_single_setup "100M" "MONO"
+        stop_single_setup "40M" "MONO"
+        stop_split_setup "100M"
+        stop_split_setup "40M"
+        clean_log_files "MONO"
+        clean_log_files "NFAPI"
+    fi
+    
+    # Stop sessions on CN server
+    if [ -n "$CN_SERVER_USER" ] && [ -n "$CN_SERVER_HOST" ]; then
+        echo "Stopping sessions on CN server..."
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$CN_SERVER_USER@$CN_SERVER_HOST" \
+            "screen -X -S iperf-server quit 2>/dev/null || true"
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$CN_SERVER_USER@$CN_SERVER_HOST" \
+            "screen -X -S ping-session quit 2>/dev/null || true"
+    else
+        echo "CN server information not set, skipping CN server reset."
+    fi
+    
+    # Execute remote script on main host if needed
+    if [ -n "$GNB_SERVER_USER" ] && [ -n "$GNB_SERVER_HOST" ]; then
+        echo "Executing oaiLONvf.sh on main host..."
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
+            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S /oai72/Script/oaiLONvf.sh 2>/dev/null || true'"
+    else
+        echo "gNB server information not set, skipping remote script execution."
+    fi
+    
+    # Optional: Set RU bandwidth
+    # if type set_ru_bandwidth &>/dev/null; then
+    #     echo "Setting RU bandwidth to 100M..."
+    #     set_ru_bandwidth "100000000"
+    # fi
+    
+    echo "Reset complete."
 }
 
 # Example usage:
