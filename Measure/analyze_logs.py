@@ -4,6 +4,7 @@ import numpy as np
 import statistics
 import pandas as pd
 from datetime import datetime
+import os
 
 def calculate_timestamp_differences(vnf_path, pnf_path):
     vnf_timestamps = []
@@ -30,7 +31,26 @@ def calculate_timestamp_differences(vnf_path, pnf_path):
         differences.append((i+1, vnf_timestamps[i], pnf_timestamps[i], diff))
     return differences
 
-def plot_timestamp_differences(differences):
+def generate_output_filenames(vnf_path, pnf_path):
+    # Extract base filenames without extensions
+    vnf_base = os.path.splitext(os.path.basename(vnf_path))[0]
+    pnf_base = os.path.splitext(os.path.basename(pnf_path))[0]
+    
+    # Create output directory if it doesn't exist
+    output_dir = 'Measure'
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Generate output filenames
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_name = f"{vnf_base}_vs_{pnf_base}" #_{timestamp}
+    
+    return {
+        'report': f"{output_dir}/{base_name}_report.txt",
+        'plot': f"{output_dir}/{base_name}_plot.png",
+        'filtered_plot': f"{output_dir}/{base_name}_filtered_plot.png"
+    }
+
+def plot_timestamp_differences(differences, output_filename):
     # Extract data for plotting
     indices = [i for i, _, _, _ in differences]
     diffs_ms = [diff * 1000 for _, _, _, diff in differences]  # Convert to ms
@@ -58,7 +78,7 @@ def plot_timestamp_differences(differences):
     
     plt.legend()
     plt.tight_layout()
-    plt.savefig('Measure/timestamp_differences.png')
+    plt.savefig(output_filename)
     plt.show()
     
     # Print statistics
@@ -73,7 +93,7 @@ def plot_timestamp_differences(differences):
     
     return mean_diff
 
-def plot_filtered_differences(differences):
+def plot_filtered_differences(differences, output_filename):
     # Extract data for plotting
     indices = [i for i, _, _, _ in differences]
     diffs_ms = [diff * 1000 for _, _, _, diff in differences]  # Convert to ms
@@ -113,7 +133,7 @@ def plot_filtered_differences(differences):
     plt.title('VNF vs PNF Timestamp Differences (Outliers Removed)')
     plt.xlabel('Packet Number')
     plt.ylabel('Time Difference (ms)')
-    plt.ylim(top=2)  # Fix y-axis maximum to 2
+    # plt.ylim(top=2)  # Fix y-axis maximum to 2
     plt.grid(True)
     
     # Add horizontal lines for mean and median
@@ -122,7 +142,7 @@ def plot_filtered_differences(differences):
     
     plt.legend()
     plt.tight_layout()
-    plt.savefig('Measure/filtered_timestamp_differences.png')
+    plt.savefig(output_filename)
     plt.show()
     
     # Print filtered statistics
@@ -135,7 +155,7 @@ def plot_filtered_differences(differences):
     print(f"標準差: {std_dev:.3f} ms")
     print(f"異常值界限: [{lower_bound:.3f}, {upper_bound:.3f}] ms")
 
-def generate_report(vnf_path, pnf_path, differences):
+def generate_report(vnf_path, pnf_path, differences, report_path):
     # Convert differences to milliseconds for analysis
     diffs_ms = [diff * 1000 for _, _, _, diff in differences]
     
@@ -184,13 +204,12 @@ def generate_report(vnf_path, pnf_path, differences):
     report += f"Highest latency - Index: {highest_idx+1}, Value: {diffs_ms[highest_idx]:.4f} ms\n"
     report += f"Lowest latency - Index: {lowest_idx+1}, Value: {diffs_ms[lowest_idx]:.4f} ms\n"
     
-    # Save report to file
-    report_path = 'Measure/latency_analysis_report.txt'
+    # Save report to file with dynamic filename
     with open(report_path, 'w') as f:
         f.write(report)
     
     # Print report to console
-    print(report)
+    # print(report)
     print(f"Report saved to {report_path}")
     
     return report_path
@@ -203,12 +222,15 @@ def main():
 
     differences = calculate_timestamp_differences(args.vnf_path, args.pnf_path)
     
+    # Generate dynamic output filenames
+    output_files = generate_output_filenames(args.vnf_path, args.pnf_path)
+    
     # Generate comprehensive report
-    generate_report(args.vnf_path, args.pnf_path, differences)
+    generate_report(args.vnf_path, args.pnf_path, differences, output_files['report'])
     
     # Generate both plots
-    plot_timestamp_differences(differences)
-    plot_filtered_differences(differences)
+    plot_timestamp_differences(differences, output_files['plot'])
+    plot_filtered_differences(differences, output_files['filtered_plot'])
 
 if __name__ == "__main__":
     main()
