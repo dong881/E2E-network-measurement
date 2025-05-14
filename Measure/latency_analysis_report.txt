@@ -1,0 +1,30 @@
+=== Latency Analysis Report (2025-05-14 11:27:22) ===
+
+VNF File: /home/ming/E2E-network-measurement/Measure/nfapi-VNF.txt
+PNF File: /home/ming/E2E-network-measurement/Measure/nfapi-PNF.txt
+
+VNF First Entry: timestamp=1747036392.8874626
+PNF First Entry: timestamp=1747036392.8853757
+Initial Time Difference: 2.0869 ms
+
+Statistical Analysis:
+- Mean latency: 1.9225 ms
+- Median latency: 1.9221 ms
+- Min latency: 1.8926 ms
+- Max latency: 4.1747 ms
+- Standard deviation: 0.0174 ms
+
+Full Statistics (in ms):
+count    177697.000000
+mean          1.922492
+std           0.017416
+min           1.892567
+25%           1.909256
+50%           1.922131
+75%           1.935482
+max           4.174709
+Name: diff, dtype: float64
+
+Extreme Values:
+Highest latency - Index: 94458, Value: 4.1747 ms
+Lowest latency - Index: 177452, Value: 1.8926 ms
