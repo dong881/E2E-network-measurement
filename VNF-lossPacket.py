@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+from collections import Counter
+
 def calculate_packet_loss_rate(input_text):
     # 從輸入文本中提取封包日誌
     packet_logs = []
@@ -99,6 +102,27 @@ def find_consecutive_losses(lost_packets):
     consecutive_lengths.append(current_length)
     return consecutive_lengths
 
+def plot_consecutive_loss_distribution(consecutive_losses):
+    """繪製連續掉包長度分布統計圖"""
+    if not consecutive_losses:
+        print("沒有連續掉包資料可供繪圖。")
+        return
+    
+    # 統計連續掉包長度的頻率
+    counter = Counter(consecutive_losses)
+    lengths = list(counter.keys())
+    frequencies = list(counter.values())
+    
+    # 繪製長條圖
+    plt.figure(figsize=(12, 9))
+    plt.bar(lengths, frequencies, color='skyblue')
+    plt.xlabel('連續掉包長度')
+    plt.ylabel('頻率')
+    plt.title('連續掉包長度分布統計')
+    plt.xticks(lengths)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.show()
+
 def main():
     print("請輸入日誌內容（輸入'END'單獨一行來結束輸入）：")
     input_lines = []
@@ -118,17 +142,8 @@ def main():
         if key == "掉包率":
             print(f"{key}: {value:.2%}")
         elif key == "連續掉包分布":
-            # 計算連續掉包的分布統計
-            if value:
-                distribution = {}
-                for length in value:
-                    if length in distribution:
-                        distribution[length] += 1
-                    else:
-                        distribution[length] = 1
-                print(f"{key}: {dict(sorted(distribution.items()))}")
-            else:
-                print(f"{key}: {value}")
+            # 繪製連續掉包分布圖
+            plot_consecutive_loss_distribution(value)
         else:
             print(f"{key}: {value}")
 

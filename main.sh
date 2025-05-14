@@ -6,6 +6,9 @@ source modify_UE.sh
 source run_gNB.sh
 source set_ru_bandwidth.sh
 
+fetch_and_analyze_logs "NFAPI"
+exit 1
+
 # Execute remote script on main host
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS oaiLONvf bash -c 'echo $PASSWORD | sudo -S /home/oai72/Script/oaiLONvf.sh'"
 
@@ -18,19 +21,29 @@ sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
     "screen -X -S ping-session quit"
 
 start_gNB() {
-    # start_split_setup "100M"
-    start_single_setup "100M" "MONO"
+    start_split_setup "100M"
+    # start_single_setup "100M" "MONO"
 }
 stop_gNB() {
-    # stop_split_setup "100M"
-    stop_single_setup "100M" "MONO"
+    stop_split_setup "100M"
+    # stop_single_setup "100M" "MONO"
 }
 
 
 stop_gNB
 # exit 1
+clean_log_files "NFAPI"
+
 start_gNB
 # exit 1
+
+sleep 60
+
+fetch_and_analyze_logs "NFAPI"
+
+stop_gNB
+exit 1
+
 # Toggle airplane mode to reset UE with retry logic
 # MAX_RETRIES is now sourced from run_config.sh
 RETRY_COUNT=0

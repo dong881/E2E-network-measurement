@@ -1,0 +1,55 @@
+=== Latency Analysis Report (2025-05-12 15:55:21) ===
+
+VNF File: /home/ming/E2E-network-measurement/Measure/nfapi-VNF.txt
+PNF File: /home/ming/E2E-network-measurement/Measure/nfapi-PNF.txt
+
+VNF First Entry: frame=1, slot=3
+PNF First Entry: frame=0, slot=19
+Detected Shift: frame_shift=0, slot_shift=4
+(Absolute difference: 4 slots)
+
+Statistical Analysis:
+- Mean latency: 1.8998 ms
+- Median latency: -0.0994 ms
+- Min latency: -0.2053 ms
+- Max latency: 10239.9428 ms
+- Standard deviation: 143.0978 ms
+
+Full Statistics (in ms):
+count    2.048000e+07
+mean     1.899813e+00
+std      1.430978e+02
+min     -2.052784e-01
+25%     -1.037121e-01
+50%     -9.942055e-02
+75%     -7.081032e-02
+max      1.023994e+04
+Name: diff, dtype: float64
+
+Latency by Slot (Average, in ms):
+slot
+0    -0.099231
+1    -0.099963
+2    -0.071771
+3    -0.051177
+4    -0.178724
+5    -0.100259
+6    -0.100920
+7    -0.071754
+8    -0.048785
+9    -0.193698
+10   -0.100975
+11   -0.100167
+12   -0.072154
+13   -0.035824
+14   -0.178440
+15   -0.100124
+16    9.899075
+17    9.928046
+18    9.951107
+19    9.821998
+Name: diff, dtype: float64
+
+Extreme Values:
+Highest latency - Frame: 693.0, Slot: 18.0, Value: 10239.9428 ms
+Lowest latency - Frame: 421.0, Slot: 9.0, Value: -0.2053 ms

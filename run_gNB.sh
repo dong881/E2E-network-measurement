@@ -3,19 +3,56 @@
 # Global variables
 SERVER_PASSWORD="bmwlab"
 
-# Commands for Split Machine Setup (Two Machines)
-CMD_VNF_100M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF -q"
-CMD_VNF_40M_SPLIT="cd ~/OnlyOAI/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF -q"
-CMD_PNF_SPLIT="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf-twoMachine.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15 -q"
+# Commands for Single Machine Setup
+# Define common paths and options
+# BASE_PATH="~/FH_7.2_dev/openairinterface5g"
+BASE_PATH="~/oai_mp_f_ming/openairinterface5g"
+BUILD_DIR="$BASE_PATH/cmake_targets/ran_build/build"
+CONF_DIR="$BASE_PATH/targets/PROJECTS/GENERIC-NR-5GC/CONF"
+
+# Common options
+SUDO_PREFIX="echo '$SERVER_PASSWORD' | sudo -S"
+THREAD_OPTS="--thread-pool 1,3,5,7,9,11,13,15"
+NFAPI_TRACE="NFAPI_TRACE_LEVEL=info"
+COMMON_CMD="cd $BUILD_DIR && $SUDO_PREFIX"
+
+# Mode-specific options
+VNF_OPTS="--nfapi VNF"
+PNF_OPTS="--nfapi PNF --reorder-thread-disable 1 $THREAD_OPTS"
+MONO_OPTS="$THREAD_OPTS"
+
+# Config files
+CONF_VNF_100M="gnb-vnf.sa.band78.273prb.nfapi.conf"
+CONF_VNF_40M="gnb-vnf.sa.band78.106prb.nfapi.conf"
+CONF_MONO_100M="gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf"
+CONF_MONO_40M="gnb.sa.band78.106prb.fhi72.4x4-liteon_new.conf"
+CONF_MONO_100M_JURA="gnb.sa.band78.273prb.fhi72.4x4-metanoia-new.conf"
+# CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
+CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
 
 # Commands for Single Machine Setup
-CMD_VNF_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.273prb.nfapi.conf --nfapi VNF -q"
-CMD_MONO_100M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15 -q"
-CMD_VNF_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-vnf.sa.band78.106prb.nfapi.conf --nfapi VNF -q"
-CMD_MONO_40M_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.106prb.fhi72.4x4-liteon_new.conf --thread-pool 1,3,5,7,9,11,13,15 -q"
-CMD_PNF_SINGLE="cd ~/FH_7.2_dev/openairinterface5g/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S NFAPI_TRACE_LEVEL=info ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb-pnf.band78.fhi72.4x4-liteon_new.conf --nfapi PNF --reorder-thread-disable 1 --thread-pool 1,3,5,7,9,11,13,15 -q"
+CMD_VNF_100M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_VNF_100M $VNF_OPTS"
+CMD_VNF_40M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_VNF_40M $VNF_OPTS"
+CMD_MONO_100M_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M $MONO_OPTS"
+CMD_MONO_40M_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_40M $MONO_OPTS"
+CMD_MONO_100M_JURA_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M_JURA $MONO_OPTS"
+CMD_PNF_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_PNF $PNF_OPTS"
 
-# PNF Command (Common)
+# Base paths for different setups
+VNF_SPLIT_BASE_PATH="~/OnlyOAI/openairinterface5g"
+PNF_SPLIT_BASE_PATH=$BASE_PATH
+
+# Additional config files
+CONF_PNF_SPLIT="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
+
+# Common command prefixes for split setup
+VNF_SPLIT_CMD_PREFIX="cd $VNF_SPLIT_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
+PNF_SPLIT_CMD_PREFIX="cd $PNF_SPLIT_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
+
+# Commands for Split Machine Setup (Two Machines)
+CMD_VNF_100M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_100M $VNF_OPTS"
+CMD_VNF_40M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_40M $VNF_OPTS"
+CMD_PNF_SPLIT="$PNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_PNF_SPLIT $PNF_OPTS"
 
 # Function to start a screen session
 start_session() {
@@ -122,6 +159,95 @@ stop_single_setup() {
         fi
     fi
 }
+
+# Function to fetch log files and analyze them
+fetch_and_analyze_logs() {
+    local mode=$1  # "MONO" or "NFAPI"
+    local SSH_OPTIONS="-o StrictHostKeyChecking=no"
+    
+    # Create measurement directory if it doesn't exist
+    mkdir -p $LOCAL_MEASURE_DIR
+    
+    if [ "$mode" = "MONO" ]; then
+        # For Monolithic mode
+        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
+        local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        local vnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$VNF_LOG_FILE"
+        local pnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$PNF_LOG_FILE"
+        
+        echo "Fetching VNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$vnf_remote_log" "$vnf_local_log"
+        
+        echo "Fetching PVNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$pnf_remote_log" "$pnf_local_log"
+
+        if [ -f "$vnf_local_log" ] && [ -f "$pnf_local_log" ]; then
+            echo "Successfully copied VNF and PNF logs"
+            python $LOG_ANALYSIS_SCRIPT "$vnf_local_log" "$pnf_local_log"
+        else
+            echo "Failed to copy one or more log files"
+        fi
+    elif [ "$mode" = "NFAPI" ]; then
+        # For NFAPI mode (need both VNF and PNF logs)
+        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
+        local pnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        local vnf_local_log="$LOCAL_MEASURE_DIR/nfapi-$VNF_LOG_FILE"
+        local pnf_local_log="$LOCAL_MEASURE_DIR/nfapi-$PNF_LOG_FILE"
+        
+        echo "Fetching VNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$vnf_remote_log" "$vnf_local_log"
+        
+        echo "Fetching PNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_remote_log" "$pnf_local_log"
+        
+        if [ -f "$vnf_local_log" ] && [ -f "$pnf_local_log" ]; then
+            echo "Successfully copied VNF and PNF logs"
+            python $LOG_ANALYSIS_SCRIPT "$vnf_local_log" "$pnf_local_log"
+        else
+            echo "Failed to copy one or more log files"
+        fi
+    else
+        echo "Invalid mode. Please specify either 'MONO' or 'NFAPI'."
+    fi
+}
+
+# Function to clean log files on servers
+clean_log_files() {
+    local mode=$1  # "MONO" or "NFAPI"
+    
+    echo "Cleaning log files in $mode mode..."
+    
+    if [ "$mode" = "MONO" ]; then
+        # For Monolithic mode, both logs are on the same server
+        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
+        local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        
+        echo "Removing VNF and PNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo '$SERVER_PASSWORD' | sudo -S rm -f $vnf_remote_log $pnf_remote_log"
+        
+    elif [ "$mode" = "NFAPI" ]; then
+        # For NFAPI mode, logs are on different servers
+        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
+        local pnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        
+        echo "Removing VNF log from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo '$SERVER_PASSWORD' | sudo -S rm -f $vnf_remote_log"
+        
+        echo "Removing PNF log from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo '$SERVER_PASSWORD' | sudo -S rm -f $pnf_remote_log"
+        
+    else
+        echo "Invalid mode. Please specify either 'MONO' or 'NFAPI'."
+    fi
+}
+
+# Example usage:
+# clean_log_files "MONO"  # Clean log files in monolithic mode
+# clean_log_files "NFAPI" # Clean log files in NFAPI mode
+
+# Example usage:
+# fetch_and_analyze_logs "MONO"  # For monolithic mode
+# fetch_and_analyze_logs "NFAPI" # For NFAPI mode
 
 # Split machine setup stop examples
 # stop_split_setup "100M"    # Stop 100M bandwidth setup
