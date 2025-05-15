@@ -8,21 +8,37 @@ source set_ru_bandwidth.sh
 
 # CURRENT_MODE="NFAPI"  # Default mode, can be "MONO" or "NFAPI"
 CURRENT_MODE="MONO"  # Uncomment to change mode
-
+UE_IP=""
 
 # Parse input arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --skip-ue-setup) SKIP_UE_SETUP=true ;;
+        --manual-mode) MANUAL_MODE_ENABLED=true ;;
         --current-mode) CURRENT_MODE="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
 
-if [ "$SKIP_UE_SETUP" = true ]; then
-    echo "Skipping UE setup as per input flag."
-    get_ue_ip
+if [ "$MANUAL_MODE_ENABLED" = true ]; then
+    reset_all "$CURRENT_MODE"
+    start_gNB "$CURRENT_MODE"
+    # sleep 20
+    # stop_gNB "$CURRENT_MODE"
+    # sleep 5
+    # fetch_and_analyze_logs "$CURRENT_MODE"
+    # exit 1
+    echo "Manual mode enabled. Please input the UE IP address:"
+    while true; do
+        read -r user_input
+        if [[ $user_input =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            UE_IP="$user_input"
+            echo "UE IP address set to: $UE_IP"
+            break
+        else
+            echo "Invalid IP address. Please input a valid UE IP address:"
+        fi
+    done
 else
     reset_all "$CURRENT_MODE"
     start_gNB "$CURRENT_MODE"
@@ -30,7 +46,6 @@ else
     # Toggle airplane mode to reset UE with retry logic
     # MAX_RETRIES is now sourced from run_config.sh
     RETRY_COUNT=0
-    UE_IP=""
 
     toggle_airplane_mode "on"
     sleep 15
@@ -135,4 +150,6 @@ for direction in $directions; do
 done
 
 stop_gNB "$CURRENT_MODE"
+sleep 5
+fetch_and_analyze_logs "$CURRENT_MODE"
 toggle_airplane_mode "on"
