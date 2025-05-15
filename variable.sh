@@ -11,14 +11,19 @@ export VNF_GNB_SERVER_HOST="192.168.8.26"
 # export GNB_SERVER_HOST="192.168.8.43"
 export GNB_SERVER_USER="oai72_su"
 export GNB_SERVER_HOST="192.168.8.82"
-export CONTROL_PC_IP="192.168.8.118"
-export CONTROL_PC_USER="sshuser"
+# export CONTROL_PC_IP="192.168.8.118"
+# export CONTROL_PC_USER="sshuser"
+export CONTROL_PC_IP="140.118.162.81"
+export CONTROL_PC_USER="BMW LAB"
 export CN_SERVER_USER="oai-cn"
 export CN_SERVER_HOST="192.168.8.108"
 export SERVER_IP="192.168.70.135"
 export TEST_SERVER_IP="10.45.0.1" # IP for iperf/ping tests
 export OUTPUT_DIR="test_results_$(date +%Y%m%d)"
-export control_pc_iperf_path="C:\Users\sshuser\Desktop\MTK\iperf3"
+# Control MTK UE NoteBook
+# export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\MTK\\iperf3"
+# Control Samsung UE NoteBook
+export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\iperf3"
 
 # Source the run configuration
 source "$(dirname "$0")/run_config.sh"

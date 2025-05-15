@@ -189,16 +189,16 @@ fetch_and_analyze_logs() {
     
     if [ "$mode" = "MONO" ]; then
         # For Monolithic mode
-        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        local vnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
+        local pnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         local vnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$VNF_LOG_FILE"
         local pnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$PNF_LOG_FILE"
         
-        echo "Fetching VNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$vnf_remote_log" "$vnf_local_log"
+        echo "Fetching VNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$vnf_remote_log" "$vnf_local_log"
         
-        echo "Fetching PVNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$pnf_remote_log" "$pnf_local_log"
+        echo "Fetching PVNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_remote_log" "$pnf_local_log"
 
         if [ -f "$vnf_local_log" ] && [ -f "$pnf_local_log" ]; then
             echo "Successfully copied VNF and PNF logs"
@@ -232,18 +232,15 @@ fetch_and_analyze_logs() {
 
 # Function to clean log files on servers
 clean_log_files() {
-    local mode=$1  # "MONO" or "NFAPI"
-    
-    echo "Cleaning log files in $mode mode..."
-    
+    local mode=$1  # "MONO" or "NFAPI"    
     if [ "$mode" = "MONO" ]; then
         # For Monolithic mode, both logs are on the same server
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         
-        echo "Removing VNF and PNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
+        echo "Removing VNF and PNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
         # Execute with a direct command string that handles the password prompt
-        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log $pnf_remote_log"
+        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log $pnf_remote_log"
         
     elif [ "$mode" = "NFAPI" ]; then
         # For NFAPI mode, logs are on different servers
@@ -266,11 +263,9 @@ clean_log_files() {
 # Function to reset all states and prepare for a clean start
 reset_all() {
     local mode=${1:-$CURRENT_MODE}
-    echo "Resetting all system states..."
     
     # Stop any running sessions on the gNB server
     if [ -n "$mode" ]; then
-        echo "Stopping gNB in $mode mode..."
         stop_gNB "$mode"
         clean_log_files "$mode"
     else
@@ -286,7 +281,6 @@ reset_all() {
     
     # Stop sessions on CN server
     if [ -n "$CN_SERVER_USER" ] && [ -n "$CN_SERVER_HOST" ]; then
-        echo "Stopping sessions on CN server..."
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$CN_SERVER_USER@$CN_SERVER_HOST" \
             "screen -X -S iperf-server quit 2>/dev/null || true"
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$CN_SERVER_USER@$CN_SERVER_HOST" \
@@ -297,7 +291,6 @@ reset_all() {
     
     # Execute remote script on main host if needed
     if [ -n "$GNB_SERVER_USER" ] && [ -n "$GNB_SERVER_HOST" ]; then
-        echo "Executing oaiLONvf.sh on main host..."
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
             "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S /oai72/Script/oaiLONvf.sh 2>/dev/null || true'"
     else

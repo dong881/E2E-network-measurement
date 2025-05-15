@@ -1,5 +1,6 @@
 #!/bin/bash
-export ADB_DEVICE="0123456789ABCDEF"
+# export ADB_DEVICE="0123456789ABCDEF" # MTK UE device ID
+export ADB_DEVICE="R5CN30TMBYR" # Samsung UE device ID
 export TEST_DURATION=30 # Duration in seconds (updated from main.sh)
 export WAIT_AFTER_REBOOT=60
 export WAIT_AFTER_GNB=18
@@ -27,7 +28,7 @@ VNF_LOG_FILE="VNF.txt"
 PNF_LOG_FILE="PNF.txt"
 
 # Local measurement directory
-LOCAL_MEASURE_DIR="/home/ming/E2E-network-measurement/Measure"
+LOCAL_MEASURE_DIR="/home/ming/E2E-network-measurement/Measure/log"
 
 # Analysis script path
-LOG_ANALYSIS_SCRIPT="$LOCAL_MEASURE_DIR/analyze_logs.py"
+LOG_ANALYSIS_SCRIPT="$LOCAL_MEASURE_DIR/../analyze_logs.py"
