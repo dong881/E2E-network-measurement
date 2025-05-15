@@ -6,79 +6,63 @@ source modify_UE.sh
 source run_gNB.sh
 source set_ru_bandwidth.sh
 
-fetch_and_analyze_logs "NFAPI"
-exit 1
-
-# Execute remote script on main host
-sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "screen -dmS oaiLONvf bash -c 'echo $PASSWORD | sudo -S /home/oai72/Script/oaiLONvf.sh'"
-
-# set_ru_bandwidth "100000000"  # Set RU bandwidth to 100M
-
-# Stop and start split setup
-sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
-    "screen -X -S iperf-server quit"
-sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
-    "screen -X -S ping-session quit"
-
-start_gNB() {
-    start_split_setup "100M"
-    # start_single_setup "100M" "MONO"
-}
-stop_gNB() {
-    stop_split_setup "100M"
-    # stop_single_setup "100M" "MONO"
-}
+# CURRENT_MODE="NFAPI"  # Default mode, can be "MONO" or "NFAPI"
+CURRENT_MODE="MONO"  # Uncomment to change mode
 
 
-stop_gNB
-# exit 1
-clean_log_files "NFAPI"
-
-start_gNB
-# exit 1
-
-sleep 60
-
-fetch_and_analyze_logs "NFAPI"
-
-stop_gNB
-exit 1
-
-# Toggle airplane mode to reset UE with retry logic
-# MAX_RETRIES is now sourced from run_config.sh
-RETRY_COUNT=0
-UE_IP=""
-
-toggle_airplane_mode "on"
-sleep 15
-while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    echo "Attempt $(($RETRY_COUNT + 1)) of $MAX_RETRIES to reset UE connection"
-    toggle_airplane_mode "on"
-    sleep 3
-    toggle_airplane_mode "off"
-    sleep 3
-    
-    # Get UE IP
-    get_ue_ip
-    
-    # Check if UE IP was successfully obtained
-    if [ -n "$UE_IP" ]; then
-        echo "Successfully connected UE with IP: $UE_IP"
-        break
-    fi
-    
-    echo "Failed to get UE IP on attempt $(($RETRY_COUNT + 1))"
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    
-    if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-        echo "ERROR: Failed to get UE IP after $MAX_RETRIES attempts. Exiting script."
-        stop_gNB
-        exit 1
-    fi
-    
-    echo "Retrying..."
-    sleep 5
+# Parse input arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --skip-ue-setup) SKIP_UE_SETUP=true ;;
+        --current-mode) CURRENT_MODE="$2"; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
 done
+
+if [ "$SKIP_UE_SETUP" = true ]; then
+    echo "Skipping UE setup as per input flag."
+    get_ue_ip
+else
+    reset_all "$CURRENT_MODE"
+    start_gNB "$CURRENT_MODE"
+    sleep 60
+    # Toggle airplane mode to reset UE with retry logic
+    # MAX_RETRIES is now sourced from run_config.sh
+    RETRY_COUNT=0
+    UE_IP=""
+
+    toggle_airplane_mode "on"
+    sleep 15
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        echo "Attempt $(($RETRY_COUNT + 1)) of $MAX_RETRIES to reset UE connection"
+        toggle_airplane_mode "on"
+        sleep 3
+        toggle_airplane_mode "off"
+        sleep 3
+        
+        # Get UE IP
+        get_ue_ip
+        
+        # Check if UE IP was successfully obtained
+        if [ -n "$UE_IP" ]; then
+            echo "Successfully connected UE with IP: $UE_IP"
+            break
+        fi
+        
+        echo "Failed to get UE IP on attempt $(($RETRY_COUNT + 1))"
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        
+        if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+            echo "ERROR: Failed to get UE IP after $MAX_RETRIES attempts. Exiting script."
+            stop_gNB "$CURRENT_MODE"
+            exit 1
+        fi
+        
+        echo "Retrying..."
+        sleep 5
+    done
+fi
 
 sleep 1
 # Create directory for results if it doesn't exist
@@ -150,5 +134,5 @@ for direction in $directions; do
     done
 done
 
-stop_gNB
+stop_gNB "$CURRENT_MODE"
 toggle_airplane_mode "on"
