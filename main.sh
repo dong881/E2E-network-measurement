@@ -7,7 +7,7 @@ source run_gNB.sh
 source set_ru_bandwidth.sh
 
 # CURRENT_MODE="NFAPI"  # Default mode, can be "MONO" or "NFAPI"
-CURRENT_MODE="MONO"  # Uncomment to change mode
+CURRENT_MODE="NFAPI"  # Uncomment to change mode
 UE_IP=""
 
 # Parse input arguments
