@@ -68,7 +68,7 @@ def generate_output_filenames(vnf_path, pnf_path):
     pnf_base = os.path.splitext(os.path.basename(pnf_path))[0]
     
     # Create output directory if it doesn't exist
-    output_dir = 'Measure'
+    output_dir = 'Measure/result'
     os.makedirs(output_dir, exist_ok=True)
     
     # Generate output filenames
@@ -205,7 +205,8 @@ def create_box_plot(data_dict, output_filename):
         data_dict: Dictionary with labels as keys and measurement data as values
         output_filename: Path to save the box plot image
     """
-    plt.figure(figsize=(12, 8))
+    # Set up the figure with a simpler layout
+    fig, ax = plt.subplots(figsize=(10, 7))
     
     # Extract only raw data
     if 'Raw Data' in data_dict:
@@ -217,7 +218,7 @@ def create_box_plot(data_dict, output_filename):
         labels = list(data_dict.keys())
     
     # Create box plot with custom settings
-    box_plot = plt.boxplot(
+    box_plot = ax.boxplot(
         data, 
         tick_labels=labels,  # Fix deprecated 'labels' parameter
         patch_artist=True,
@@ -236,52 +237,54 @@ def create_box_plot(data_dict, output_filename):
         patch.set_alpha(0.7)  # Semi-transparent for better visualization
     
     # Set logarithmic scale for y-axis
-    plt.yscale('log')
+    ax.set_yscale('log')
     
-    plt.title('Time Difference Comparison (Logarithmic Scale Box Plot)', fontsize=16, pad=20)
-    plt.xlabel('Measurement Groups', fontsize=14)
-    plt.ylabel('Time Difference (ms, log scale)', fontsize=14)
-    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    ax.set_title('Time Difference Comparison (Logarithmic Scale)', fontsize=16)
+    ax.set_xlabel('Measurement Groups', fontsize=14)
+    ax.set_ylabel('Time Difference (ms, log scale)', fontsize=14)
+    ax.grid(True, axis='y', linestyle='--', alpha=0.7)
     
-    # Add annotations to explain box plot components in English
-    components_text = (
-        "Box Plot Components:\n"
-        "• Box: Middle 50% of data (Q1 to Q3)\n"
-        "• Blue Line: Median (Q2)\n"
-        "• Red Line: Mean\n"
-        "• Whiskers: Extend to min/max within 1.5*IQR\n"
-        "• Red Dots: Outliers outside whisker range"
-    )
+    # Add legend for box plot components
+    legend_elements = [
+        plt.Line2D([0], [0], color='blue', linewidth=2, label='Median'),
+        plt.Line2D([0], [0], color='red', linewidth=2, label='Mean'),
+        plt.Rectangle((0, 0), 1, 1, fc='#8dd3c7', alpha=0.7, label='Q1-Q3 Range'),
+        plt.Line2D([0], [0], color='black', label='Whiskers (1.5*IQR)'),
+        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', 
+                  markersize=8, label='Outliers')
+    ]
+    ax.legend(handles=legend_elements, loc='upper right')
     
-    # Place annotation in a semi-transparent box
-    plt.figtext(0.15, 0.01, components_text, ha='left', fontsize=10, 
-                bbox={'facecolor':'white', 'alpha':0.8, 'pad':5, 'boxstyle':'round'})
-    
-    # Add statistics for raw data only
-    stats_text = ""
+    # Calculate statistics text for the figure
     for label, values in data_dict.items():
         if label == 'Filtered Data':
             continue  # Skip filtered data statistics
             
-        # Calculate key statistics
         q1 = np.percentile(values, 25)
         q3 = np.percentile(values, 75)
         iqr = q3 - q1
         median = np.median(values)
         mean = np.mean(values)
         
-        stats_text += f"{label}:\n"
-        stats_text += f"  Median: {median:.3f} ms\n"
-        stats_text += f"  Mean: {mean:.3f} ms\n"
-        stats_text += f"  IQR: {iqr:.3f} ms\n"
-        stats_text += f"  Outlier bounds: [{q1-1.5*iqr:.3f}, {q3+1.5*iqr:.3f}] ms\n\n"
+        stats_text = (
+            f"Statistics:\n"
+            f"Min: {np.min(values):.3f} ms\n"
+            f"Q1: {q1:.3f} ms\n"
+            f"Median: {median:.3f} ms\n"
+            f"Mean: {mean:.3f} ms\n"
+            f"Q3: {q3:.3f} ms\n"
+            f"Max: {np.max(values):.3f} ms\n"
+            f"IQR: {iqr:.3f} ms\n"
+            f"Count: {len(values)}"
+        )
+        
+        # Add text annotation in a clean spot
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=10,
+                verticalalignment='top', bbox=props)
     
-    # Place statistics in a semi-transparent box on the right side
-    plt.figtext(0.75, 0.25, stats_text, ha='left', fontsize=9, 
-                bbox={'facecolor':'white', 'alpha':0.8, 'pad':5, 'boxstyle':'round'})
-    
-    plt.tight_layout(rect=[0, 0.05, 1, 0.95])  # Adjust layout for annotations
-    plt.savefig(output_filename, dpi=300)  # Higher resolution
+    plt.tight_layout()
+    plt.savefig(output_filename, dpi=300)
     plt.show()
     
     print(f"Box plot saved to {output_filename}")

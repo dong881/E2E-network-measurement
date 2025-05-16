@@ -23,11 +23,11 @@ done
 if [ "$MANUAL_MODE_ENABLED" = true ]; then
     reset_all "$CURRENT_MODE"
     start_gNB "$CURRENT_MODE"
-    # sleep 20
-    # stop_gNB "$CURRENT_MODE"
-    # sleep 5
-    # fetch_and_analyze_logs "$CURRENT_MODE"
-    # exit 1
+    sleep 20
+    stop_gNB "$CURRENT_MODE"
+    sleep 5
+    fetch_and_analyze_logs "$CURRENT_MODE"
+    exit 1
     echo "Manual mode enabled. Please input the UE IP address:"
     while true; do
         read -r user_input
