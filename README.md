@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-This framework automates End-to-End (E2E) network performance testing using shell scripts. It coordinates actions across multiple devices (Control PC, RU, gNB, CN, UE) via SSH and ADB. Key features include configurable test parameters (bandwidth, protocol, direction), automated setup/teardown of network components (gNB, iPerf server), UE connection management, and collection of iPerf/ping results. Configuration is separated into `variable.sh` (environment) and `run_config.sh` (test parameters) for easy management. The `main.sh` script orchestrates the entire process.
+This framework automates End-to-End (E2E) network performance testing using shell scripts and Python analysis tools. It coordinates actions across multiple devices (Control PC, RU, gNB, CN, UE) via SSH and ADB, collecting comprehensive performance metrics including throughput, latency, and packet loss. Key features include configurable test parameters (bandwidth, protocol, direction), automated setup/teardown of network components, data collection, and advanced visualizations. The modular design separates configuration into `variable.sh` (environment) and `run_config.sh` (test parameters), while `main.sh` orchestrates the entire process.
 
 ## Overview
 
@@ -24,8 +24,65 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
 - **Parametric Testing**: `main.sh` orchestrates tests across specified ranges of bandwidth, protocols (TCP/UDP), and directions (Uplink/Downlink).
 - **Data Collection**: Saves iPerf JSON results and ping logs for each test run.
 - **Robust Execution**: Includes retry logic for establishing UE connection.
-- **Data Analysis**: A Python script (`network_analysis.py`) processes the collected data and generates comprehensive visualizations. [See Python Analysis Documentation](docs/python_analysis.md)
+- **Advanced Analytics**:
+    - Network packet loss analysis (`VNF-lossPacket.py`)
+    - Comprehensive performance data processing (`network_analysis.py`)
+    - Log analysis for timestamp differences (`Measure/analyze_logs.py`) 
+    - Latency comparison across deployment models (`Measure/compare_latency.py`)
 - **Visualization**: Various plots and charts help interpret test results. [See Visualization Guide](docs/visualization_guide.md)
+
+## Installation
+
+### Prerequisites
+
+- Linux environment (Ubuntu recommended)
+- Git for cloning the repository
+- Python 3.6+ with pip
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/E2E-network-measurement.git
+cd E2E-network-measurement
+```
+
+### Step 2: Install Dependencies
+
+```bash
+# System packages
+sudo apt update
+sudo apt install -y sshpass screen expect adb iperf3
+
+# Python dependencies
+pip install matplotlib numpy pandas seaborn
+
+# Make scripts executable
+chmod +x *.sh
+chmod +x Measure/result/*.sh
+```
+
+### Step 3: Verify Installation
+
+```bash
+# Check if required tools are available
+command -v sshpass >/dev/null 2>&1 && echo "✅ sshpass installed" || echo "❌ sshpass missing"
+command -v screen >/dev/null 2>&1 && echo "✅ screen installed" || echo "❌ screen missing"
+command -v expect >/dev/null 2>&1 && echo "✅ expect installed" || echo "❌ expect missing"
+command -v adb >/dev/null 2>&1 && echo "✅ adb installed" || echo "❌ adb missing"
+command -v iperf3 >/dev/null 2>&1 && echo "✅ iperf3 installed" || echo "❌ iperf3 missing"
+
+# Check Python dependencies
+python3 -c "import matplotlib, numpy, pandas, seaborn; print('✅ Python dependencies installed')" || echo "❌ Some Python dependencies are missing"
+```
+
+### Step 4: Configure Environment
+
+1. Edit `variable.sh` to set your network configuration
+2. Edit `run_config.sh` to set test parameters
+3. Create required output directories:
+```bash
+mkdir -p data results Measure/log Measure/result
+```
 
 ## Prerequisites
 
@@ -38,7 +95,7 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
   - `ping`: Standard network utility (usually pre-installed).
   - `screen`: Terminal multiplexer (`sudo apt install screen`).
   - `expect`: For automating interactive SSH sessions (e.g., RU configuration) (`sudo apt install expect`).
-  - **For Analysis**: Python with matplotlib, numpy, pandas libraries. Install with: `pip install matplotlib numpy pandas`.
+  - **For Analysis**: Python with matplotlib, numpy, pandas, seaborn libraries. Install with: `pip install matplotlib numpy pandas seaborn`.
 
 ### Hardware Requirements
 - **Control PC**: The machine running these scripts.
@@ -87,7 +144,15 @@ Modify the following files to match your environment:
     ```
 3.  **Run the Main Script**:
     ```bash
+    # Standard mode
     ./main.sh
+    
+    # Manual mode (requires UE IP input)
+    ./main.sh --manual-mode
+    
+    # Specify gNB mode (MONO or NFAPI)
+    ./main.sh --mode MONO
+    ./main.sh --mode NFAPI
     ```
     The script will:
     - Source configuration variables.
@@ -98,6 +163,7 @@ Modify the following files to match your environment:
     - Execute the iPerf3 and ping test loop defined in `main.sh`.
     - Save results to `./data/YYYYMMDD/`.
     - Stop gNB components and clean up CN processes.
+    - Fetch and analyze logs.
     - Turn off UE radio (airplane mode).
 
 4.  **Output**:
@@ -106,19 +172,48 @@ Modify the following files to match your environment:
 
 ### Data Analysis
 
-After collecting test data, you can analyze the results using the provided Python script:
+After collecting test data, you can analyze the results using the provided Python scripts:
 
-1. **Run the Analysis Script**:
+1. **Clean iPerf JSON Files (if needed)**:
+   ```bash
+   # Modify DATA_DIR in the script if necessary
+   python3 clean_iperf_json.py
+   ```
+
+2. **Run the Network Analysis Script**:
    ```bash
    python3 network_analysis.py
    ```
-
-2. **Select a Test Directory** when prompted. The script will:
+   When prompted, select a test directory. The script will:
    - Process all test files in the selected directory
    - Generate visualizations and statistics
    - Save results to `./results/YYYYMMDD/`
 
-3. **Review the Results**:
+3. **Analyze VNF-PNF Logs**:
+   ```bash
+   python3 Measure/analyze_logs.py /path/to/vnf/log /path/to/pnf/log
+   ```
+   This will:
+   - Calculate timestamp differences between VNF and PNF logs
+   - Generate statistical reports and visualizations
+   - Save results to `Measure/result/` directory
+
+4. **Compare Latency Across Deployment Models**:
+   ```bash
+   python3 Measure/compare_latency.py
+   ```
+   This will:
+   - Compare latency metrics across different deployment configurations
+   - Generate comparison charts and tables
+   - Save results to `Measure/result/` directory
+
+5. **Analyze Packet Loss**:
+   ```bash
+   python3 VNF-lossPacket.py
+   ```
+   Follow the prompts to input log data and analyze packet loss rates.
+
+6. **Review the Results**:
    - Summary plots show ping latency vs. throughput trends
    - Detailed plots show per-test performance
    - CSV files contain comprehensive metrics
@@ -134,20 +229,26 @@ After collecting test data, you can analyze the results using the provided Pytho
 - **[`modify_UE.sh`](docs/modify_UE_details.md)**: Contains functions (`toggle_airplane_mode`, `get_ue_ip`, `run_iperf`) to interact with the UE via ADB. Called by `main.sh`. [See Details](docs/modify_UE_details.md)
 - **[`collect_data_fromCN.sh`](docs/collect_data_fromCN_details.md)**: Contains functions (`ping-start`, `ping-stop`, `iperf-start`, `iperf-stop`) to manage test processes (ping, iperf3 server) on the CN server via SSH. Called by `main.sh`. [See Details](docs/collect_data_fromCN_details.md)
 - **`network_analysis.py`**: Python script for post-processing test results and generating visualizations. [See Details](docs/python_analysis.md)
+- **`VNF-lossPacket.py`**: Analyzes packet loss from VNF logs.
+- **`clean_iperf_json.py`**: Cleans iPerf JSON output files to fix parsing issues.
+- **`Measure/analyze_logs.py`**: Calculates timestamp differences between VNF and PNF logs.
+- **`Measure/compare_latency.py`**: Compares latency across different deployment models.
+- **`Measure/result/add_prefix.sh`**: Adds prefixes to result files for organization.
 
 ## Notes and Troubleshooting
 
+- **Installation Verification**: Use the verification commands in the installation section to confirm all dependencies are installed correctly. Look for ✅ indicators for each requirement.
+- **Log Files**: Examine these logs for debugging:
+  - VNF/PNF logs: Usually found at `~/oai_mp_f_ming/openairinterface5g/cmake_targets/ran_build/build/VNF.txt` and `PNF.txt`
+  - iPerf logs: Found in the `data/YYYYMMDD/` directory
+  - Analysis logs: Output to the console and `Measure/result/` directory
 - **Dependencies**: Ensure all required tools (`sshpass`, `adb`, `iperf3`, `screen`, `expect`) are installed and in the system's PATH.
 - **Permissions**: Scripts need execute permissions (`chmod +x *.sh`).
 - **SSH Failures**: Verify credentials in `variable.sh` and network connectivity. Check if `sshpass` is installed or configure passwordless SSH.
 - **ADB Issues**: Ensure the UE is connected, authorized, and the correct `ADB_DEVICE` is set in `run_config.sh`. Check if iPerf3 binary exists and is executable on the UE at `/data/local/tmp/iperf3`.
 - **Configuration Errors**: Double-check IP addresses, usernames, passwords, and interface names in `variable.sh` and `run_config.sh`.
 - **Screen Sessions**: If scripts fail unexpectedly, check for lingering `screen` sessions on the CN and gNB servers (`screen -ls`) and terminate them (`screen -X -S <session_name> quit`).
-- **Python Dependencies**: For the analysis script, make sure you have the required Python libraries installed (`pip install matplotlib numpy pandas`).
-
-## Contributing
-
-Contributions, bug reports, and feature requests are welcome. Please open an issue or submit a pull request.
+- **Python Dependencies**: For the analysis script, make sure you have the required Python libraries installed.
 
 ## Manual ADB Command Reference
 
