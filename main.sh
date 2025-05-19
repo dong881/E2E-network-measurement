@@ -6,24 +6,44 @@ source modify_UE.sh
 source run_gNB.sh
 source set_ru_bandwidth.sh
 
-# CURRENT_MODE="NFAPI"  # Default mode, can be "MONO" or "NFAPI"
-CURRENT_MODE="NFAPI"  # Uncomment to change mode
+# Initialize variables
 UE_IP=""
+MANUAL_MODE_ENABLED=false
+CURRENT_MODE="MONO"
 
-# Parse input arguments
+# Parse input arguments (只允許兩個參數: --manual-mode 與 --mode)
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --manual-mode) MANUAL_MODE_ENABLED=true ;;
-        --current-mode) CURRENT_MODE="$2"; shift ;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+        --mode) CURRENT_MODE="$2"; shift ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
 done
 
+echo "🔎 Current status:"
+echo "  🛠️  MANUAL_MODE_ENABLED = $([ "$MANUAL_MODE_ENABLED" = true ] && echo '✅' || echo '❌')"
+echo "  🎛️  CURRENT_MODE        = $CURRENT_MODE"
+echo "  📦 TEST_UDP            = $([ "$TEST_UDP" = true ] && echo '✅' || echo '❌')"
+echo "  📦 TEST_TCP            = $([ "$TEST_TCP" = true ] && echo '✅' || echo '❌')"
+echo "  ⬆️  ENABLE_UL           = $([ "$ENABLE_UL" = true ] && echo '✅' || echo '❌')"
+echo "  🌐 TEST_SERVER_IP      = $TEST_SERVER_IP"
+echo "  🔁 MAX_RETRIES         = $MAX_RETRIES"
+echo "  ⏱️  TEST_DURATION       = $TEST_DURATION"
+echo "  😴 SLEEP_WINDOW        = $SLEEP_WINDOW"
+echo "  ⬇️  DL_START            = $DL_START"
+echo "  ⬇️  DL_END              = $DL_END"
+echo "  ⬇️  DL_STEP             = $DL_STEP"
+if [ "$ENABLE_UL" = true ]; then
+    echo "  ⬆️  UL_START            = $UL_START"
+    echo "  ⬆️  UL_END              = $UL_END"
+    echo "  ⬆️  UL_STEP             = $UL_STEP"
+fi
+
 if [ "$MANUAL_MODE_ENABLED" = true ]; then
     reset_all "$CURRENT_MODE"
     start_gNB "$CURRENT_MODE"
-    sleep 20
+    sleep 200
     stop_gNB "$CURRENT_MODE"
     sleep 5
     fetch_and_analyze_logs "$CURRENT_MODE"
