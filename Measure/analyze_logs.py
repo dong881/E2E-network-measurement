@@ -73,7 +73,7 @@ def generate_output_filenames(vnf_path, pnf_path):
     
     # Generate output filenames
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_name = f"{vnf_base}_vs_{pnf_base}" #_{timestamp}
+    base_name = f"{vnf_base}_vs_{pnf_base}"
     
     return {
         'report': f"{output_dir}/{base_name}_report.txt",
@@ -98,7 +98,7 @@ def plot_timestamp_differences(differences, output_filename):
     
     # Create the plot
     plt.figure(figsize=(10, 6))
-    plt.plot(indices, diffs_ms, 'b-', marker='o', markersize=3)  # Smaller marker size
+    plt.plot(indices, diffs_ms, 'b-', marker='o', markersize=3)
     plt.title('VNF vs PNF Timestamp Differences')
     plt.xlabel('Packet Number')
     plt.ylabel('Time Difference (ms)')
@@ -128,7 +128,7 @@ def plot_timestamp_differences(differences, output_filename):
 def plot_filtered_differences(differences, output_filename):
     # Extract data for plotting
     indices = [i for i, _, _, _ in differences]
-    diffs_ms = [diff * 1000 for _, _, _, diff in differences]  # Convert to ms
+    diffs_ms = [diff * 1000 for _, _, _, diff in differences]
     diffs_array = np.array(diffs_ms)
     
     # Calculate quartiles and IQR for outlier detection
@@ -161,11 +161,10 @@ def plot_filtered_differences(differences, output_filename):
     
     # Create the filtered plot
     plt.figure(figsize=(10, 6))
-    plt.plot(filtered_indices, filtered_data, 'g-', marker='o', markersize=1)  # Smaller marker size
+    plt.plot(filtered_indices, filtered_data, 'g-', marker='o', markersize=1)
     plt.title('VNF vs PNF Timestamp Differences (Outliers Removed)')
     plt.xlabel('Packet Number')
     plt.ylabel('Time Difference (ms)')
-    # plt.ylim(top=2)  # Fix y-axis maximum to 2
     plt.grid(True)
     
     # Add horizontal lines for mean and median
@@ -198,96 +197,44 @@ def plot_filtered_differences(differences, output_filename):
     }
 
 def create_box_plot(data_dict, output_filename):
-    """
-    Create a detailed box plot to compare measurements.
+    # Prepare data for plotting
+    data = list(data_dict.values())[0]  # Extract the filtered data
     
-    Args:
-        data_dict: Dictionary with labels as keys and measurement data as values
-        output_filename: Path to save the box plot image
-    """
-    # Set up the figure with a simpler layout
-    fig, ax = plt.subplots(figsize=(10, 7))
-    
-    # Extract only raw data
-    if 'Raw Data' in data_dict:
-        data = [data_dict['Raw Data']]
-        labels = ['Raw Data']
-    else:
-        # Use all provided data
-        data = list(data_dict.values())
-        labels = list(data_dict.keys())
-    
-    # Create box plot with custom settings
-    box_plot = ax.boxplot(
-        data, 
-        tick_labels=labels,  # Fix deprecated 'labels' parameter
-        patch_artist=True,
-        showmeans=True,              # Show mean values
-        meanline=True,               # Show mean as a line
-        showfliers=True,             # Show outliers
-        meanprops={"color":"red", "linewidth":2},  # Mean line properties
-        medianprops={"color":"blue", "linewidth":2},  # Median line properties
-        flierprops={"marker":"o", "markerfacecolor":"red", "markersize":6}  # Outlier properties
-    )
-    
-    # Customize colors
-    colors = ['#8dd3c7', '#bebada', '#fb8072', '#80b1d3', '#fdb462']
-    for patch, color in zip(box_plot['boxes'], colors[:len(data)]):
-        patch.set_facecolor(color)
-        patch.set_alpha(0.7)  # Semi-transparent for better visualization
-    
-    # Set logarithmic scale for y-axis
-    ax.set_yscale('log')
-    
-    ax.set_title('Time Difference Comparison (Logarithmic Scale)', fontsize=16)
-    ax.set_xlabel('Measurement Groups', fontsize=14)
-    ax.set_ylabel('Time Difference (ms, log scale)', fontsize=14)
-    ax.grid(True, axis='y', linestyle='--', alpha=0.7)
-    
-    # Add legend for box plot components
-    legend_elements = [
-        plt.Line2D([0], [0], color='blue', linewidth=2, label='Median'),
-        plt.Line2D([0], [0], color='red', linewidth=2, label='Mean'),
-        plt.Rectangle((0, 0), 1, 1, fc='#8dd3c7', alpha=0.7, label='Q1-Q3 Range'),
-        plt.Line2D([0], [0], color='black', label='Whiskers (1.5*IQR)'),
-        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', 
-                  markersize=8, label='Outliers')
-    ]
-    ax.legend(handles=legend_elements, loc='upper right')
-    
-    # Calculate statistics text for the figure
-    for label, values in data_dict.items():
-        if label == 'Filtered Data':
-            continue  # Skip filtered data statistics
-            
-        q1 = np.percentile(values, 25)
-        q3 = np.percentile(values, 75)
-        iqr = q3 - q1
-        median = np.median(values)
-        mean = np.mean(values)
-        
-        stats_text = (
-            f"Statistics:\n"
-            f"Min: {np.min(values):.3f} ms\n"
-            f"Q1: {q1:.3f} ms\n"
-            f"Median: {median:.3f} ms\n"
-            f"Mean: {mean:.3f} ms\n"
-            f"Q3: {q3:.3f} ms\n"
-            f"Max: {np.max(values):.3f} ms\n"
-            f"IQR: {iqr:.3f} ms\n"
-            f"Count: {len(values)}"
-        )
-        
-        # Add text annotation in a clean spot
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=10,
-                verticalalignment='top', bbox=props)
-    
+    # Create the box plot - hide outliers and points
+    plt.figure(figsize=(6, 8))
+    sns.boxplot(data=data, color='blue', width=0.5, showfliers=False)
+
+    # Calculate statistics for annotations
+    q1 = np.percentile(data, 25)  # First quartile (25%)
+    median = np.percentile(data, 50)  # Median (50%)
+    q3 = np.percentile(data, 75)  # Third quartile (75%)
+
+    # Calculate whiskers (min and max, excluding outliers)
+    iqr = q3 - q1
+    lower_whisker = max(min(data), q1 - 1.5 * iqr)
+    upper_whisker = min(max(data), q3 + 1.5 * iqr)
+
+    # Set plot labels and title
+    plt.title('Timestamp Differences Box Plot (Filtered Data)')
+    plt.ylabel('Time Difference (ms)')
+
+    # Remove x-axis label since there's only one dataset
+    plt.xticks([])
+
+    # Add annotations for the box plot components
+    plt.text(0.6, upper_whisker, 'whisker', verticalalignment='bottom', horizontalalignment='left', fontsize=10)
+    plt.text(0.6, q3, 'box', verticalalignment='bottom', horizontalalignment='left', fontsize=10)
+    plt.text(0.6, median, 'median', verticalalignment='center', horizontalalignment='left', fontsize=10)
+    plt.text(0.6, q1, 'box', verticalalignment='top', horizontalalignment='left', fontsize=10)
+    plt.text(0.6, lower_whisker, 'whisker', verticalalignment='top', horizontalalignment='left', fontsize=10)
+
+    # Add grid for better readability
+    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+
+    # Adjust layout and save the plot
     plt.tight_layout()
-    plt.savefig(output_filename, dpi=300)
+    plt.savefig(output_filename)
     plt.show()
-    
-    print(f"Box plot saved to {output_filename}")
 
 def generate_report(vnf_path, pnf_path, differences, report_path):
     # Convert differences to milliseconds for analysis
@@ -342,8 +289,6 @@ def generate_report(vnf_path, pnf_path, differences, report_path):
     with open(report_path, 'w') as f:
         f.write(report)
     
-    # Print report to console
-    # print(report)
     print(f"Report saved to {report_path}")
     
     return report_path
@@ -366,10 +311,10 @@ def main():
     plot_timestamp_differences(differences, output_files['plot'])
     filtered_data = plot_filtered_differences(differences, output_files['filtered_plot'])
     
-    # Create box plot comparing raw and filtered data
+    # Create box plot using filtered data
     if filtered_data:
         data_dict = {
-            'Raw Data': filtered_data['raw']
+            'filtered data': filtered_data['filtered']
         }
         create_box_plot(data_dict, output_files['box_plot'])
 
