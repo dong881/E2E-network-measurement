@@ -1,14 +1,12 @@
 #!/bin/bash
 
 # Global variables
-SERVER_PASSWORD="bmwlab"
+source variable.sh
 
 # Commands for Single Machine Setup
 # Define common paths and options
-# BASE_PATH="~/FH_7.2_dev/openairinterface5g"
-BASE_PATH="~/oai_mp_f_ming/openairinterface5g"
-BUILD_DIR="$BASE_PATH/cmake_targets/ran_build/build"
-CONF_DIR="$BASE_PATH/targets/PROJECTS/GENERIC-NR-5GC/CONF"
+BUILD_DIR="$PNF_BASE_PATH/cmake_targets/ran_build/build"
+CONF_DIR="$PNF_BASE_PATH/targets/PROJECTS/GENERIC-NR-5GC/CONF"
 
 # Common options
 SUDO_PREFIX="echo '$SERVER_PASSWORD' | sudo -S"
@@ -38,16 +36,12 @@ CMD_MONO_40M_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_40M $MON
 CMD_MONO_100M_JURA_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M_JURA $MONO_OPTS"
 CMD_PNF_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_PNF $PNF_OPTS"
 
-# Base paths for different setups
-VNF_SPLIT_BASE_PATH="~/OnlyOAI/openairinterface5g"
-PNF_SPLIT_BASE_PATH=$BASE_PATH
-
 # Additional config files
 CONF_PNF_SPLIT="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
 
 # Common command prefixes for split setup
-VNF_SPLIT_CMD_PREFIX="cd $VNF_SPLIT_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
-PNF_SPLIT_CMD_PREFIX="cd $PNF_SPLIT_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
+VNF_SPLIT_CMD_PREFIX="cd $VNF_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
+PNF_SPLIT_CMD_PREFIX="cd $PNF_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
 
 # Commands for Split Machine Setup (Two Machines)
 CMD_VNF_100M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_100M $VNF_OPTS"
@@ -189,8 +183,8 @@ fetch_and_analyze_logs() {
     
     if [ "$mode" = "MONO" ]; then
         # For Monolithic mode
-        local vnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        local vnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
+        local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         local vnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$VNF_LOG_FILE"
         local pnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$PNF_LOG_FILE"
         
@@ -209,7 +203,7 @@ fetch_and_analyze_logs() {
     elif [ "$mode" = "NFAPI" ]; then
         # For NFAPI mode (need both VNF and PNF logs)
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         local vnf_local_log="$LOCAL_MEASURE_DIR/nfapi-$VNF_LOG_FILE"
         local pnf_local_log="$LOCAL_MEASURE_DIR/nfapi-$PNF_LOG_FILE"
         
@@ -245,7 +239,7 @@ clean_log_files() {
     elif [ "$mode" = "NFAPI" ]; then
         # For NFAPI mode, logs are on different servers
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$PNF_NFAPI_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         
         echo "Removing VNF log from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
         # Adding -t option to allocate a pseudo-terminal

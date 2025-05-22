@@ -2,14 +2,21 @@
 # ========================================
 # FREQUENTLY ADJUSTED PARAMETERS
 # ========================================
-export TEST_DURATION=30 # Duration in seconds for tests
-export TEST_UDP=true    # Enable UDP testing
-export TEST_TCP=false   # Enable TCP testing
-export OUTPUT_DIR="test_results_$(date +%Y%m%d)"
+# Duration in seconds for tests
+export TEST_DURATION=30 
+
+# Downlink test settings
+export DL_START=100
+export DL_END=800
+export DL_STEP=100
 
 # ========================================
 # TEST EXECUTION PARAMETERS
 # ========================================
+# Test execution mode
+export TEST_UDP=true    # Enable UDP testing
+export TEST_TCP=false   # Enable TCP testing
+
 # Timing settings
 export WAIT_AFTER_REBOOT=60
 export WAIT_AFTER_GNB=18
@@ -17,11 +24,6 @@ export SLEEP_WINDOW=5 # Renamed from SLEEP_window
 
 # Test retry settings
 export MAX_RETRIES=6
-
-# Downlink test settings
-export DL_START=100
-export DL_END=800
-export DL_STEP=100
 
 # Uplink test settings
 export ENABLE_UL=false
@@ -34,7 +36,6 @@ export UL_STEP=10
 # ========================================
 export INTERFACE="ogstun"
 export TEST_SERVER_IP="10.45.0.1" # IP for iperf/ping tests
-export SERVER_IP="192.168.70.135"
 
 # RU related settings
 export RU_IP="192.168.8.77"
@@ -68,11 +69,11 @@ export ADB_DEVICE="R5CN30TMBYR" # Samsung UE device ID
 # PATH SETTINGS
 # ========================================
 # Base paths for different servers
-export VNF_BASE_PATH="/home/hpe/OnlyOAI/openairinterface5g"
-export PNF_NFAPI_BASE_PATH="/home/oai72_su/oai_mp_f_ming/openairinterface5g"
+export VNF_BASE_PATH="~/OnlyOAI/openairinterface5g"
+export PNF_BASE_PATH="~/oai_mp_f_ming/openairinterface5g"
+# export PNF_BASE_PATH="~/FH_7.2_dev/openairinterface5g"
 
 # Common build directory and log files
-export BUILD_DIR="cmake_targets/ran_build/build"
 export VNF_LOG_FILE="VNF.txt"
 export PNF_LOG_FILE="PNF.txt"
 
@@ -88,6 +89,7 @@ export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\iperf3"
 # Control MTK UE NoteBook
 # export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\MTK\\iperf3"
 
+# export OUTPUT_DIR="test_results_$(date +%Y%m%d)"
 # Source the run configuration (currently disabled)
 # source "$(dirname "$0")/run_config.sh"
 # mkdir -p "$OUTPUT_DIR"
