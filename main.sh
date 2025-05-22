@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source variable.sh # This already sources run_config.sh
+source variable.sh
 source collect_data_fromCN.sh
 source modify_UE.sh
 source run_gNB.sh
@@ -66,7 +66,6 @@ else
     start_gNB "$CURRENT_MODE"
     sleep 60
     # Toggle airplane mode to reset UE with retry logic
-    # MAX_RETRIES is now sourced from run_config.sh
     RETRY_COUNT=0
 
     toggle_airplane_mode "on"
