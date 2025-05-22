@@ -24,19 +24,18 @@ get_ue_ip() {
 # 函數：在 UE 上運行 iperf3 測試
 run_iperf() {
     local mode=$1 server_ip=$2 options=$3 local_log=$4
-    echo "Running iperf3 in $mode mode…"
-    [ -z "$UE_IP" ] && get_ue_ip
+    # [ -z "$UE_IP" ] && get_ue_ip
 
-    # 確保 iperf3 binary 存在
-    if sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-         "adb -s $ADB_DEVICE shell ls /data/local/tmp/iperf3 2>/dev/null" | grep -q not_exists; then
+    # 確保 iperf3 binary 存在（忽略回傳內容與亂碼）
+    sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+        "adb -s $ADB_DEVICE shell ls /data/local/tmp/iperf3" >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
         echo "Uploading iperf3…"
         sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
             "adb -s $ADB_DEVICE push \"$control_pc_iperf_path\" /data/local/tmp/iperf3"
+        sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+            "adb -s $ADB_DEVICE shell chmod +x /data/local/tmp/iperf3"
     fi
-
-    sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-        "adb -s $ADB_DEVICE shell chmod +x /data/local/tmp/iperf3"
 
     if [ "$mode" = "server" ]; then
         sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
@@ -51,8 +50,8 @@ run_iperf() {
             
             # Run iperf directly on the UE and save output to UE's storage
             echo "Running iperf3 client on UE device..."
-            echo sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE shell \"/data/local/tmp/iperf3 -c $server_ip $options > $ue_log\""
+            # echo sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+            #     "adb -s $ADB_DEVICE shell \"/data/local/tmp/iperf3 -c $server_ip $options > $ue_log\""
 
             sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
                 "adb -s $ADB_DEVICE shell \"sh -c '/data/local/tmp/iperf3 -c $server_ip $options > $ue_log'\""
@@ -72,7 +71,7 @@ run_iperf() {
         else
             # Run iperf3 with JSON output and timestamp for display
             sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE shell \"current_time=\$(date +\\\"%s\\\"); echo \\\"Test started at: \$(date)\\\"; /data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options\""
+                "adb -s $ADB_DEVICE shell \"current_time=\$(date +\\\"%s\\\"); echo \\\"Test started at: \$(date)\\\"; /data/local/tmp/iperf3 -c $server_ip $options\"" #  -B $UE_IP
         fi
     else
         echo "Error: mode must be server or client"
