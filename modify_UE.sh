@@ -1,7 +1,4 @@
 #!/bin/bash
-
-# Global variables
-# ADB_DEVICE="0123456789ABCDEF"
 source variable.sh
 
 # 函數：控制 UE 飛航模式
@@ -54,8 +51,11 @@ run_iperf() {
             
             # Run iperf directly on the UE and save output to UE's storage
             echo "Running iperf3 client on UE device..."
+            echo sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+                "adb -s $ADB_DEVICE shell \"/data/local/tmp/iperf3 -c $server_ip $options > $ue_log\""
+
             sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-                "adb -s $ADB_DEVICE shell \"/data/local/tmp/iperf3 -c $server_ip -B $UE_IP $options > $ue_log\""
+                "adb -s $ADB_DEVICE shell \"sh -c '/data/local/tmp/iperf3 -c $server_ip $options > $ue_log'\""
             
             # Pull the result from UE to Windows control PC
             sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \

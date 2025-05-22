@@ -9,13 +9,15 @@ source set_ru_bandwidth.sh
 # Initialize variables
 UE_IP=""
 MANUAL_MODE_ENABLED=false
+PASS=false
 CURRENT_MODE="MONO"
 
-# Parse input arguments (只允許兩個參數: --manual-mode 與 --mode)
+# Parse input arguments (只允許三個參數: --manual-mode, --mode, 與 --pass)
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --manual-mode) MANUAL_MODE_ENABLED=true ;;
         --mode) CURRENT_MODE="$2"; shift ;;
+        --pass) PASS=true ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
@@ -27,10 +29,8 @@ echo "  🎛️  CURRENT_MODE        = $CURRENT_MODE"
 echo "  📦 TEST_UDP            = $([ "$TEST_UDP" = true ] && echo '✅' || echo '❌')"
 echo "  📦 TEST_TCP            = $([ "$TEST_TCP" = true ] && echo '✅' || echo '❌')"
 echo "  ⬆️  ENABLE_UL           = $([ "$ENABLE_UL" = true ] && echo '✅' || echo '❌')"
-echo "  🌐 TEST_SERVER_IP      = $TEST_SERVER_IP"
 echo "  🔁 MAX_RETRIES         = $MAX_RETRIES"
 echo "  ⏱️  TEST_DURATION       = $TEST_DURATION"
-echo "  😴 SLEEP_WINDOW        = $SLEEP_WINDOW"
 echo "  ⬇️  DL_START            = $DL_START"
 echo "  ⬇️  DL_END              = $DL_END"
 echo "  ⬇️  DL_STEP             = $DL_STEP"
@@ -41,13 +41,15 @@ if [ "$ENABLE_UL" = true ]; then
 fi
 
 if [ "$MANUAL_MODE_ENABLED" = true ]; then
-    reset_all "$CURRENT_MODE"
-    start_gNB "$CURRENT_MODE"
-    sleep 200
-    stop_gNB "$CURRENT_MODE"
-    sleep 5
-    fetch_and_analyze_logs "$CURRENT_MODE"
-    exit 1
+    if [ "$PASS" = false ]; then
+        reset_all "$CURRENT_MODE"
+        start_gNB "$CURRENT_MODE"
+    fi
+    # sleep 25
+    # stop_gNB "$CURRENT_MODE"
+    # sleep 5
+    # fetch_and_analyze_logs "$CURRENT_MODE"
+    # exit 1
     echo "Manual mode enabled. Please input the UE IP address:"
     while true; do
         read -r user_input

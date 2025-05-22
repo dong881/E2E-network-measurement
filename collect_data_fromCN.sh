@@ -30,14 +30,13 @@ ping-stop() {
 }
 
 iperf-start() {
-    # 創建處理腳本，無需 jq
+    # 創建處理腳本，先寫入 timestamp 再接續儲存 log
     sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" "cat > ~/process_iperf.sh" << 'EOF'
 #!/bin/bash
 current_time=$(date +"%s")
-iperf3 -s -J > ~/temp_iperf.json
-# 用 sed 插入 start_timestamp 欄位到 JSON 第一層
-sed "1s|{|\{\"start_timestamp\": $current_time,|" ~/temp_iperf.json > ~/iperf-server.json
-rm ~/temp_iperf.json
+echo "{\"start_timestamp\": $current_time," > ~/iperf-server.json
+# 移除 iperf3 輸出的第一個 '{'
+tail -n +2 <(iperf3 -s -J -1) >> ~/iperf-server.json
 EOF
 
     # 設定腳本權限並在screen中啟動
@@ -47,13 +46,13 @@ EOF
 }
 
 iperf-stop() {
+    # 清理：關閉遠端的 screen session
+    sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
+    "screen -X -S iperf-server quit"
+
     # 當測試完成後，從遠端複製日誌檔案到本機
     local output_file="$1"
     if [ ! -z "$output_file" ]; then
         sshpass -p "$SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/iperf-server.json" "$output_file"
     fi
-
-    # 清理：關閉遠端的 screen session
-    sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
-    "screen -X -S iperf-server quit"
 }

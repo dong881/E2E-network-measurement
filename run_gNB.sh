@@ -61,7 +61,7 @@ start_session() {
     local target_user=$3
     local target_host=$4
     
-    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command'"
+    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command &> ~/ming.log'"
 }
 
 # Function to stop a screen session
@@ -291,8 +291,10 @@ reset_all() {
     
     # Execute remote script on main host if needed
     if [ -n "$GNB_SERVER_USER" ] && [ -n "$GNB_SERVER_HOST" ]; then
+        # sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
+        #     "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S /oai72/Script/oaiLONvf.sh 2>/dev/null || true'"
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
-            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S /oai72/Script/oaiLONvf.sh 2>/dev/null || true'"
+            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf.sh || true'"
     else
         echo "gNB server information not set, skipping remote script execution."
     fi
