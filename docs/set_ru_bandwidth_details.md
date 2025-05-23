@@ -1,14 +1,14 @@
-# `set_ru_bandwidth.sh` - Detailed Functions
+# `radio_unit_utils.sh` - Detailed Functions
 
 This script contains functions for interacting with and configuring the Radio Unit (RU) device, primarily via SSH.
 
 ## Overview
 
-The `set_ru_bandwidth.sh` script provides automation for configuring bandwidth settings on Radio Units. It uses the `expect` utility to handle interactive SSH sessions, making it possible to automate the configuration process that would normally require manual CLI interaction.
+The `radio_unit_utils.sh` script provides automation for configuring bandwidth settings on Radio Units. It uses the `expect` utility to handle interactive SSH sessions, making it possible to automate the configuration process that would normally require manual CLI interaction.
 
 ## Functions
 
-### `set_ru_bandwidth <bandwidth_bps>`
+### `radio_unit_utils <bandwidth_bps>`
 
 *   **Purpose**: Configures the bandwidth setting on the RU device and potentially reboots it.
 *   **Parameters**:
@@ -41,10 +41,10 @@ The function creates and executes an `expect` script to handle the interactive S
 
 ```bash
 # Set RU bandwidth to 100 Mbps
-set_ru_bandwidth "100000000"
+radio_unit_utils "100000000"
 
 # Set RU bandwidth to 40 Mbps
-set_ru_bandwidth "40000000"
+radio_unit_utils "40000000"
 ```
 
 ## Error Handling

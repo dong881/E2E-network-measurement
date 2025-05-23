@@ -1,10 +1,10 @@
 #!/bin/bash
 
 source variable.sh
-source collect_data_fromCN.sh
-source modify_UE.sh
-source run_gNB.sh
-source set_ru_bandwidth.sh
+source core_network_utils.sh
+source user_equipment_utils.sh
+source gnb_utils.sh
+source radio_unit_utils.sh
 
 # Initialize variables
 UE_IP=""
@@ -12,16 +12,24 @@ MANUAL_MODE_ENABLED=false
 PASS=false
 CURRENT_MODE="MONO"
 
-# Parse input arguments (只允許三個參數: --manual-mode, --mode, 與 --pass)
+# Parse input arguments (只允許四個參數: --manual-mode, --mode, --pass, 與 --shutdown)
+SHUTDOWN_MODE=false
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --manual-mode) MANUAL_MODE_ENABLED=true ;;
         --mode) CURRENT_MODE="$2"; shift ;;
         --pass) PASS=true ;;
+        --shutdown) SHUTDOWN_MODE=true ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
 done
+
+if [ "$SHUTDOWN_MODE" = true ]; then
+    echo "Shutdown mode enabled. Stopping gNB and exiting."
+    stop_gNB "$CURRENT_MODE"
+    exit 0
+fi
 
 echo "🔎 Current status:"
 echo "  🛠️  MANUAL_MODE_ENABLED = $([ "$MANUAL_MODE_ENABLED" = true ] && echo '✅' || echo '❌')"

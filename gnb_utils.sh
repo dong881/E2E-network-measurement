@@ -294,9 +294,9 @@ reset_all() {
     fi
     
     # Optional: Set RU bandwidth
-    # if type set_ru_bandwidth &>/dev/null; then
+    # if type radio_unit_utils &>/dev/null; then
     #     echo "Setting RU bandwidth to 100M..."
-    #     set_ru_bandwidth "100000000"
+    #     radio_unit_utils "100000000"
     # fi
     
     echo "Reset complete."

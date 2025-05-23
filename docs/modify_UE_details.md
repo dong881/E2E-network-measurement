@@ -1,10 +1,10 @@
-# `modify_UE.sh` - Detailed Functions
+# `user_equipment_utils.sh` - Detailed Functions
 
 This script contains functions for interacting with the connected Android User Equipment (UE) via the Android Debug Bridge (ADB).
 
 ## Overview
 
-The `modify_UE.sh` script provides functions to control and interact with the User Equipment (UE), which is typically an Android smartphone or device connected via ADB. It handles connectivity management (airplane mode), IP address retrieval, and performance testing (running iPerf3 client).
+The `user_equipment_utils.sh` script provides functions to control and interact with the User Equipment (UE), which is typically an Android smartphone or device connected via ADB. It handles connectivity management (airplane mode), IP address retrieval, and performance testing (running iPerf3 client).
 
 ## Functions
 

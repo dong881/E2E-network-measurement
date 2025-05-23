@@ -12,15 +12,15 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
 
 ## Features
 
-- **Modular Design**: Scripts are separated by function (`set_ru_bandwidth.sh`, `run_gNB.sh`, `modify_UE.sh`, `collect_data_fromCN.sh`).
+- **Modular Design**: Scripts are separated by function (`radio_unit_utils.sh`, `gnb_utils.sh`, `user_equipment_utils.sh`, `core_network_utils.sh`).
 - **Centralized Configuration**:
     - `variable.sh`: Stores network addresses, user credentials, and device identifiers.
     - `run_config.sh`: Stores test execution parameters like duration, bandwidth ranges, protocols, and retry counts.
 - **Automated Setup**:
-    - Configures RU bandwidth via SSH (`set_ru_bandwidth.sh`).
-    - Starts/stops gNB processes on remote servers (`run_gNB.sh`).
-    - Manages CN-side processes like iPerf server and ping (`collect_data_fromCN.sh`).
-- **UE Control**: Uses ADB to toggle airplane mode, retrieve UE IP address, and run iPerf client (`modify_UE.sh`).
+    - Configures RU bandwidth via SSH (`radio_unit_utils.sh`).
+    - Starts/stops gNB processes on remote servers (`gnb_utils.sh`).
+    - Manages CN-side processes like iPerf server and ping (`core_network_utils.sh`).
+- **UE Control**: Uses ADB to toggle airplane mode, retrieve UE IP address, and run iPerf client (`user_equipment_utils.sh`).
 - **Parametric Testing**: `main.sh` orchestrates tests across specified ranges of bandwidth, protocols (TCP/UDP), and directions (Uplink/Downlink).
 - **Data Collection**: Saves iPerf JSON results and ping logs for each test run.
 - **Robust Execution**: Includes retry logic for establishing UE connection.
@@ -156,10 +156,10 @@ Modify the following files to match your environment:
     ```
     The script will:
     - Source configuration variables.
-    - Set RU bandwidth (if implemented in `set_ru_bandwidth.sh`).
+    - Set RU bandwidth (if implemented in `radio_unit_utils.sh`).
     - Stop any existing test processes on the CN server.
-    - Start the gNB components (`run_gNB.sh`).
-    - Attempt to connect the UE (`modify_UE.sh`).
+    - Start the gNB components (`gnb_utils.sh`).
+    - Attempt to connect the UE (`user_equipment_utils.sh`).
     - Execute the iPerf3 and ping test loop defined in `main.sh`.
     - Save results to `./data/YYYYMMDD/`.
     - Stop gNB components and clean up CN processes.
@@ -224,10 +224,10 @@ After collecting test data, you can analyze the results using the provided Pytho
 - **`main.sh`**: Orchestrates the entire test flow. Defines the test matrix (protocols, directions, bandwidths) and calls helper scripts.
 - **`variable.sh`**: Stores environment-specific variables (IPs, credentials). Sourced by `main.sh`.
 - **`run_config.sh`**: Stores test execution parameters (duration, ranges, flags). Sourced by `variable.sh`.
-- **[`set_ru_bandwidth.sh`](docs/set_ru_bandwidth_details.md)**: Contains functions to configure the RU (e.g., set bandwidth via SSH/expect). Called by `main.sh`. [See Details](docs/set_ru_bandwidth_details.md)
-- **[`run_gNB.sh`](docs/run_gNB_details.md)**: Contains functions (`start_split_setup`, `stop_split_setup`, etc.) to manage gNB processes on remote servers via SSH. Called by `main.sh`. [See Details](docs/run_gNB_details.md)
-- **[`modify_UE.sh`](docs/modify_UE_details.md)**: Contains functions (`toggle_airplane_mode`, `get_ue_ip`, `run_iperf`) to interact with the UE via ADB. Called by `main.sh`. [See Details](docs/modify_UE_details.md)
-- **[`collect_data_fromCN.sh`](docs/collect_data_fromCN_details.md)**: Contains functions (`ping-start`, `ping-stop`, `iperf-start`, `iperf-stop`) to manage test processes (ping, iperf3 server) on the CN server via SSH. Called by `main.sh`. [See Details](docs/collect_data_fromCN_details.md)
+- **[`radio_unit_utils.sh`](docs/radio_unit_utils_details.md)**: Contains functions to configure the RU (e.g., set bandwidth via SSH/expect). Called by `main.sh`. [See Details](docs/radio_unit_utils_details.md)
+- **[`gnb_utils.sh`](docs/run_gNB_details.md)**: Contains functions (`start_split_setup`, `stop_split_setup`, etc.) to manage gNB processes on remote servers via SSH. Called by `main.sh`. [See Details](docs/run_gNB_details.md)
+- **[`user_equipment_utils.sh`](docs/modify_UE_details.md)**: Contains functions (`toggle_airplane_mode`, `get_ue_ip`, `run_iperf`) to interact with the UE via ADB. Called by `main.sh`. [See Details](docs/modify_UE_details.md)
+- **[`core_network_utils.sh`](docs/collect_data_fromCN_details.md)**: Contains functions (`ping-start`, `ping-stop`, `iperf-start`, `iperf-stop`) to manage test processes (ping, iperf3 server) on the CN server via SSH. Called by `main.sh`. [See Details](docs/collect_data_fromCN_details.md)
 - **`network_analysis.py`**: Python script for post-processing test results and generating visualizations. [See Details](docs/python_analysis.md)
 - **`VNF-lossPacket.py`**: Analyzes packet loss from VNF logs.
 - **`clean_iperf_json.py`**: Cleans iPerf JSON output files to fix parsing issues.

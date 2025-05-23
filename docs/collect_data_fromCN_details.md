@@ -1,10 +1,10 @@
-# `collect_data_fromCN.sh` - Detailed Functions
+# `core_network_utils.sh` - Detailed Functions
 
 This script contains functions for managing data collection processes (like iPerf server and ping) typically run on the Core Network (CN) server or another designated test server.
 
 ## Overview
 
-The `collect_data_fromCN.sh` script provides functions to start and stop network measurement tools (iPerf3 and ping) on the CN server, and retrieve their output. It uses SSH to remotely control processes and `screen` sessions for persistent execution.
+The `core_network_utils.sh` script provides functions to start and stop network measurement tools (iPerf3 and ping) on the CN server, and retrieve their output. It uses SSH to remotely control processes and `screen` sessions for persistent execution.
 
 ## Functions
 

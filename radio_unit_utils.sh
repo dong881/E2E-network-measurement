@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Function: set_ru_bandwidth
+# Function: radio_unit_utils
 # Description: Sets the bandwidth for a Remote Unit (RU) device via SSH
 #
 # This function performs the following operations:
@@ -30,7 +30,7 @@
 
 source variable.sh
 
-set_ru_bandwidth() {
+radio_unit_utils() {
     local bw=$1
     echo "Setting RU bandwidth to $bw bps..."
 
@@ -87,4 +87,4 @@ EOF
     fi
 }
 
-# set_ru_bandwidth "$1"
+# radio_unit_utils "$1"

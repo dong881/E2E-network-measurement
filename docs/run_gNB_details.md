@@ -1,10 +1,10 @@
-# `run_gNB.sh` - Detailed Functions
+# `gnb_utils.sh` - Detailed Functions
 
 This script manages the lifecycle of gNodeB (gNB) processes running on one or more remote servers. It handles starting and stopping different gNB configurations (e.g., split VNF/PNF, monolithic).
 
 ## Overview
 
-The `run_gNB.sh` script provides functions to manage the 5G gNodeB (gNB) components, supporting both split architecture (separate VNF/CU and PNF/DU) and monolithic (single-server) deployments. It uses SSH to remotely control processes and `screen` sessions for persistent execution.
+The `gnb_utils.sh` script provides functions to manage the 5G gNodeB (gNB) components, supporting both split architecture (separate VNF/CU and PNF/DU) and monolithic (single-server) deployments. It uses SSH to remotely control processes and `screen` sessions for persistent execution.
 
 ## Configuration Variables
 
