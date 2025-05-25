@@ -55,7 +55,7 @@ start_session() {
     local target_user=$3
     local target_host=$4
     
-    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command &> ~/ming.log'"
+    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command &> $PNF_BASE_PATH/../ming.log'"
 }
 
 # Function to stop a screen session
@@ -176,8 +176,7 @@ stop_gNB() {
 # Function to fetch log files and analyze them
 fetch_and_analyze_logs() {
     local mode=$1  # "MONO" or "NFAPI"
-    local SSH_OPTIONS="-o StrictHostKeyChecking=no"
-    
+
     # Create measurement directory if it doesn't exist
     mkdir -p $LOCAL_MEASURE_DIR
     

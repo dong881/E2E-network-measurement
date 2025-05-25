@@ -3,7 +3,8 @@
 # FREQUENTLY ADJUSTED PARAMETERS
 # ========================================
 # Duration in seconds for tests
-export TEST_DURATION=30 
+export TEST_DURATION=3
+export SLEEP_WINDOW=5
 
 # Downlink test settings
 export DL_START=100
@@ -20,7 +21,6 @@ export TEST_TCP=false   # Enable TCP testing
 # Timing settings
 export WAIT_AFTER_REBOOT=60
 export WAIT_AFTER_GNB=18
-export SLEEP_WINDOW=5 # Renamed from SLEEP_window
 
 # Test retry settings
 export MAX_RETRIES=6
@@ -34,6 +34,7 @@ export UL_STEP=10
 # ========================================
 # NETWORK ADDRESSES & CREDENTIALS
 # ========================================
+export SSH_OPTIONS="-o StrictHostKeyChecking=no"
 export INTERFACE="ogstun"
 export TEST_SERVER_IP="10.45.0.1" # IP for iperf/ping tests
 

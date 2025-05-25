@@ -163,12 +163,12 @@ for direction in $directions; do
             # Start iperf test
             iperf-start
             run_iperf "client" "$TEST_SERVER_IP" "$params" "./data/$(date +"%Y%m%d")/iperf-${file_base}-UE.json"
-            
-            if [ "$direction" = "ul" ]; then
-                iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
-            else
-                iperf-stop
-            fi
+            iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
+            # if [ "$direction" = "ul" ]; then
+            #     iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
+            # else
+            #     iperf-stop
+            # fi
             
             # Stop ping and save results
             sleep $SLEEP_WINDOW
