@@ -27,7 +27,8 @@ done
 
 if [ "$SHUTDOWN_MODE" = true ]; then
     echo "Shutdown mode enabled. Stopping gNB and exiting."
-    stop_gNB "$CURRENT_MODE"
+    stop_gNB "MONO"
+    stop_gNB "NFAPI"
     exit 0
 fi
 
