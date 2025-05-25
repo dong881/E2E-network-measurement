@@ -5,14 +5,14 @@ source variable.sh
 
 # Commands for Single Machine Setup
 # Define common paths and options
-BUILD_DIR="$PNF_BASE_PATH/cmake_targets/ran_build/build"
+BUILD_DIR="cmake_targets/ran_build/build"
 CONF_DIR="$PNF_BASE_PATH/targets/PROJECTS/GENERIC-NR-5GC/CONF"
 
 # Common options
 SUDO_PREFIX="echo '$SERVER_PASSWORD' | sudo -S"
 THREAD_OPTS="--thread-pool 1,3,5,7,9,11,13,15"
 NFAPI_TRACE="NFAPI_TRACE_LEVEL=info"
-COMMON_CMD="cd $BUILD_DIR && $SUDO_PREFIX"
+COMMON_CMD="cd $PNF_BASE_PATH/$BUILD_DIR && $SUDO_PREFIX"
 
 # Mode-specific options
 VNF_OPTS="--nfapi VNF"
@@ -40,8 +40,8 @@ CMD_PNF_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_PNF $
 CONF_PNF_SPLIT="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
 
 # Common command prefixes for split setup
-VNF_SPLIT_CMD_PREFIX="cd $VNF_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
-PNF_SPLIT_CMD_PREFIX="cd $PNF_BASE_PATH/cmake_targets/ran_build/build && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
+VNF_SPLIT_CMD_PREFIX="cd $VNF_BASE_PATH/$BUILD_DIR && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
+PNF_SPLIT_CMD_PREFIX="cd $PNF_BASE_PATH/$BUILD_DIR && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
 
 # Commands for Split Machine Setup (Two Machines)
 CMD_VNF_100M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_100M $VNF_OPTS"
