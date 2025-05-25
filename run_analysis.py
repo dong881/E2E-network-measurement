@@ -8,12 +8,14 @@ import sys
 from pathlib import Path
 
 def run_analysis():
-    """Run both analysis scripts"""
+    """Run all analysis scripts"""
     script_dir = Path(__file__).parent
     
     scripts = [
         script_dir / "analyze_throughput.py",
-        script_dir / "analyze_loss_rate.py"
+        script_dir / "analyze_packet_count.py",
+        script_dir / "analyze_loss_rate.py",
+        script_dir / "analyze_ping.py"
     ]
     
     for script in scripts:
