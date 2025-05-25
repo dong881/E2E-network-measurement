@@ -1,0 +1,21 @@
+1748187935: PING 10.45.0.91 (10.45.0.91) from 10.45.0.1 ogstun: 56(84) bytes of data.
+1748187935: 64 bytes from 10.45.0.91: icmp_seq=1 ttl=64 time=26.4 ms
+1748187936: 64 bytes from 10.45.0.91: icmp_seq=2 ttl=64 time=24.8 ms
+1748187937: 64 bytes from 10.45.0.91: icmp_seq=3 ttl=64 time=27.8 ms
+1748187938: 64 bytes from 10.45.0.91: icmp_seq=4 ttl=64 time=25.8 ms
+1748187939: 64 bytes from 10.45.0.91: icmp_seq=5 ttl=64 time=23.9 ms
+1748187940: 64 bytes from 10.45.0.91: icmp_seq=6 ttl=64 time=27.8 ms
+1748187941: 64 bytes from 10.45.0.91: icmp_seq=7 ttl=64 time=26.4 ms
+1748187942: 64 bytes from 10.45.0.91: icmp_seq=8 ttl=64 time=24.8 ms
+1748187943: 64 bytes from 10.45.0.91: icmp_seq=9 ttl=64 time=23.6 ms
+1748187944: 64 bytes from 10.45.0.91: icmp_seq=10 ttl=64 time=47.3 ms
+1748187945: 64 bytes from 10.45.0.91: icmp_seq=11 ttl=64 time=28.9 ms
+1748187946: 64 bytes from 10.45.0.91: icmp_seq=12 ttl=64 time=11.9 ms
+1748187947: 64 bytes from 10.45.0.91: icmp_seq=13 ttl=64 time=25.1 ms
+1748187948: 64 bytes from 10.45.0.91: icmp_seq=14 ttl=64 time=26.3 ms
+1748187949: 64 bytes from 10.45.0.91: icmp_seq=15 ttl=64 time=24.7 ms
+1748187950: 64 bytes from 10.45.0.91: icmp_seq=16 ttl=64 time=13.5 ms
+1748187951: 64 bytes from 10.45.0.91: icmp_seq=17 ttl=64 time=26.5 ms
+1748187952: 64 bytes from 10.45.0.91: icmp_seq=18 ttl=64 time=24.4 ms
+1748187953: 64 bytes from 10.45.0.91: icmp_seq=19 ttl=64 time=27.8 ms
+1748187954: 64 bytes from 10.45.0.91: icmp_seq=20 ttl=64 time=25.8 ms
