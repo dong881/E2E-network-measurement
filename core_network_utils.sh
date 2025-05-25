@@ -36,7 +36,7 @@ iperf-start() {
 current_time=$(date +"%s")
 echo "{\"start_timestamp\": $current_time," > ~/iperf-server.json
 # 移除 iperf3 輸出的第一個 '{'
-tail -n +2 <(iperf3 -s -J -1) >> ~/iperf-server.json
+tail -n +2 <(iperf3 -s -J) >> ~/iperf-server.json
 EOF
 
     # 設定腳本權限並在screen中啟動

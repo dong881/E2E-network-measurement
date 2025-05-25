@@ -3,7 +3,7 @@
 # FREQUENTLY ADJUSTED PARAMETERS
 # ========================================
 # Duration in seconds for tests
-export TEST_DURATION=3
+export TEST_DURATION=300
 export SLEEP_WINDOW=5
 
 # Downlink test settings
