@@ -19,7 +19,7 @@ def load_json_data(file_path):
 def extract_cn_throughput(data):
     """Extract CN (sender) throughput data from iperf3 JSON"""
     if not data:
-        return None, None
+        return None, None, 0
     
     try:
         # CN is the sender, get sent data from end.sum (sender=true)
@@ -85,28 +85,28 @@ def extract_ue_throughput(data):
         print(f"Error extracting UE throughput: {e}")
         return None, None, 0
 
-def get_throughput_configs(data_dir):
-    """Find all throughput configuration directories"""
+def get_bandwidth_configs(data_dir):
+    """Find all bandwidth configuration directories"""
     configs = []
     
-    # Look for files with throughput patterns
+    # Look for files with bandwidth patterns
     for file_path in data_dir.glob('iperf*-*M-*.json'):
-        # Extract throughput value from filename
+        # Extract bandwidth value from filename
         match = re.search(r'-(\d+)M-', file_path.name)
         if match:
-            throughput_val = int(match.group(1))
-            configs.append(throughput_val)
+            bandwidth_val = int(match.group(1))
+            configs.append(bandwidth_val)
     
     return sorted(list(set(configs)))
 
-def find_iperf_files(data_dir, throughput_val):
-    """Find CN and UE iperf files for a specific throughput"""
+def find_iperf_files(data_dir, bandwidth_val):
+    """Find CN and UE iperf files for a specific bandwidth"""
     cn_file = None
     ue_file = None
     
     # Look for files matching the pattern
-    cn_pattern = f"iperf*-{throughput_val}M-CN.json"
-    ue_pattern = f"iperf*-{throughput_val}M-UE.json"
+    cn_pattern = f"iperf*-{bandwidth_val}M-CN.json"
+    ue_pattern = f"iperf*-{bandwidth_val}M-UE.json"
     
     for file_path in data_dir.glob(cn_pattern):
         cn_file = file_path
@@ -121,12 +121,14 @@ def find_iperf_files(data_dir, throughput_val):
 def analyze_throughput_comparison():
     """Main function to analyze and plot throughput comparison"""
     data_dir = Path('/home/mini/E2E-network-measurement/data/20250525-TEST')
+    output_dir = Path('/home/mini/E2E-network-measurement/output')
+    output_dir.mkdir(exist_ok=True)
     
-    # Get all throughput configurations
-    throughput_configs = get_throughput_configs(data_dir)
+    # Get all bandwidth configurations
+    bandwidth_configs = get_bandwidth_configs(data_dir)
     
-    if not throughput_configs:
-        print("No throughput configuration files found!")
+    if not bandwidth_configs:
+        print("No bandwidth configuration files found!")
         return
     
     plt.figure(figsize=(14, 8))
@@ -135,15 +137,15 @@ def analyze_throughput_comparison():
     ue_averages = []
     labels = []
     
-    print("Processing throughput configurations:")
+    print("Processing bandwidth configurations:")
     
-    for throughput_val in throughput_configs:
-        labels.append(f"{throughput_val}M")
+    for bandwidth_val in bandwidth_configs:
+        labels.append(f"{bandwidth_val}M")
         
         # Find corresponding files
-        cn_file, ue_file = find_iperf_files(data_dir, throughput_val)
+        cn_file, ue_file = find_iperf_files(data_dir, bandwidth_val)
         
-        print(f"\n{throughput_val}M configuration:")
+        print(f"\n{bandwidth_val}M bandwidth configuration:")
         print(f"  CN file: {cn_file}")
         print(f"  UE file: {ue_file}")
         
@@ -183,7 +185,7 @@ def analyze_throughput_comparison():
                     edgecolor='black', linewidth=0.5)
     
     # Customize the plot
-    plt.xlabel('Throughput Configuration', fontsize=12, fontweight='bold')
+    plt.xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
     plt.ylabel('Actual Throughput (Mbits/s)', fontsize=12, fontweight='bold')
     plt.title('Network Throughput Analysis: CN Transmission vs UE Reception', 
               fontsize=14, fontweight='bold', pad=20)
@@ -207,11 +209,11 @@ def analyze_throughput_comparison():
         plt.ylim(0, max_val * 1.15)
     
     plt.tight_layout()
-    plt.savefig('/home/mini/E2E-network-measurement/throughput_comparison.png', 
-                dpi=300, bbox_inches='tight', facecolor='white')
+    output_file = output_dir / 'throughput_comparison.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
     plt.show()
     
-    print(f"\nThroughput comparison chart saved as 'throughput_comparison.png'")
+    print(f"\nThroughput comparison chart saved as '{output_file}'")
 
 if __name__ == "__main__":
     analyze_throughput_comparison()

@@ -6,51 +6,33 @@ from pathlib import Path
 import re
 
 def load_json_data(file_path):
-    """Load JSON data from file"""
-    try:
-        with open(file_path, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error loading {file_path}: {e}")
-        return None
+    """Load JSON data from a file"""
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    return data
 
-def extract_packet_counts(cn_data, ue_data):
-    """Extract packet counts from CN and UE data"""
-    cn_packets_sent = 0
-    ue_packets_received = 0
-    
-    # CN端發送的封包數 (sender=true)
-    if cn_data and 'end' in cn_data and 'sum' in cn_data['end']:
-        cn_packets_sent = cn_data['end']['sum'].get('packets', 0)
-    
-    # UE端實際接收的封包數 (從sum_received取得最準確的數據)
-    if ue_data and 'end' in ue_data and 'sum_received' in ue_data['end']:
-        ue_packets_received = ue_data['end']['sum_received'].get('packets', 0)
-    
-    return cn_packets_sent, ue_packets_received
-
-def get_throughput_configs(data_dir):
-    """Find all throughput configuration directories"""
+def get_bandwidth_configs(data_dir):
+    """Find all bandwidth configuration directories"""
     configs = []
     
-    # Look for files with throughput patterns
+    # Look for files with bandwidth patterns
     for file_path in data_dir.glob('iperf*-*M-*.json'):
-        # Extract throughput value from filename
+        # Extract bandwidth value from filename
         match = re.search(r'-(\d+)M-', file_path.name)
         if match:
-            throughput_val = int(match.group(1))
-            configs.append(throughput_val)
+            bandwidth_val = int(match.group(1))
+            configs.append(bandwidth_val)
     
     return sorted(list(set(configs)))
 
-def find_iperf_files(data_dir, throughput_val):
-    """Find CN and UE iperf files for a specific throughput"""
+def find_iperf_files(data_dir, bandwidth_val):
+    """Find CN and UE iperf files for a specific bandwidth"""
     cn_file = None
     ue_file = None
     
     # Look for files matching the pattern
-    cn_pattern = f"iperf*-{throughput_val}M-CN.json"
-    ue_pattern = f"iperf*-{throughput_val}M-UE.json"
+    cn_pattern = f"iperf*-{bandwidth_val}M-CN.json"
+    ue_pattern = f"iperf*-{bandwidth_val}M-UE.json"
     
     for file_path in data_dir.glob(cn_pattern):
         cn_file = file_path
@@ -62,15 +44,24 @@ def find_iperf_files(data_dir, throughput_val):
     
     return cn_file, ue_file
 
+def extract_packet_counts(cn_data, ue_data):
+    """Extract packet counts from CN and UE data"""
+    cn_packets = cn_data['end']['streams'][0]['udp']['packets'] if cn_data and 'end' in cn_data and 'streams' in cn_data['end'] and len(cn_data['end']['streams']) > 0 and 'udp' in cn_data['end']['streams'][0] else 0
+    ue_packets = ue_data['end']['streams'][0]['udp']['packets'] if ue_data and 'end' in ue_data and 'streams' in ue_data['end'] and len(ue_data['end']['streams']) > 0 and 'udp' in ue_data['end']['streams'][0] else 0
+    
+    return cn_packets, ue_packets
+
 def analyze_packet_counts():
     """Main function to analyze and plot packet counts"""
     data_dir = Path('/home/mini/E2E-network-measurement/data/20250525-TEST')
+    output_dir = Path('/home/mini/E2E-network-measurement/output')
+    output_dir.mkdir(exist_ok=True)
     
-    # Get all throughput configurations
-    throughput_configs = get_throughput_configs(data_dir)
+    # Get all bandwidth configurations
+    bandwidth_configs = get_bandwidth_configs(data_dir)
     
-    if not throughput_configs:
-        print("No throughput configuration files found!")
+    if not bandwidth_configs:
+        print("No bandwidth configuration files found!")
         return
     
     plt.figure(figsize=(14, 8))
@@ -81,13 +72,13 @@ def analyze_packet_counts():
     
     print("Processing packet count analysis:")
     
-    for throughput_val in throughput_configs:
-        labels.append(f"{throughput_val}M")
+    for bandwidth_val in bandwidth_configs:
+        labels.append(f"{bandwidth_val}M")
         
         # Find corresponding files
-        cn_file, ue_file = find_iperf_files(data_dir, throughput_val)
+        cn_file, ue_file = find_iperf_files(data_dir, bandwidth_val)
         
-        print(f"\n{throughput_val}M configuration:")
+        print(f"\n{bandwidth_val}M bandwidth configuration:")
         print(f"  CN file: {cn_file}")
         print(f"  UE file: {ue_file}")
         
@@ -122,7 +113,7 @@ def analyze_packet_counts():
                     edgecolor='black', linewidth=0.5)
     
     # Customize the plot
-    plt.xlabel('Throughput Configuration', fontsize=12, fontweight='bold')
+    plt.xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
     plt.ylabel('Packet Count', fontsize=12, fontweight='bold')
     plt.title('Network Packet Analysis: Sent vs Received Packets', 
               fontsize=14, fontweight='bold', pad=20)
@@ -147,16 +138,16 @@ def analyze_packet_counts():
         plt.ylim(0, max_val * 1.15)
     
     plt.tight_layout()
-    plt.savefig('/home/mini/E2E-network-measurement/packet_count_analysis.png', 
-                dpi=300, bbox_inches='tight', facecolor='white')
+    output_file = output_dir / 'packet_count_analysis.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
     plt.show()
     
-    print(f"\nPacket count analysis chart saved as 'packet_count_analysis.png'")
+    print(f"\nPacket count analysis chart saved as '{output_file}'")
     
     # Print summary table
     print("\nPacket Count Summary:")
-    print("Config\t\tSent\t\tReceived\tLost\t\tLoss%")
-    print("-" * 60)
+    print("Bandwidth\t\tSent\t\tReceived\tLost\t\tLoss%")
+    print("-" * 70)
     for i, label in enumerate(labels):
         sent = cn_packet_counts[i]
         received = ue_packet_counts[i]

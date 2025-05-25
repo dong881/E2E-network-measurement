@@ -1,102 +1,63 @@
+import re
 import json
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-import re
 
 def load_json_data(file_path):
-    """Load JSON data from file"""
-    try:
-        with open(file_path, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error loading {file_path}: {e}")
-        return None
+    """Load JSON data from a file"""
+    with open(file_path, 'r') as f:
+        return json.load(f)
 
 def extract_iperf_loss_data(cn_data, ue_data):
-    """Extract loss rate data directly from iperf3 results"""
-    cn_loss_percent = 0
-    ue_loss_percent = 0
-    cn_packets_sent = 0
-    ue_packets_received = 0
+    """Extract loss data from iperf CN and UE JSON results"""
+    cn_packets_sent = cn_data['end']['streams'][0]['udp']['packets']
+    ue_packets_received = ue_data['end']['streams'][0]['udp']['packets']
     
-    try:
-        # From CN (sender) data
-        if cn_data and 'end' in cn_data and 'sum' in cn_data['end']:
-            cn_loss_percent = cn_data['end']['sum'].get('lost_percent', 0)
-            cn_packets_sent = cn_data['end']['sum'].get('packets', 0)
-        
-        # From UE (receiver) data - use sum_received for most accurate data
-        if ue_data and 'end' in ue_data:
-            if 'sum_received' in ue_data['end']:
-                ue_loss_percent = ue_data['end']['sum_received'].get('lost_percent', 0)
-                ue_packets_received = ue_data['end']['sum_received'].get('packets', 0)
-            elif 'sum' in ue_data['end']:
-                ue_loss_percent = ue_data['end']['sum'].get('lost_percent', 0)
-                ue_packets_received = ue_data['end']['sum'].get('packets', 0)
-        
-        # Calculate manual loss rate for comparison
-        manual_loss_rate = 0
-        if cn_packets_sent > 0 and ue_packets_received > 0:
-            lost_packets = cn_packets_sent - ue_packets_received
-            manual_loss_rate = (lost_packets / cn_packets_sent) * 100
-        
-        return {
-            'cn_loss_percent': cn_loss_percent,
-            'ue_loss_percent': ue_loss_percent,
-            'manual_loss_rate': manual_loss_rate,
-            'cn_packets_sent': cn_packets_sent,
-            'ue_packets_received': ue_packets_received
-        }
-        
-    except Exception as e:
-        print(f"Error extracting loss data: {e}")
-        return {
-            'cn_loss_percent': 0,
-            'ue_loss_percent': 0,
-            'manual_loss_rate': 0,
-            'cn_packets_sent': 0,
-            'ue_packets_received': 0
-        }
+    # Calculate loss percentages
+    cn_loss_percent = cn_data['end']['streams'][0]['udp']['lost_percent']
+    ue_loss_percent = ue_data['end']['streams'][0]['udp']['lost_percent']
+    
+    # Manual calculation based on actual packet counts
+    manual_loss_rate = ((cn_packets_sent - ue_packets_received) / cn_packets_sent) * 100 if cn_packets_sent > 0 else 0
+    
+    return {
+        'cn_packets_sent': cn_packets_sent,
+        'ue_packets_received': ue_packets_received,
+        'cn_loss_percent': cn_loss_percent,
+        'ue_loss_percent': ue_loss_percent,
+        'manual_loss_rate': manual_loss_rate
+    }
 
 def get_jitter_info(ue_data):
     """Extract jitter information from UE data"""
-    if not ue_data:
-        return None
-    
     try:
-        if 'end' in ue_data and 'sum_received' in ue_data['end']:
-            return ue_data['end']['sum_received'].get('jitter_ms', None)
-        elif 'end' in ue_data and 'sum' in ue_data['end']:
-            return ue_data['end']['sum'].get('jitter_ms', None)
-    except:
-        pass
-    
-    return None
+        return ue_data['end']['streams'][0]['udp']['jitter_ms']
+    except KeyError:
+        return None
 
-def get_throughput_configs(data_dir):
-    """Find all throughput configuration directories"""
+def get_bandwidth_configs(data_dir):
+    """Find all bandwidth configuration directories"""
     configs = []
     
-    # Look for files with throughput patterns
+    # Look for files with bandwidth patterns
     for file_path in data_dir.glob('iperf*-*M-*.json'):
-        # Extract throughput value from filename
+        # Extract bandwidth value from filename
         match = re.search(r'-(\d+)M-', file_path.name)
         if match:
-            throughput_val = int(match.group(1))
-            configs.append(throughput_val)
+            bandwidth_val = int(match.group(1))
+            configs.append(bandwidth_val)
     
     return sorted(list(set(configs)))
 
-def find_iperf_files(data_dir, throughput_val):
-    """Find CN and UE iperf files for a specific throughput"""
+def find_iperf_files(data_dir, bandwidth_val):
+    """Find CN and UE iperf files for a specific bandwidth"""
     cn_file = None
     ue_file = None
     
     # Look for files matching the pattern
-    cn_pattern = f"iperf*-{throughput_val}M-CN.json"
-    ue_pattern = f"iperf*-{throughput_val}M-UE.json"
+    cn_pattern = f"iperf*-{bandwidth_val}M-CN.json"
+    ue_pattern = f"iperf*-{bandwidth_val}M-UE.json"
     
     for file_path in data_dir.glob(cn_pattern):
         cn_file = file_path
@@ -111,12 +72,14 @@ def find_iperf_files(data_dir, throughput_val):
 def analyze_loss_rates():
     """Main function to analyze and plot loss rates"""
     data_dir = Path('/home/mini/E2E-network-measurement/data/20250525-TEST')
+    output_dir = Path('/home/mini/E2E-network-measurement/output')
+    output_dir.mkdir(exist_ok=True)
     
-    # Get all throughput configurations
-    throughput_configs = get_throughput_configs(data_dir)
+    # Get all bandwidth configurations
+    bandwidth_configs = get_bandwidth_configs(data_dir)
     
-    if not throughput_configs:
-        print("No throughput configuration files found!")
+    if not bandwidth_configs:
+        print("No bandwidth configuration files found!")
         return
     
     iperf_loss_rates = []
@@ -126,13 +89,13 @@ def analyze_loss_rates():
     
     print("Processing loss rate calculations (iperf vs manual):")
     
-    for throughput_val in throughput_configs:
-        labels.append(f"{throughput_val}M")
+    for bandwidth_val in bandwidth_configs:
+        labels.append(f"{bandwidth_val}M")
         
         # Find corresponding files
-        cn_file, ue_file = find_iperf_files(data_dir, throughput_val)
+        cn_file, ue_file = find_iperf_files(data_dir, bandwidth_val)
         
-        print(f"\n{throughput_val}M configuration:")
+        print(f"\n{bandwidth_val}M bandwidth configuration:")
         
         # Load data and extract loss information
         cn_data = load_json_data(cn_file) if cn_file else None
@@ -170,7 +133,7 @@ def analyze_loss_rates():
                    edgecolor='black', linewidth=0.8, alpha=0.8)
     
     # Customize the plot
-    plt.xlabel('Throughput Configuration', fontsize=12, fontweight='bold')
+    plt.xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
     plt.ylabel('Packet Loss Rate (%)', fontsize=12, fontweight='bold')
     plt.title('Network Packet Loss Rate Analysis (Manual Calculation)', 
               fontsize=14, fontweight='bold', pad=20)
@@ -195,14 +158,14 @@ def analyze_loss_rates():
     plt.ylim(0, max(manual_loss_rates) * 1.15 if manual_loss_rates and max(manual_loss_rates) > 0 else 5)
     
     plt.tight_layout()
-    plt.savefig('/home/mini/E2E-network-measurement/loss_rate_analysis.png', 
-                dpi=300, bbox_inches='tight', facecolor='white')
+    output_file = output_dir / 'loss_rate_analysis.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
     plt.show()
     
     # Print detailed comparison
     print("\nDetailed Loss Rate Comparison:")
-    print("Config\t\tiperf Report\tManual Calc\tJitter (ms)")
-    print("-" * 60)
+    print("Bandwidth\t\tiperf Report\tManual Calc\tJitter (ms)")
+    print("-" * 70)
     for i, label in enumerate(labels):
         iperf_loss = iperf_loss_rates[i]
         manual_loss = manual_loss_rates[i]
@@ -210,7 +173,7 @@ def analyze_loss_rates():
         jitter_str = f"{jitter:.3f}" if jitter > 0 else "N/A"
         print(f"{label}\t\t{iperf_loss:.2f}%\t\t{manual_loss:.2f}%\t\t{jitter_str}")
     
-    print(f"\nLoss rate analysis chart saved as 'loss_rate_analysis.png'")
+    print(f"\nLoss rate analysis chart saved as '{output_file}'")
 
 if __name__ == "__main__":
     analyze_loss_rates()
