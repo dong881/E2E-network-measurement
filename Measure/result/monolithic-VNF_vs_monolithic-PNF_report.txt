@@ -1,30 +1,30 @@
-=== Latency Analysis Report (2025-05-21 15:02:33) ===
+=== Latency Analysis Report (2025-05-26 03:50:51) ===
 
 VNF File: /home/ming/E2E-network-measurement/Measure/log/monolithic-VNF.txt
 PNF File: /home/ming/E2E-network-measurement/Measure/log/monolithic-PNF.txt
 
-VNF First Entry: timestamp=1747810936.2452850
-PNF First Entry: timestamp=1747810936.2452712
-Initial Time Difference: 0.0138 ms
+VNF First Entry: timestamp=1748198550.9653950
+PNF First Entry: timestamp=1748198550.9653797
+Initial Time Difference: 0.0153 ms
 
 Statistical Analysis:
-- Mean latency: 0.0012 ms
+- Mean latency: 0.0014 ms
 - Median latency: 0.0012 ms
 - Min latency: 0.0005 ms
-- Max latency: 0.0219 ms
-- Standard deviation: 0.0008 ms
+- Max latency: 129.1425 ms
+- Standard deviation: 0.0538 ms
 
 Full Statistics (in ms):
-count    21511.000000
-mean         0.001195
-std          0.000810
-min          0.000477
-25%          0.000954
-50%          0.001192
-75%          0.001192
-max          0.021935
+count    7.746648e+06
+mean     1.378526e-03
+std      5.383663e-02
+min      4.768372e-04
+25%      1.192093e-03
+50%      1.192093e-03
+75%      1.430511e-03
+max      1.291425e+02
 Name: diff, dtype: float64
 
 Extreme Values:
-Highest latency - Index: 1323, Value: 0.0219 ms
-Lowest latency - Index: 17, Value: 0.0005 ms
+Highest latency - Index: 6043709, Value: 129.1425 ms
+Lowest latency - Index: 5537, Value: 0.0005 ms
