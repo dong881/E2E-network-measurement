@@ -46,6 +46,17 @@ EOF
 }
 
 iperf-stop() {
+    # 先發送 SIGTERM 信號給 iperf3 進程，讓它正常結束
+    sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
+    "pkill -TERM iperf3"
+    
+    # 等待 iperf3 完成並寫入完整的 JSON
+    sleep 3
+    
+    # 確認 JSON 文件完整性（檢查是否以 '}' 結尾）
+    sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
+    "timeout 10 bash -c 'while ! tail -1 ~/iperf-server.json | grep -q \"}\"; do sleep 1; done'"
+    
     # 清理：關閉遠端的 screen session
     sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
     "screen -X -S iperf-server quit"
