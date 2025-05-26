@@ -2,6 +2,7 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+import sys
 
 def parse_ping_log(file_path):
     """Parse ping log file and extract latency data"""
@@ -43,11 +44,22 @@ def get_ping_configs(data_dir):
     
     return sorted(configs, key=lambda x: x[0])
 
-def analyze_ping_latency():
+def analyze_ping_latency(data_dir=None):
     """Analyze ping latency data"""
-    data_dir = Path('/home/mini/E2E-network-measurement/data/20250525-TEST')
-    output_dir = Path('/home/mini/E2E-network-measurement/output')
+    # Use provided data_dir or interactive selection
+    if data_dir is None:
+        from data_selector import get_data_folder_interactive
+        data_dir = get_data_folder_interactive()
+        if not data_dir:
+            print("No data folder selected. Exiting...")
+            return
+    else:
+        data_dir = Path(data_dir)
+    
+    output_dir = Path('~/E2E-network-measurement/output').expanduser()
     output_dir.mkdir(exist_ok=True)
+    
+    print(f"Analyzing ping data from: {data_dir}")
     
     # Get all ping configurations
     ping_configs = get_ping_configs(data_dir)
@@ -152,9 +164,14 @@ def analyze_ping_latency():
     print("-" * 70)
     for i, label in enumerate(labels):
         if avg_latencies[i] > 0:
-            print(f"{label}\t\t{avg_latencies[i]:.2f}\t\t{min_latencies[i]:.2f}\t\t{max_latencies[i]:.2f}\t\t{std_latencies[i]:.2f}\t\t{len(latencies) if 'latencies' in locals() else 'N/A'}")
+            print(f"{label}\t\t{avg_latencies[i]:.2f}\t\t{min_latencies[i]:.2f}\t\t{max_latencies[i]:.2f}\t\t{std_latencies[i]:.2f}\t\tN/A")
         else:
             print(f"{label}\t\tN/A\t\tN/A\t\tN/A\t\tN/A\t\tN/A")
 
 if __name__ == "__main__":
-    analyze_ping_latency()
+    # Check if data directory is provided as command line argument
+    if len(sys.argv) > 1:
+        data_directory = sys.argv[1]
+        analyze_ping_latency(data_directory)
+    else:
+        analyze_ping_latency()

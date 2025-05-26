@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 from pathlib import Path
 import re
+import sys
 
 def load_json_data(file_path):
     """Load JSON data from file"""
@@ -118,11 +119,22 @@ def find_iperf_files(data_dir, bandwidth_val):
     
     return cn_file, ue_file
 
-def analyze_throughput_comparison():
+def analyze_throughput_comparison(data_dir=None):
     """Main function to analyze and plot throughput comparison"""
-    data_dir = Path('/home/mini/E2E-network-measurement/data/20250525-TEST')
-    output_dir = Path('/home/mini/E2E-network-measurement/output')
+    # Use provided data_dir or interactive selection
+    if data_dir is None:
+        from data_selector import get_data_folder_interactive
+        data_dir = get_data_folder_interactive()
+        if not data_dir:
+            print("No data folder selected. Exiting...")
+            return
+    else:
+        data_dir = Path(data_dir)
+    
+    output_dir = Path('~/E2E-network-measurement/output').expanduser()
     output_dir.mkdir(exist_ok=True)
+    
+    print(f"Analyzing data from: {data_dir}")
     
     # Get all bandwidth configurations
     bandwidth_configs = get_bandwidth_configs(data_dir)
@@ -216,4 +228,9 @@ def analyze_throughput_comparison():
     print(f"\nThroughput comparison chart saved as '{output_file}'")
 
 if __name__ == "__main__":
-    analyze_throughput_comparison()
+    # Check if data directory is provided as command line argument
+    if len(sys.argv) > 1:
+        data_directory = sys.argv[1]
+        analyze_throughput_comparison(data_directory)
+    else:
+        analyze_throughput_comparison()

@@ -1,15 +1,18 @@
 import json
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 import re
+import sys
 
 def load_json_data(file_path):
-    """Load JSON data from a file"""
-    with open(file_path, 'r') as f:
-        data = json.load(f)
-    return data
+    """Load JSON data from file"""
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading {file_path}: {e}")
+        return None
 
 def get_bandwidth_configs(data_dir):
     """Find all bandwidth configuration directories"""
@@ -44,18 +47,22 @@ def find_iperf_files(data_dir, bandwidth_val):
     
     return cn_file, ue_file
 
-def extract_packet_counts(cn_data, ue_data):
-    """Extract packet counts from CN and UE data"""
-    cn_packets = cn_data['end']['streams'][0]['udp']['packets'] if cn_data and 'end' in cn_data and 'streams' in cn_data['end'] and len(cn_data['end']['streams']) > 0 and 'udp' in cn_data['end']['streams'][0] else 0
-    ue_packets = ue_data['end']['streams'][0]['udp']['packets'] if ue_data and 'end' in ue_data and 'streams' in ue_data['end'] and len(ue_data['end']['streams']) > 0 and 'udp' in ue_data['end']['streams'][0] else 0
+def analyze_packet_count(data_dir=None):
+    """Main function to analyze and plot packet count comparison"""
+    # Use provided data_dir or interactive selection
+    if data_dir is None:
+        from data_selector import get_data_folder_interactive
+        data_dir = get_data_folder_interactive()
+        if not data_dir:
+            print("No data folder selected. Exiting...")
+            return
+    else:
+        data_dir = Path(data_dir)
     
-    return cn_packets, ue_packets
-
-def analyze_packet_counts():
-    """Main function to analyze and plot packet counts"""
-    data_dir = Path('/home/mini/E2E-network-measurement/data/20250525-TEST')
-    output_dir = Path('/home/mini/E2E-network-measurement/output')
+    output_dir = Path('~/E2E-network-measurement/output').expanduser()
     output_dir.mkdir(exist_ok=True)
+    
+    print(f"Analyzing packet data from: {data_dir}")
     
     # Get all bandwidth configurations
     bandwidth_configs = get_bandwidth_configs(data_dir)
@@ -66,11 +73,11 @@ def analyze_packet_counts():
     
     plt.figure(figsize=(14, 8))
     
-    cn_packet_counts = []
-    ue_packet_counts = []
+    cn_packets = []
+    ue_packets = []
     labels = []
     
-    print("Processing packet count analysis:")
+    print("Processing packet count data:")
     
     for bandwidth_val in bandwidth_configs:
         labels.append(f"{bandwidth_val}M")
@@ -87,35 +94,41 @@ def analyze_packet_counts():
         ue_data = load_json_data(ue_file) if ue_file else None
         
         # Extract packet counts
-        cn_packets, ue_packets = extract_packet_counts(cn_data, ue_data)
+        cn_packet_count = 0
+        ue_packet_count = 0
         
-        cn_packet_counts.append(cn_packets)
-        ue_packet_counts.append(ue_packets)
+        if cn_data and 'end' in cn_data and 'sum' in cn_data['end']:
+            cn_packet_count = cn_data['end']['sum'].get('packets', 0)
         
-        print(f"  CN sent packets: {cn_packets}")
-        print(f"  UE received packets: {ue_packets}")
+        if ue_data and 'end' in ue_data and 'sum_received' in ue_data['end']:
+            ue_packet_count = ue_data['end']['sum_received'].get('packets', 0)
         
-        # Calculate difference
-        if cn_packets > 0 and ue_packets > 0:
-            lost_packets = cn_packets - ue_packets
-            loss_percent = (lost_packets / cn_packets) * 100
-            print(f"  Lost packets: {lost_packets} ({loss_percent:.2f}%)")
+        cn_packets.append(cn_packet_count)
+        ue_packets.append(ue_packet_count)
+        
+        print(f"  CN packets sent: {cn_packet_count}")
+        print(f"  UE packets received: {ue_packet_count}")
+        
+        if cn_packet_count > 0:
+            packet_loss = cn_packet_count - ue_packet_count
+            loss_percent = (packet_loss / cn_packet_count) * 100
+            print(f"  Packet loss: {packet_loss} ({loss_percent:.2f}%)")
     
     # Create grouped bar chart
     bar_width = 0.35
     x_positions = np.arange(len(labels))
     
-    bars1 = plt.bar(x_positions - bar_width/2, cn_packet_counts, bar_width, 
-                    label='CN Packets Sent', color='#3498db', alpha=0.8, 
+    bars1 = plt.bar(x_positions - bar_width/2, cn_packets, bar_width, 
+                    label='CN Packets Sent', color='#2E86AB', alpha=0.8, 
                     edgecolor='black', linewidth=0.5)
-    bars2 = plt.bar(x_positions + bar_width/2, ue_packet_counts, bar_width, 
-                    label='UE Packets Received', color='#e74c3c', alpha=0.8, 
+    bars2 = plt.bar(x_positions + bar_width/2, ue_packets, bar_width, 
+                    label='UE Packets Received', color='#A23B72', alpha=0.8, 
                     edgecolor='black', linewidth=0.5)
     
     # Customize the plot
     plt.xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
     plt.ylabel('Packet Count', fontsize=12, fontweight='bold')
-    plt.title('Network Packet Analysis: Sent vs Received Packets', 
+    plt.title('Network Packet Count Analysis: CN Transmission vs UE Reception', 
               fontsize=14, fontweight='bold', pad=20)
     
     plt.xticks(x_positions, labels, rotation=0)
@@ -123,37 +136,30 @@ def analyze_packet_counts():
     plt.grid(True, alpha=0.3, linestyle='--', axis='y')
     
     # Add value labels on bars
-    for i, (cn_count, ue_count) in enumerate(zip(cn_packet_counts, ue_packet_counts)):
-        if cn_count > 0:
-            plt.text(bars1[i].get_x() + bars1[i].get_width()/2., cn_count + max(cn_packet_counts) * 0.01, 
-                    f'{cn_count:,}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-        if ue_count > 0:
-            plt.text(bars2[i].get_x() + bars2[i].get_width()/2., ue_count + max(ue_packet_counts) * 0.01, 
-                    f'{ue_count:,}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+    for i, (cn_val, ue_val) in enumerate(zip(cn_packets, ue_packets)):
+        if cn_val > 0:
+            plt.text(bars1[i].get_x() + bars1[i].get_width()/2., cn_val + max(cn_packets) * 0.01, 
+                    f'{cn_val}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+        if ue_val > 0:
+            plt.text(bars2[i].get_x() + bars2[i].get_width()/2., ue_val + max(ue_packets) * 0.01, 
+                    f'{ue_val}', ha='center', va='bottom', fontsize=9, fontweight='bold')
     
     # Set y-axis limit
-    max_val = max(max(cn_packet_counts) if cn_packet_counts else [0], 
-                  max(ue_packet_counts) if ue_packet_counts else [0])
+    max_val = max(max(cn_packets) if cn_packets else [0], max(ue_packets) if ue_packets else [0])
     if max_val > 0:
         plt.ylim(0, max_val * 1.15)
     
     plt.tight_layout()
-    output_file = output_dir / 'packet_count_analysis.png'
+    output_file = output_dir / 'packet_count_comparison.png'
     plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
     plt.show()
     
-    print(f"\nPacket count analysis chart saved as '{output_file}'")
-    
-    # Print summary table
-    print("\nPacket Count Summary:")
-    print("Bandwidth\t\tSent\t\tReceived\tLost\t\tLoss%")
-    print("-" * 70)
-    for i, label in enumerate(labels):
-        sent = cn_packet_counts[i]
-        received = ue_packet_counts[i]
-        lost = sent - received
-        loss_pct = (lost / sent * 100) if sent > 0 else 0
-        print(f"{label}\t\t{sent:,}\t\t{received:,}\t\t{lost:,}\t\t{loss_pct:.2f}%")
+    print(f"\nPacket count comparison chart saved as '{output_file}'")
 
 if __name__ == "__main__":
-    analyze_packet_counts()
+    # Check if data directory is provided as command line argument
+    if len(sys.argv) > 1:
+        data_directory = sys.argv[1]
+        analyze_packet_count(data_directory)
+    else:
+        analyze_packet_count()
