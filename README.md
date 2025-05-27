@@ -29,6 +29,7 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
     - Comprehensive performance data processing (`network_analysis.py`)
     - Log analysis for timestamp differences (`Measure/analyze_logs.py`) 
     - Latency comparison across deployment models (`Measure/compare_latency.py`)
+    - Ping latency analysis (`Measure/analyze_ping_latency.py`)
 - **Visualization**: Various plots and charts help interpret test results. [See Visualization Guide](docs/visualization_guide.md)
 
 ## Installation
@@ -213,7 +214,16 @@ After collecting test data, you can analyze the results using the provided Pytho
    ```
    Follow the prompts to input log data and analyze packet loss rates.
 
-6. **Review the Results**:
+6. **Analyze Ping Latency**:
+   ```bash
+   python3 Measure/analyze_ping_latency.py
+   ```
+   This will:
+   - Analyze ping latency data from the test results
+   - Generate latency distribution plots and statistics
+   - Save results to `Measure/result/` directory
+
+7. **Review the Results**:
    - Summary plots show ping latency vs. throughput trends
    - Detailed plots show per-test performance
    - CSV files contain comprehensive metrics

@@ -135,19 +135,48 @@ def analyze_packet_count(data_dir=None):
     plt.legend(fontsize=11, loc='upper left')
     plt.grid(True, alpha=0.3, linestyle='--', axis='y')
     
-    # Add value labels on bars
-    for i, (cn_val, ue_val) in enumerate(zip(cn_packets, ue_packets)):
-        if cn_val > 0:
-            plt.text(bars1[i].get_x() + bars1[i].get_width()/2., cn_val + max(cn_packets) * 0.01, 
-                    f'{cn_val}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-        if ue_val > 0:
-            plt.text(bars2[i].get_x() + bars2[i].get_width()/2., ue_val + max(ue_packets) * 0.01, 
-                    f'{ue_val}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-    
-    # Set y-axis limit
+    # Improved value labels on bars - fix overlapping
     max_val = max(max(cn_packets) if cn_packets else [0], max(ue_packets) if ue_packets else [0])
+    
+    for i, (cn_val, ue_val) in enumerate(zip(cn_packets, ue_packets)):
+        # Format numbers with appropriate unit (K for thousands, M for millions)
+        def format_number(num):
+            if num >= 1_000_000:
+                return f'{num/1_000_000:.1f}M'
+            elif num >= 1_000:
+                return f'{num/1_000:.1f}K'
+            else:
+                return str(num)
+        
+        # Position labels with proper spacing
+        if cn_val > 0:
+            plt.text(bars1[i].get_x() + bars1[i].get_width()/2., 
+                    cn_val + max_val * 0.02, 
+                    format_number(cn_val), 
+                    ha='center', va='bottom', fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
+        
+        if ue_val > 0:
+            plt.text(bars2[i].get_x() + bars2[i].get_width()/2., 
+                    ue_val + max_val * 0.02, 
+                    format_number(ue_val), 
+                    ha='center', va='bottom', fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
+    
+    # Set y-axis limit with better spacing
     if max_val > 0:
-        plt.ylim(0, max_val * 1.15)
+        plt.ylim(0, max_val * 1.25)
+    
+    # Format y-axis with appropriate units
+    def y_formatter(x, pos):
+        if x >= 1_000_000:
+            return f'{x/1_000_000:.1f}M'
+        elif x >= 1_000:
+            return f'{x/1_000:.0f}K'
+        else:
+            return f'{x:.0f}'
+    
+    plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(y_formatter))
     
     plt.tight_layout()
     output_file = output_dir / 'packet_count_comparison.png'

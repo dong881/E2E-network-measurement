@@ -9,13 +9,13 @@ from pathlib import Path
 
 def run_analysis():
     """Run all analysis scripts"""
-    script_dir = Path(__file__).parent
+    script_dir = Path(__file__).parent / "scripts"
     
     scripts = [
         script_dir / "analyze_throughput.py",
         script_dir / "analyze_packet_count.py",
         script_dir / "analyze_loss_rate.py",
-        script_dir / "analyze_ping.py"
+        script_dir / "analyze_ping_latency.py"
     ]
     
     for script in scripts:
