@@ -255,7 +255,7 @@ clean_log_files() {
 
 # Function to reset all states and prepare for a clean start
 reset_all() {
-    
+
     stop_gNB "MONO"
     stop_gNB "NFAPI"
     clean_log_files "MONO"
@@ -276,7 +276,7 @@ reset_all() {
         # sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
         #     "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S /oai72/Script/oaiLONvf.sh 2>/dev/null || true'"
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
-            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf.sh || true'"
+            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf_demo.sh || true'"
     else
         echo "gNB server information not set, skipping remote script execution."
     fi

@@ -182,4 +182,4 @@ done
 stop_gNB "$CURRENT_MODE"
 sleep 5
 fetch_and_analyze_logs "$CURRENT_MODE"
-toggle_airplane_mode "on"
+# toggle_airplane_mode "on"
