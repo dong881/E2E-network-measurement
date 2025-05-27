@@ -255,23 +255,12 @@ clean_log_files() {
 
 # Function to reset all states and prepare for a clean start
 reset_all() {
-    local mode=${1:-$CURRENT_MODE}
     
-    # Stop any running sessions on the gNB server
-    if [ -n "$mode" ]; then
-        stop_gNB "$mode"
-        clean_log_files "$mode"
-    else
-        # If no mode is specified, try to stop both modes
-        echo "Stopping gNB in both MONO and NFAPI modes..."
-        stop_single_setup "100M" "MONO"
-        stop_single_setup "40M" "MONO"
-        stop_split_setup "100M"
-        stop_split_setup "40M"
-        clean_log_files "MONO"
-        clean_log_files "NFAPI"
-    fi
-    
+    stop_gNB "MONO"
+    stop_gNB "NFAPI"
+    clean_log_files "MONO"
+    clean_log_files "NFAPI"
+
     # Stop sessions on CN server
     if [ -n "$CN_SERVER_USER" ] && [ -n "$CN_SERVER_HOST" ]; then
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$CN_SERVER_USER@$CN_SERVER_HOST" \
