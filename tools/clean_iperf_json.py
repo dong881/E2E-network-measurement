@@ -2,7 +2,7 @@ import os
 import glob
 import json
 
-DATA_DIR = "/home/ming/E2E-network-measurement/data/20250528-nFAPI(100-400M)"
+DATA_DIR = "/home/ming/E2E-network-measurement/data/20250528-nFAPI(100-500M)"
 
 def is_error_block(obj):
     return (
