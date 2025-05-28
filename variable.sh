@@ -3,7 +3,7 @@
 # FREQUENTLY ADJUSTED PARAMETERS
 # ========================================
 # Duration in seconds for tests
-export TEST_DURATION=5
+export TEST_DURATION=600
 export SLEEP_WINDOW=1
 
 # Downlink test settings
@@ -89,8 +89,3 @@ export LOG_ANALYSIS_SCRIPT="$LOCAL_MEASURE_DIR/../analyze_logs.py"
 export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\iperf3"
 # Control MTK UE NoteBook
 # export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\MTK\\iperf3"
-
-# export OUTPUT_DIR="test_results_$(date +%Y%m%d)"
-# Source the run configuration (currently disabled)
-# source "$(dirname "$0")/run_config.sh"
-# mkdir -p "$OUTPUT_DIR"
