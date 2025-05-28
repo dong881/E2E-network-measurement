@@ -20,6 +20,11 @@ while [[ "$#" -gt 0 ]]; do
         --mode) CURRENT_MODE="$2"; shift ;;
         --pass) PASS=true ;;
         --shutdown) SHUTDOWN_MODE=true ;;
+        --ru-bw) 
+            RU_BW="$2"
+            echo "Setting LiteOn RU bandwidth to: $RU_BW"
+            radio_unit_utils "$RU_BW"
+            exit 1 ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift

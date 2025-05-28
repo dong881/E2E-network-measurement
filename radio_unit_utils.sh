@@ -29,7 +29,11 @@
 #   - Creates output log at $OUTPUT_DIR/set_bandwidth.out
 
 source variable.sh
-
+export OUTPUT_DIR="test_results_$(date +%Y%m%d)"
+if [ -f "$(dirname "$0")/run_config.sh" ]; then
+	source "$(dirname "$0")/run_config.sh"
+fi
+mkdir -p "$OUTPUT_DIR"
 radio_unit_utils() {
     local bw=$1
     echo "Setting RU bandwidth to $bw bps..."

@@ -25,8 +25,8 @@ CONF_VNF_40M="gnb-vnf.sa.band78.106prb.nfapi.conf"
 CONF_MONO_100M="gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf"
 CONF_MONO_100M_JURA="gnb.sa.band78.273prb.fhi72.4x4-metanoia.conf"
 CONF_MONO_40M="gnb.sa.band78.106prb.fhi72.4x4-liteon_new.conf"
-# CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
-CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
+CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
+# CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
 
 # Commands for Single Machine Setup
 CMD_VNF_100M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_VNF_100M $VNF_OPTS"

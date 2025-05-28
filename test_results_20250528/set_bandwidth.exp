@@ -1,0 +1,28 @@
+#!/usr/bin/expect
+set timeout 60
+spawn ssh $env(RU_USER)@$env(RU_IP)
+expect "password:"
+send "$env(RU_PASSWORD)\r"
+expect ">"
+send "enable\r"
+expect "Password:"
+send "$env(RU_ENABLE_PASSWORD)\r"
+expect "#"
+send "show running-config\r"
+expect "#"
+send "configure terminal\r"
+expect "(config)#"
+send "bandwidth $env(bw)\r"
+expect "(config)#"
+send "exit\r"
+expect "#"
+send "show running-config\r"
+expect "#"
+if {[catch {set old_bw [exec grep "Band Width = " $env(OUTPUT_DIR)/set_bandwidth.out | head -1 | cut -d= -f2 | tr -d " "]}]} {
+    set old_bw "unknown"
+}
+if {$old_bw != $env(bw)} {
+    send "reboot\r"
+    expect "system is going down"
+}
+expect eof
