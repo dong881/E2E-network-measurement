@@ -14,9 +14,7 @@ toggle_airplane_mode() {
 # 函數：獲取 UE IP
 get_ue_ip() {
     UE_IP=$(sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-             "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni0" | awk '/inet/ {print $2}' | cut -d/ -f1)
-    UE_IP=${UE_IP:-$(sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
-             "adb -s $ADB_DEVICE shell ip -f inet addr show ccmni1" | awk '/inet/ {print $2}' | cut -d/ -f1)}
+             "adb -s $ADB_DEVICE shell ip -f inet addr show" | awk '/inet/ && !/127\.0\.0\.1/ {print $2}' | cut -d/ -f1 | head -n1)
     [ -z "$UE_IP" ] && { echo "Error: Unable to fetch UE IP." >&2; }
     echo "UE IP: $UE_IP"
 }

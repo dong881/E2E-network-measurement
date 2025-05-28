@@ -54,22 +54,10 @@ if [ "$MANUAL_MODE_ENABLED" = true ]; then
         reset_all "$CURRENT_MODE"
         start_gNB "$CURRENT_MODE"
     fi
-    # sleep 25
-    # stop_gNB "$CURRENT_MODE"
-    # sleep 5
-    # fetch_and_analyze_logs "$CURRENT_MODE"
-    # exit 1
-    echo "Manual mode enabled. Please input the UE IP address:"
-    while true; do
-        read -r user_input
-        if [[ $user_input =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            UE_IP="$user_input"
-            echo "UE IP address set to: $UE_IP"
-            break
-        else
-            echo "Invalid IP address. Please input a valid UE IP address:"
-        fi
-    done
+    echo "Manual mode enabled. Press Enter to continue and get UE IP automatically..."
+    read -r
+    get_ue_ip
+    echo "UE IP address obtained: $UE_IP"
 else
     reset_all "$CURRENT_MODE"
     start_gNB "$CURRENT_MODE"
