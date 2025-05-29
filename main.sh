@@ -37,6 +37,66 @@ if [ "$SHUTDOWN_MODE" = true ]; then
     exit 0
 fi
 
+# Calculate total test combinations and estimated time
+TOTAL_TESTS=0
+if [ "$TEST_UDP" = true ]; then
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+fi
+if [ "$TEST_TCP" = true ]; then
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+fi
+if [ "$ENABLE_UL" = true ]; then
+    TOTAL_TESTS=$((TOTAL_TESTS * 2))
+fi
+
+# Calculate number of bandwidth steps for DL and UL
+DL_STEPS=$(( (DL_END - DL_START) / DL_STEP + 1 ))
+UL_STEPS=0
+if [ "$ENABLE_UL" = true ]; then
+    UL_STEPS=$(( (UL_END - UL_START) / UL_STEP + 1 ))
+fi
+
+# Calculate total test iterations
+TOTAL_ITERATIONS=$((TOTAL_TESTS * (DL_STEPS + UL_STEPS)))
+
+# Calculate estimated time in seconds
+# Each test includes: TEST_DURATION + 3 * SLEEP_WINDOW + 2 seconds
+ESTIMATED_TIME=$((TOTAL_ITERATIONS * (TEST_DURATION + 3 * SLEEP_WINDOW + 2)))
+
+# Convert to hours and minutes
+ESTIMATED_HOURS=$((ESTIMATED_TIME / 3600))
+ESTIMATED_MINUTES=$(( (ESTIMATED_TIME % 3600) / 60 ))
+
+echo "📊 Test Configuration Summary:"
+echo "  🔢 Total test combinations: $TOTAL_TESTS"
+echo "  🔄 Total iterations: $TOTAL_ITERATIONS"
+echo "  ⏱️  Estimated duration: ${ESTIMATED_HOURS}h ${ESTIMATED_MINUTES}m"
+
+# Get current date and next day
+CURRENT_DATE=$(date +"%Y%m%d")
+NEXT_DATE=$(date -d "tomorrow" +"%Y%m%d")
+
+# Create directory name based on mode and bandwidth range
+DIR_NAME="${CURRENT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)"
+if [ "$ENABLE_UL" = true ]; then
+    DIR_NAME="${DIR_NAME}-UL(${UL_START}-${UL_END}M)"
+fi
+
+# Check if estimated end time would be tomorrow
+CURRENT_TIMESTAMP=$(date +%s)
+ESTIMATED_END_TIMESTAMP=$((CURRENT_TIMESTAMP + ESTIMATED_TIME))
+ESTIMATED_END_DATE=$(date -d "@$ESTIMATED_END_TIMESTAMP" +"%Y%m%d")
+
+# Create appropriate directory
+if [ "$ESTIMATED_END_DATE" != "$CURRENT_DATE" ]; then
+    echo "⚠️  Warning: Tests will likely continue into tomorrow"
+    echo "Creating directories for both today and tomorrow"
+    mkdir -p "./data/${DIR_NAME}"
+    mkdir -p "./data/${NEXT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)"
+else
+    mkdir -p "./data/${DIR_NAME}"
+fi
+
 echo "🔎 Current status:"
 echo "  🛠️  MANUAL_MODE_ENABLED = $([ "$MANUAL_MODE_ENABLED" = true ] && echo '✅' || echo '❌')"
 echo "  🎛️  CURRENT_MODE        = $CURRENT_MODE"
@@ -138,7 +198,7 @@ for direction in $directions; do
         [ -z "$UE_IP" ] && get_ue_ip
         ping-start $UE_IP
         sleep $SLEEP_WINDOW
-        ping-stop "./data/$(date +"%Y%m%d")/ping-${direction}-${protocol}-idle.log"
+        ping-stop "./data/${DIR_NAME}/ping-${direction}-${protocol}-idle.log"
 
         for bw in $(seq $start $step $end); do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
@@ -156,17 +216,12 @@ for direction in $directions; do
             
             # Start iperf test
             iperf-start
-            run_iperf "client" "$TEST_SERVER_IP" "$params" "./data/$(date +"%Y%m%d")/iperf-${file_base}-UE.json"
-            iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
-            # if [ "$direction" = "ul" ]; then
-            #     iperf-stop "./data/$(date +"%Y%m%d")/iperf-${file_base}-CN.json"
-            # else
-            #     iperf-stop
-            # fi
+            run_iperf "client" "$TEST_SERVER_IP" "$params" "./data/${DIR_NAME}/iperf-${file_base}-UE.json"
+            iperf-stop "./data/${DIR_NAME}/iperf-${file_base}-CN.json"
             
             # Stop ping and save results
             sleep $SLEEP_WINDOW
-            ping-stop "./data/$(date +"%Y%m%d")/ping-${file_base}.log"
+            ping-stop "./data/${DIR_NAME}/ping-${file_base}.log"
             sleep 2
         done
     done
