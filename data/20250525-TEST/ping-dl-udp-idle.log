@@ -1,7 +1,0 @@
-1748187868: PING 10.45.0.91 (10.45.0.91) from 10.45.0.1 ogstun: 56(84) bytes of data.
-1748187868: 64 bytes from 10.45.0.91: icmp_seq=1 ttl=64 time=26.5 ms
-1748187869: 64 bytes from 10.45.0.91: icmp_seq=2 ttl=64 time=25.0 ms
-1748187870: 64 bytes from 10.45.0.91: icmp_seq=3 ttl=64 time=14.4 ms
-1748187871: 64 bytes from 10.45.0.91: icmp_seq=4 ttl=64 time=32.1 ms
-1748187872: 64 bytes from 10.45.0.91: icmp_seq=5 ttl=64 time=30.9 ms
-1748187873: 64 bytes from 10.45.0.91: icmp_seq=6 ttl=64 time=28.8 ms
