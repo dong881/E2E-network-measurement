@@ -4,7 +4,6 @@ source variable.sh
 source core_network_utils.sh
 source user_equipment_utils.sh
 source gnb_utils.sh
-source radio_unit_utils.sh
 
 # Initialize variables
 UE_IP=""
@@ -21,6 +20,7 @@ while [[ "$#" -gt 0 ]]; do
         --pass) PASS=true ;;
         --shutdown) SHUTDOWN_MODE=true ;;
         --ru-bw) 
+            source radio_unit_utils.sh
             RU_BW="$2"
             echo "Setting LiteOn RU bandwidth to: $RU_BW"
             radio_unit_utils "$RU_BW"
