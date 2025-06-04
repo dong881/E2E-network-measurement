@@ -166,6 +166,9 @@ def analyze_packet_loss(data_dir=None):
     plt.title(f'UE Network Packet Loss Analysis - {mode} Mode\nReceiver-Side Loss Rate Assessment', 
               fontsize=16, fontweight='bold', pad=25)
     
+    # Set y-axis limit to 100%
+    plt.ylim(0, 100)
+    
     # Create custom legend for loss rate ranges (Natural order)
     legend_elements = [
         plt.Rectangle((0,0),1,1, facecolor='#2E8B57', label='Perfect (0%)'),

@@ -214,7 +214,7 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
     median_color = '#1B5E20'
     whisker_color = '#4B5563'
     q2_trend_color = '#FF5722'
-    bar_edge_color = '#FF0000'  # Red outline for bars
+    bar_edge_color = '#1976D2'  # Blue outline for bars
     
     output_files = []
     
@@ -224,7 +224,7 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
     # Create twin axis for throughput bars
     ax2 = ax.twinx()
     
-    # FIRST: Add background bars for received throughput (unfilled with red outline)
+    # FIRST: Add background bars for received throughput (unfilled with blue outline)
     x_positions = range(1, len(bandwidths) + 1)
     bars = ax2.bar(x_positions, recv_values, alpha=0.5, color='none', 
                    width=0.9, edgecolor=bar_edge_color, linewidth=2.0,
