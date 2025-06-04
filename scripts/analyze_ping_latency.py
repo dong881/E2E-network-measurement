@@ -1,71 +1,47 @@
-import os
-import re
 import json
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+import numpy as np
 from pathlib import Path
+import re
 import sys
+import os
+
+def load_json_data(file_path):
+    """Load JSON data from file"""
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading {file_path}: {e}")
+        return None
 
 def parse_ping_log(file_path):
-    """Parse ping log file and extract latency data"""
-    latencies = []
-    timestamps = []
+    """Parse ping log files to extract latency data"""
+    ping_data = []
     
     try:
         with open(file_path, 'r') as f:
-            for line_num, line in enumerate(f):
-                # Extract timestamp (epoch or relative time)
-                timestamp = None
-                
-                # Format 1: Epoch timestamp at beginning
-                epoch_match = re.match(r'^(\d{10})\D', line)
-                if epoch_match:
-                    timestamp = float(epoch_match.group(1))
-                
-                # Format 2: Bracketed timestamp [HH:MM:SS]
-                time_match = re.search(r'\[([\d.:]+)\]', line)
-                if time_match and not timestamp:
-                    time_str = time_match.group(1)
-                    time_components = time_str.split(':')
-                    if len(time_components) >= 3:
-                        hours, minutes, seconds = map(float, time_components)
-                        timestamp = hours * 3600 + minutes * 60 + seconds
-                
-                # Default: use line number
-                if timestamp is None:
-                    timestamp = line_num
-                
-                # Extract ping time
-                ping_match = re.search(r'time=([\d.]+) ms', line)
+            for line in f:
+                ping_match = re.search(r'time=([\d.]+)\s*ms', line)
                 if ping_match:
                     ping_time = float(ping_match.group(1))
-                    latencies.append(ping_time)
-                    timestamps.append(timestamp)
-        
-        return pd.DataFrame({
-            'timestamp': timestamps,
-            'latency_ms': latencies
-        })
-    
+                    ping_data.append(ping_time)
     except Exception as e:
         print(f"Error parsing ping log {file_path}: {e}")
-        return pd.DataFrame()
+    
+    return ping_data
 
-def get_ping_configs(data_dir):
-    """Find all ping configuration files"""
+def get_bandwidth_configs(data_dir):
+    """Find all bandwidth configuration directories"""
     configs = []
     
-    for file_path in data_dir.glob('ping*-*M.log'):
-        # Extract bandwidth value
+    for file_path in data_dir.glob('ping*-*M*.log'):
         match = re.search(r'-(\d+)M', file_path.name)
         if match:
             bandwidth_val = int(match.group(1))
-            direction = 'dl' if 'dl' in file_path.name else 'ul'
-            configs.append((bandwidth_val, direction, file_path))
+            configs.append(bandwidth_val)
     
-    return sorted(configs, key=lambda x: x[0])
+    return sorted(list(set(configs)))
 
 def calculate_quartile_stats(data):
     """Calculate comprehensive quartile statistics"""
@@ -75,15 +51,11 @@ def calculate_quartile_stats(data):
     q1 = np.percentile(data, 25)
     q2 = np.percentile(data, 50)  # Median
     q3 = np.percentile(data, 75)
-    q4 = np.percentile(data, 100)  # Maximum
     
     # IQR and outlier boundaries
     iqr = q3 - q1
     lower_bound = q1 - 1.5 * iqr
     upper_bound = q3 + 1.5 * iqr
-    
-    # Filter data to Q2-Q3 range for core analysis
-    q2_q3_data = data[(data >= q2) & (data <= q3)]
     
     # Filter outliers using IQR method
     filtered_data = data[(data >= lower_bound) & (data <= upper_bound)]
@@ -92,263 +64,278 @@ def calculate_quartile_stats(data):
         'q1': q1,
         'q2': q2,
         'q3': q3,
-        'q4': q4,
         'iqr': iqr,
         'mean': np.mean(data),
         'std': np.std(data),
-        'lower_bound': lower_bound,
-        'upper_bound': upper_bound,
         'outlier_count': len(data) - len(filtered_data),
-        'q2_q3_data': q2_q3_data,
-        'filtered_data': filtered_data,
         'raw_data': data
     }
 
-def create_quartile_analysis_plot(results_dict, output_dir, direction):
+def extract_mode_from_folder(folder_path):
+    """Extract mode from folder name - simplified and reliable"""
+    folder_name = Path(folder_path).name
+    
+    # Handle date prefix pattern: YYYYMMDD-MODE
+    if len(folder_name) > 8 and folder_name[8:9] == '-':
+        folder_name = folder_name[9:]
+    
+    # Extract mode before parentheses or first part
+    if '(' in folder_name:
+        mode = folder_name.split('(')[0].strip().rstrip('-')
+    else:
+        mode = folder_name.split('-')[0] if '-' in folder_name else folder_name
+    
+    return mode.strip() if mode.strip() else "Unknown"
+
+def create_quartile_analysis_plot(results_dict, output_dir, direction, mode):
     """Create comprehensive quartile analysis visualization"""
     
-    # Set up the plotting style
-    plt.style.use('seaborn-v0_8-whitegrid')
-    fig = plt.figure(figsize=(20, 16))
+    plt.rcParams.update({
+        'font.family': 'serif',
+        'font.size': 11,
+        'axes.titlesize': 13,
+        'axes.labelsize': 12,
+        'legend.fontsize': 9,
+    })
     
-    # Extract data for plotting
     bandwidths = sorted(results_dict.keys())
     labels = [f"{bw}M" for bw in bandwidths]
     
-    # 1. Quartile Box Plot (Top Left)
-    ax1 = plt.subplot(2, 3, (1, 2))
+    # Color scheme
+    box_color = '#2E7D32'
+    median_color = '#1B5E20'
+    whisker_color = '#4B5563'
+    q2_trend_color = '#FF5722'
+    
+    output_files = []
+    
+    # 1. Box Plot with Q2 Trend Line
+    fig, ax = plt.subplots(figsize=(12, 7))
     
     box_data = [results_dict[bw]['raw_data'] for bw in bandwidths]
     
-    # Create box plot with custom styling
-    box_plot = ax1.boxplot(box_data, labels=labels, patch_artist=True, 
-                          showfliers=False, widths=0.6)
+    box_plot = plt.boxplot(box_data, tick_labels=labels, patch_artist=True, 
+                          showfliers=False, widths=0.5)
     
-    # Color the boxes with a gradient
-    colors = plt.cm.viridis(np.linspace(0.2, 0.8, len(bandwidths)))
-    for patch, color in zip(box_plot['boxes'], colors):
-        patch.set_facecolor(color)
-        patch.set_alpha(0.7)
+    for patch in box_plot['boxes']:
+        patch.set_facecolor(box_color)
+        patch.set_alpha(0.8)
+        patch.set_edgecolor(whisker_color)
     
-    ax1.set_xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('Ping Latency (ms)', fontsize=12, fontweight='bold')
-    ax1.set_title(f'Ping Latency Distribution - {direction.upper()} UDP', 
-                  fontsize=14, fontweight='bold')
-    ax1.grid(True, alpha=0.3)
+    for whisker in box_plot['whiskers']:
+        whisker.set_color(whisker_color)
+        whisker.set_linewidth(1.8)
+    for cap in box_plot['caps']:
+        cap.set_color(whisker_color)
+        cap.set_linewidth(1.8)
+    for median in box_plot['medians']:
+        median.set_color(median_color)
+        median.set_linewidth(3.0)
+
+    # Add Q2 trend line
+    q2_values = [results_dict[bw]['q2'] for bw in bandwidths]
+    x_positions = range(1, len(bandwidths) + 1)
     
-    # 2. Q2-Q3 Range Analysis (Top Right)
-    ax2 = plt.subplot(2, 3, 3)
+    ax.plot(x_positions, q2_values, 'o-', 
+            linewidth=2.5, markersize=6, 
+            color=q2_trend_color, 
+            markerfacecolor='white', 
+            markeredgewidth=2.0, 
+            markeredgecolor=q2_trend_color,
+            label='Q2 Median Trend', 
+            zorder=10)
+
+    plt.xlabel('Iperf Bandwidth Configuration (Mbps)')
+    plt.ylabel('Ping Latency (ms)')
+    plt.title(f'Latency Distribution Analysis: {mode} Mode ({direction.upper()})')
+    plt.grid(True, alpha=0.3, linestyle=':', color='gray')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    plt.ylim(0, 100)
+    plt.legend()
+    plt.tight_layout()
     
-    q2_means = [np.mean(results_dict[bw]['q2_q3_data']) if len(results_dict[bw]['q2_q3_data']) > 0 else 0 
-                for bw in bandwidths]
-    q2_stds = [np.std(results_dict[bw]['q2_q3_data']) if len(results_dict[bw]['q2_q3_data']) > 1 else 0 
-               for bw in bandwidths]
+    output_file1 = output_dir / f'ping_latency_boxplot_{direction}.png'
+    plt.savefig(output_file1, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.show()
+    plt.close()
+    output_files.append(output_file1)
     
-    bars = ax2.bar(labels, q2_means, yerr=q2_stds, capsize=5, 
-                   color='lightcoral', alpha=0.8, edgecolor='black')
-    
-    # Add value labels
-    for i, (mean_val, std_val) in enumerate(zip(q2_means, q2_stds)):
-        ax2.text(i, mean_val + std_val + max(q2_means) * 0.02, 
-                f'{mean_val:.1f}±{std_val:.1f}', 
-                ha='center', va='bottom', fontsize=9, fontweight='bold')
-    
-    ax2.set_xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
-    ax2.set_ylabel('Latency (ms)', fontsize=12, fontweight='bold')
-    ax2.set_title('Q2-Q3 Range Analysis\n(Core Performance)', fontsize=12, fontweight='bold')
-    ax2.grid(True, alpha=0.3, axis='y')
-    
-    # 3. Outlier Analysis (Bottom Left)
-    ax3 = plt.subplot(2, 3, 4)
+    # 2. Quality Analysis
+    fig, ax = plt.subplots(figsize=(12, 7))
     
     outlier_counts = [results_dict[bw]['outlier_count'] for bw in bandwidths]
     total_counts = [len(results_dict[bw]['raw_data']) for bw in bandwidths]
     outlier_percentages = [out/total*100 if total > 0 else 0 
                           for out, total in zip(outlier_counts, total_counts)]
     
-    bars = ax3.bar(labels, outlier_percentages, color='orange', alpha=0.8, edgecolor='black')
+    # Color coding based on quality
+    bar_colors = []
+    for pct in outlier_percentages:
+        if pct == 0:
+            bar_colors.append('#4CAF50')    # Excellent
+        elif pct <= 5:
+            bar_colors.append('#66BB6A')    # Good
+        elif pct <= 15:
+            bar_colors.append('#FFA726')    # Moderate
+        else:
+            bar_colors.append('#F44336')    # Critical
     
-    # Add percentage labels
-    for i, pct in enumerate(outlier_percentages):
-        ax3.text(i, pct + max(outlier_percentages) * 0.02, 
-                f'{pct:.1f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+    plt.bar(labels, outlier_percentages, color=bar_colors, alpha=0.8)
     
-    ax3.set_xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
-    ax3.set_ylabel('Outlier Percentage (%)', fontsize=12, fontweight='bold')
-    ax3.set_title('Outlier Distribution\n(IQR Method)', fontsize=12, fontweight='bold')
-    ax3.grid(True, alpha=0.3, axis='y')
-    
-    # 4. Statistical Summary Table (Bottom Center)
-    ax4 = plt.subplot(2, 3, 5)
-    ax4.axis('off')
-    
-    # Create summary table
-    table_data = []
-    for bw in bandwidths:
-        stats = results_dict[bw]
-        row = [
-            f"{bw}M",
-            f"{stats['q1']:.1f}",
-            f"{stats['q2']:.1f}",
-            f"{stats['q3']:.1f}",
-            f"{stats['mean']:.1f}",
-            f"{stats['std']:.1f}"
-        ]
-        table_data.append(row)
-    
-    table = ax4.table(
-        cellText=table_data,
-        colLabels=['BW', 'Q1', 'Q2', 'Q3', 'Mean', 'Std'],
-        loc='center',
-        cellLoc='center'
-    )
-    table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1.2, 1.8)
-    ax4.set_title('Statistical Summary', fontsize=12, fontweight='bold', pad=20)
-    
-    # 5. Trend Analysis (Bottom Right)
-    ax5 = plt.subplot(2, 3, 6)
-    
-    means = [results_dict[bw]['mean'] for bw in bandwidths]
-    q2s = [results_dict[bw]['q2'] for bw in bandwidths]
-    
-    ax5.plot(bandwidths, means, 'o-', linewidth=2, markersize=6, 
-            label='Mean Latency', color='red')
-    ax5.plot(bandwidths, q2s, 's-', linewidth=2, markersize=6, 
-            label='Median (Q2)', color='blue')
-    
-    ax5.set_xlabel('Bandwidth (Mbps)', fontsize=12, fontweight='bold')
-    ax5.set_ylabel('Latency (ms)', fontsize=12, fontweight='bold')
-    ax5.set_title('Latency Trend Analysis', fontsize=12, fontweight='bold')
-    ax5.grid(True, alpha=0.3)
-    ax5.legend()
-    
+    plt.xlabel('Iperf Bandwidth Configuration (Mbps)')
+    plt.ylabel('Outlier Percentage (%)')
+    plt.title(f'Network Quality Assessment: {mode} Mode ({direction.upper()})')
+    plt.grid(True, alpha=0.3, linestyle=':', axis='y', color='gray')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     plt.tight_layout()
-    output_file = output_dir / f'ping_latency_quartile_analysis_{direction}.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
-    plt.show()
     
-    return output_file
+    output_file2 = output_dir / f'ping_latency_quality_{direction}.png'
+    plt.savefig(output_file2, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.show()
+    plt.close()
+    output_files.append(output_file2)
+    
+    return output_files
 
-def create_filtered_box_plot(results_dict, output_dir, direction):
-    """Create publication-quality box plot with filtered data"""
+def find_ping_files(data_dir, bandwidth_val):
+    """Find downlink and uplink ping files for a specific bandwidth"""
+    dl_file = None
+    ul_file = None
     
-    plt.style.use('seaborn-v0_8-whitegrid')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+    # Look for downlink and uplink ping files
+    dl_pattern = f"ping*-{bandwidth_val}M*dl*.log"
+    ul_pattern = f"ping*-{bandwidth_val}M*ul*.log"
     
-    bandwidths = sorted(results_dict.keys())
-    labels = [f"{bw}M" for bw in bandwidths]
+    for file_path in data_dir.glob(dl_pattern):
+        dl_file = file_path
+        break
     
-    # 1. Raw Data Box Plot
-    raw_data = [results_dict[bw]['raw_data'] for bw in bandwidths]
+    for file_path in data_dir.glob(ul_pattern):
+        ul_file = file_path
+        break
     
-    box1 = ax1.boxplot(raw_data, labels=labels, patch_artist=True, 
-                      showfliers=True, widths=0.6)
+    # If specific dl/ul patterns not found, try generic patterns
+    if not dl_file and not ul_file:
+        generic_pattern = f"ping*-{bandwidth_val}M*.log"
+        for file_path in data_dir.glob(generic_pattern):
+            if 'dl' in file_path.name.lower():
+                dl_file = file_path
+            elif 'ul' in file_path.name.lower():
+                ul_file = file_path
+            else:
+                if not dl_file:
+                    dl_file = file_path
     
-    # Color with gradient
-    colors = plt.cm.Blues(np.linspace(0.4, 0.8, len(bandwidths)))
-    for patch, color in zip(box1['boxes'], colors):
-        patch.set_facecolor(color)
-        patch.set_alpha(0.8)
+    return dl_file, ul_file
+
+def create_comprehensive_ping_analysis(ping_data, mode, output_dir):
+    """Create comprehensive ping latency analysis"""
     
-    ax1.set_xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('Ping Latency (ms)', fontsize=12, fontweight='bold')
-    ax1.set_title('Raw Data Distribution\n(Including Outliers)', fontsize=14, fontweight='bold')
-    ax1.grid(True, alpha=0.3)
-    
-    # 2. Filtered Data Box Plot (Q2-Q3 Range)
-    filtered_data = [results_dict[bw]['q2_q3_data'] for bw in bandwidths]
-    
-    box2 = ax2.boxplot(filtered_data, labels=labels, patch_artist=True, 
-                      showfliers=False, widths=0.6)
-    
-    # Color with different gradient
-    colors2 = plt.cm.Greens(np.linspace(0.4, 0.8, len(bandwidths)))
-    for patch, color in zip(box2['boxes'], colors2):
-        patch.set_facecolor(color)
-        patch.set_alpha(0.8)
-    
-    ax2.set_xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
-    ax2.set_ylabel('Ping Latency (ms)', fontsize=12, fontweight='bold')
-    ax2.set_title('Q2-Q3 Range Distribution\n(Core Performance)', fontsize=14, fontweight='bold')
-    ax2.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    output_file = output_dir / f'ping_latency_filtered_boxplot_{direction}.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
-    plt.show()
-    
-    return output_file
+    for direction in ['dl', 'ul']:
+        if not ping_data[direction]:
+            print(f"⚠️ No {direction.upper()} ping data found, skipping...")
+            continue
+            
+        print(f"📊 Creating {direction.upper()} ping analysis...")
+        
+        # Calculate quartile statistics for each bandwidth
+        results_dict = {}
+        for bandwidth, data in ping_data[direction].items():
+            if data:
+                np_data = np.array(data)
+                stats = calculate_quartile_stats(np_data)
+                if stats:
+                    results_dict[bandwidth] = stats
+        
+        if not results_dict:
+            print(f"⚠️ No valid {direction.upper()} data for analysis")
+            continue
+        
+        # Create analysis plots
+        try:
+            analysis_files = create_quartile_analysis_plot(results_dict, output_dir, direction, mode)
+            print(f"✅ Analysis plots saved: {len(analysis_files)} files")
+        except Exception as e:
+            print(f"❌ Error creating analysis for {direction}: {e}")
+        
+        # Print summary statistics
+        print(f"\n📋 {direction.upper()} Ping Latency Summary:")
+        print("-" * 50)
+        for bandwidth in sorted(results_dict.keys()):
+            stats = results_dict[bandwidth]
+            print(f"{bandwidth}M: Mean={stats['mean']:.2f}ms, "
+                  f"Median={stats['q2']:.2f}ms, "
+                  f"Std={stats['std']:.2f}ms, "
+                  f"Outliers={stats['outlier_count']}")
 
 def analyze_ping_latency(data_dir=None):
-    """Analyze ping latency data with quartile statistics"""
-    # Use provided data_dir or interactive selection
+    """Main function to analyze ping latency data"""
     if data_dir is None:
-        from data_selector import get_data_folder_interactive
+        from data_selector import get_data_folder_interactive, setup_logging, redirect_output_to_log, get_analysis_output_dir
         data_dir = get_data_folder_interactive()
         if not data_dir:
-            print("No data folder selected. Exiting...")
             return
     else:
         data_dir = Path(data_dir)
     
-    output_dir = Path('~/E2E-network-measurement/output').expanduser()
-    output_dir.mkdir(exist_ok=True)
+    # Extract mode from data directory
+    mode = extract_mode_from_folder(data_dir)
+    print(f"📋 Detected mode: {mode}")
+    
+    # Check for centralized output directory
+    if 'CENTRALIZED_OUTPUT_DIR' in os.environ:
+        output_dir = Path(os.environ['CENTRALIZED_OUTPUT_DIR'])
+        log_file = None
+        log_handle = None
+    else:
+        from data_selector import get_analysis_output_dir, setup_logging, redirect_output_to_log
+        analysis_base_dir = get_analysis_output_dir(data_dir)
+        output_dir = analysis_base_dir
+        log_file = setup_logging(output_dir, "ping_latency_analysis")
+        log_handle = redirect_output_to_log(log_file)
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"Analyzing ping latency data from: {data_dir}")
     
-    # Get all ping configurations
-    ping_configs = get_ping_configs(data_dir)
+    bandwidth_configs = get_bandwidth_configs(data_dir)
     
-    if not ping_configs:
-        print("No ping configuration files found!")
+    if not bandwidth_configs:
+        print("❌ No ping files found in the data directory")
         return
     
-    # Group by direction
-    dl_configs = [(bw, path) for bw, direction, path in ping_configs if direction == 'dl']
-    ul_configs = [(bw, path) for bw, direction, path in ping_configs if direction == 'ul']
+    ping_data = {'dl': {}, 'ul': {}}
     
-    # Process each direction
-    for direction, configs in [('dl', dl_configs), ('ul', ul_configs)]:
-        if not configs:
-            continue
-            
-        print(f"\nProcessing {direction.upper()} configurations:")
+    print("Processing ping latency data:")
+    
+    for bandwidth_val in bandwidth_configs:
+        print(f"📊 Processing {bandwidth_val}M bandwidth...")
+        dl_file, ul_file = find_ping_files(data_dir, bandwidth_val)
         
-        results_dict = {}
+        if dl_file:
+            dl_data = parse_ping_log(dl_file)
+            ping_data['dl'][bandwidth_val] = dl_data
+            print(f"  📥 Downlink: {len(dl_data)} ping measurements")
         
-        for bandwidth, file_path in configs:
-            print(f"  Processing {bandwidth}M: {file_path.name}")
-            
-            # Parse ping data
-            ping_df = parse_ping_log(file_path)
-            
-            if ping_df.empty:
-                print(f"    Warning: No valid ping data found")
-                continue
-            
-            # Calculate quartile statistics
-            stats = calculate_quartile_stats(ping_df['latency_ms'].values)
-            
-            if stats:
-                results_dict[bandwidth] = stats
-                print(f"    Q1: {stats['q1']:.2f}ms, Q2: {stats['q2']:.2f}ms, Q3: {stats['q3']:.2f}ms")
-                print(f"    Mean: {stats['mean']:.2f}ms, Outliers: {stats['outlier_count']}")
-        
-        if results_dict:
-            # Create visualizations
-            quartile_file = create_quartile_analysis_plot(results_dict, output_dir, direction)
-            boxplot_file = create_filtered_box_plot(results_dict, output_dir, direction)
-            
-            print(f"\n{direction.upper()} analysis complete:")
-            print(f"  Quartile analysis: {quartile_file}")
-            print(f"  Filtered box plot: {boxplot_file}")
+        if ul_file:
+            ul_data = parse_ping_log(ul_file)
+            ping_data['ul'][bandwidth_val] = ul_data
+            print(f"  📤 Uplink: {len(ul_data)} ping measurements")
+    
+    # Create comprehensive analysis
+    create_comprehensive_ping_analysis(ping_data, mode, output_dir)
+    
+    print(f"✅ Ping latency analysis complete! Results saved to {output_dir}")
+    if log_file:
+        print(f"📋 Log file saved to: {log_file}")
+    
+    if log_handle:
+        log_handle.close()
 
 if __name__ == "__main__":
-    # Check if data directory is provided as command line argument
     if len(sys.argv) > 1:
-        data_directory = sys.argv[1]
-        analyze_ping_latency(data_directory)
+        analyze_ping_latency(sys.argv[1])
     else:
         analyze_ping_latency()

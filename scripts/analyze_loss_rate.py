@@ -1,49 +1,37 @@
-import re
+from pathlib import Path
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-from pathlib import Path
+import re
 import sys
+import os
 
 def load_json_data(file_path):
-    """Load JSON data from a file"""
-    with open(file_path, 'r') as f:
-        return json.load(f)
-
-def extract_iperf_loss_data(cn_data, ue_data):
-    """Extract loss data from iperf CN and UE JSON results"""
-    cn_packets_sent = cn_data['end']['streams'][0]['udp']['packets']
-    ue_packets_received = ue_data['end']['streams'][0]['udp']['packets']
-    
-    # Calculate loss percentages
-    cn_loss_percent = cn_data['end']['streams'][0]['udp']['lost_percent']
-    ue_loss_percent = ue_data['end']['streams'][0]['udp']['lost_percent']
-    
-    # Manual calculation based on actual packet counts
-    manual_loss_rate = ((cn_packets_sent - ue_packets_received) / cn_packets_sent) * 100 if cn_packets_sent > 0 else 0
-    
-    return {
-        'cn_packets_sent': cn_packets_sent,
-        'ue_packets_received': ue_packets_received,
-        'cn_loss_percent': cn_loss_percent,
-        'ue_loss_percent': ue_loss_percent,
-        'manual_loss_rate': manual_loss_rate
-    }
-
-def get_jitter_info(ue_data):
-    """Extract jitter information from UE data"""
+    """Load JSON data from file"""
     try:
-        return ue_data['end']['streams'][0]['udp']['jitter_ms']
-    except KeyError:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading {file_path}: {e}")
         return None
+
+def extract_loss_rate(data):
+    """Extract loss rate from iperf3 JSON"""
+    if not data:
+        return 0
+    
+    try:
+        if 'end' in data and 'sum' in data['end']:
+            return data['end']['sum'].get('lost_percent', 0)
+    except Exception as e:
+        print(f"Error extracting loss rate: {e}")
+        return 0
 
 def get_bandwidth_configs(data_dir):
     """Find all bandwidth configuration directories"""
     configs = []
     
-    # Look for files with bandwidth patterns
     for file_path in data_dir.glob('iperf*-*M-*.json'):
-        # Extract bandwidth value from filename
         match = re.search(r'-(\d+)M-', file_path.name)
         if match:
             bandwidth_val = int(match.group(1))
@@ -56,7 +44,6 @@ def find_iperf_files(data_dir, bandwidth_val):
     cn_file = None
     ue_file = None
     
-    # Look for files matching the pattern
     cn_pattern = f"iperf*-{bandwidth_val}M-CN.json"
     ue_pattern = f"iperf*-{bandwidth_val}M-UE.json"
     
@@ -70,127 +57,143 @@ def find_iperf_files(data_dir, bandwidth_val):
     
     return cn_file, ue_file
 
-def analyze_loss_rates(data_dir=None):
-    """Main function to analyze and plot loss rates"""
-    # Use provided data_dir or interactive selection
+def extract_mode_from_folder(folder_path):
+    """Extract mode from folder name"""
+    folder_name = Path(folder_path).name
+    
+    if '-' in folder_name:
+        parts = folder_name.split('-')
+        if len(parts) >= 2:
+            mode_part = parts[1].split('(')[0]
+            return mode_part
+    return "Unknown Mode"
+
+def analyze_loss_rate(data_dir=None):
+    """Main function to analyze and plot loss rate data"""
     if data_dir is None:
-        from data_selector import get_data_folder_interactive
+        from data_selector import get_data_folder_interactive, setup_logging, redirect_output_to_log, get_analysis_output_dir
         data_dir = get_data_folder_interactive()
         if not data_dir:
-            print("No data folder selected. Exiting...")
             return
     else:
         data_dir = Path(data_dir)
     
-    output_dir = Path('~/E2E-network-measurement/output').expanduser()
-    output_dir.mkdir(exist_ok=True)
+    # Extract mode from data directory
+    mode = extract_mode_from_folder(data_dir)
     
-    print(f"Analyzing loss data from: {data_dir}")
+    # Check for centralized output directory
+    if 'CENTRALIZED_OUTPUT_DIR' in os.environ:
+        output_dir = Path(os.environ['CENTRALIZED_OUTPUT_DIR'])
+        log_file = None
+        log_handle = None
+    else:
+        from data_selector import get_analysis_output_dir, setup_logging, redirect_output_to_log
+        analysis_base_dir = get_analysis_output_dir(data_dir)
+        output_dir = analysis_base_dir
+        log_file = setup_logging(output_dir, "loss_rate_analysis")
+        log_handle = redirect_output_to_log(log_file)
     
-    # Get all bandwidth configurations
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"Analyzing loss rate data from: {data_dir}")
+    
     bandwidth_configs = get_bandwidth_configs(data_dir)
     
     if not bandwidth_configs:
-        print("No bandwidth configuration files found!")
+        print("❌ No bandwidth configurations found in the data directory")
         return
     
-    iperf_loss_rates = []
-    manual_loss_rates = []
-    jitter_values = []
+    cn_loss_rates = []
+    ue_loss_rates = []
     labels = []
     
-    print("Processing loss rate calculations (iperf vs manual):")
+    print("Processing loss rate data:")
     
     for bandwidth_val in bandwidth_configs:
-        labels.append(f"{bandwidth_val}M")
-        
-        # Find corresponding files
+        print(f"📊 Processing {bandwidth_val}M bandwidth...")
         cn_file, ue_file = find_iperf_files(data_dir, bandwidth_val)
         
-        print(f"\n{bandwidth_val}M bandwidth configuration:")
-        
-        # Load data and extract loss information
         cn_data = load_json_data(cn_file) if cn_file else None
         ue_data = load_json_data(ue_file) if ue_file else None
         
-        loss_data = extract_iperf_loss_data(cn_data, ue_data)
-        jitter = get_jitter_info(ue_data)
+        cn_loss_rate = extract_loss_rate(cn_data)
+        ue_loss_rate = extract_loss_rate(ue_data)
         
-        # Use the more accurate loss rate (manual calculation from actual packet counts)
-        final_loss_rate = loss_data['manual_loss_rate']
+        cn_loss_rates.append(cn_loss_rate)
+        ue_loss_rates.append(ue_loss_rate)
+        labels.append(f"{bandwidth_val}M")
+    
+    # Create merged loss rate analysis plot
+    fig, ax1 = plt.subplots(figsize=(16, 10))
+    
+    x = np.arange(len(labels))
+    width = 0.35
+    
+    # Create bars
+    bars1 = ax1.bar(x - width/2, cn_loss_rates, width, label='CN (Sender)', 
+                   color='#1E88E5', alpha=0.7, edgecolor='black', linewidth=1)
+    bars2 = ax1.bar(x + width/2, ue_loss_rates, width, label='UE (Receiver)', 
+                   color='#D32F2F', alpha=0.7, edgecolor='black', linewidth=1)
+    
+    # Add trend lines
+    ax1.plot(x, cn_loss_rates, 'o-', color='#0D47A1', linewidth=2, markersize=6, 
+             markerfacecolor='white', markeredgewidth=2, label='CN Trend')
+    ax1.plot(x, ue_loss_rates, 's-', color='#B71C1C', linewidth=2, markersize=6, 
+             markerfacecolor='white', markeredgewidth=2, label='UE Trend')
+    
+    # Add value labels with smart positioning
+    max_loss = max(max(cn_loss_rates), max(ue_loss_rates)) if cn_loss_rates or ue_loss_rates else 1
+    label_spacing = max_loss * 0.015  # 1.5% spacing for better visibility
+    
+    for i, (cn_val, ue_val) in enumerate(zip(cn_loss_rates, ue_loss_rates)):
+        # CN labels with background boxes
+        if cn_val >= 0.01:  # Only show if >= 0.01%
+            ax1.text(i - width/2, cn_val + label_spacing, f'{cn_val:.2f}%', 
+                    ha='center', va='bottom', fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                             edgecolor='#1E88E5', alpha=0.9))
+        else:
+            ax1.text(i - width/2, cn_val + label_spacing, f'{cn_val:.3f}%', 
+                    ha='center', va='bottom', fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                             edgecolor='#1E88E5', alpha=0.9))
         
-        iperf_loss_rates.append(loss_data['ue_loss_percent'])
-        manual_loss_rates.append(final_loss_rate)
-        jitter_values.append(jitter if jitter else 0)
-        
-        print(f"  CN packets sent: {loss_data['cn_packets_sent']}")
-        print(f"  UE packets received: {loss_data['ue_packets_received']}")
-        print(f"  CN reported loss: {loss_data['cn_loss_percent']:.2f}%")
-        print(f"  UE reported loss: {loss_data['ue_loss_percent']:.2f}%")
-        print(f"  Manual calculated loss: {final_loss_rate:.2f}%")
-        if jitter:
-            print(f"  Jitter: {jitter:.3f} ms")
+        # UE labels with background boxes
+        if ue_val >= 0.01:  # Only show if >= 0.01%
+            ax1.text(i + width/2, ue_val + label_spacing, f'{ue_val:.2f}%', 
+                    ha='center', va='bottom', fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                             edgecolor='#D32F2F', alpha=0.9))
+        else:
+            ax1.text(i + width/2, ue_val + label_spacing, f'{ue_val:.3f}%', 
+                    ha='center', va='bottom', fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                             edgecolor='#D32F2F', alpha=0.9))
     
-    # Create the plot using manual calculation (more accurate)
-    plt.figure(figsize=(12, 7))
-    
-    # Create color gradient based on loss rate values
-    if max(manual_loss_rates) > 0:
-        normalized_rates = np.array(manual_loss_rates) / max(manual_loss_rates)
-        colors = plt.cm.Reds(0.3 + normalized_rates * 0.6)
-    else:
-        colors = ['#2E86AB'] * len(manual_loss_rates)
-    
-    bars = plt.bar(range(len(labels)), manual_loss_rates, color=colors, 
-                   edgecolor='black', linewidth=0.8, alpha=0.8)
-    
-    # Customize the plot
-    plt.xlabel('Bandwidth Configuration', fontsize=12, fontweight='bold')
-    plt.ylabel('Packet Loss Rate (%)', fontsize=12, fontweight='bold')
-    plt.title('Network Packet Loss Rate Analysis (Manual Calculation)', 
-              fontsize=14, fontweight='bold', pad=20)
-    
-    plt.xticks(range(len(labels)), labels, rotation=0)
-    plt.grid(True, alpha=0.3, linestyle='--', axis='y')
-    
-    # Add value labels on bars
-    for i, (bar, loss_rate) in enumerate(zip(bars, manual_loss_rates)):
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height + max(manual_loss_rates) * 0.01,
-                f'{loss_rate:.2f}%', ha='center', va='bottom', 
-                fontsize=10, fontweight='bold')
-    
-    # Add a horizontal line at acceptable loss rate threshold (e.g., 1%)
-    if max(manual_loss_rates) > 1:
-        plt.axhline(y=1.0, color='red', linestyle='--', alpha=0.7, linewidth=2, 
-                    label='1% Loss Threshold')
-        plt.legend(fontsize=10)
-    
-    # Set y-axis to start from 0 and add some margin
-    plt.ylim(0, max(manual_loss_rates) * 1.15 if manual_loss_rates and max(manual_loss_rates) > 0 else 5)
+    ax1.set_xlabel('Bandwidth Configuration', fontsize=14, fontweight='bold')
+    ax1.set_ylabel('Loss Rate (%)', fontsize=14, fontweight='bold')
+    ax1.set_title(f'Network Loss Rate Analysis - {mode} Mode\nCN (Sender) vs UE (Receiver) Comparison with Trends', 
+                  fontsize=16, fontweight='bold', pad=20)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(labels)
+    ax1.legend(fontsize=11, loc='upper left')
+    ax1.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
-    output_file = output_dir / 'loss_rate_analysis.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
+    output_file = output_dir / 'merged_loss_rate_analysis.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.show()
+    plt.close()
     
-    # Print detailed comparison
-    print("\nDetailed Loss Rate Comparison:")
-    print("Bandwidth\t\tiperf Report\tManual Calc\tJitter (ms)")
-    print("-" * 70)
-    for i, label in enumerate(labels):
-        iperf_loss = iperf_loss_rates[i]
-        manual_loss = manual_loss_rates[i]
-        jitter = jitter_values[i]
-        jitter_str = f"{jitter:.3f}" if jitter > 0 else "N/A"
-        print(f"{label}\t\t{iperf_loss:.2f}%\t\t{manual_loss:.2f}%\t\t{jitter_str}")
+    print(f"✅ Loss rate analysis complete! Plot saved to {output_file}")
+    if log_file:
+        print(f"📋 Log file saved to: {log_file}")
     
-    print(f"\nLoss rate analysis chart saved as '{output_file}'")
+    if log_handle:
+        log_handle.close()
 
 if __name__ == "__main__":
-    # Check if data directory is provided as command line argument
     if len(sys.argv) > 1:
-        data_directory = sys.argv[1]
-        analyze_loss_rates(data_directory)
+        analyze_loss_rate(sys.argv[1])
     else:
-        analyze_loss_rates()
+        analyze_loss_rate()
