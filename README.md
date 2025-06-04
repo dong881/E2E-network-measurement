@@ -2,13 +2,20 @@
 
 ## Project Summary
 
-This framework automates End-to-End (E2E) network performance testing using shell scripts and Python analysis tools. It coordinates actions across multiple devices (Control PC, RU, gNB, CN, UE) via SSH and ADB, collecting comprehensive performance metrics including throughput, latency, and packet loss. Key features include configurable test parameters (bandwidth, protocol, direction), automated setup/teardown of network components, data collection, and advanced visualizations. The modular design separates configuration into `variable.sh` (environment) and `run_config.sh` (test parameters), while `main.sh` orchestrates the entire process.
+This framework automates End-to-End (E2E) network performance testing using shell scripts and Python analysis tools. It coordinates actions across multiple devices (Control PC, RU, gNB, CN, UE) via SSH and ADB, collecting comprehensive performance metrics including throughput, latency, packet loss, jitter, and CPU utilization. Key features include configurable test parameters (bandwidth, protocol, direction), automated setup/teardown of network components, data collection, and advanced visualizations with individual analysis scripts for each metric type. The modular design separates configuration into `variable.sh` (environment) and `run_config.sh` (test parameters), while `main.sh` orchestrates the entire process.
 
 ## Overview
 
 This project provides an automated framework for end-to-end (E2E) network performance measurement. It leverages SSH, ADB, iPerf3, and ping to systematically evaluate network throughput and latency across various configurations. The framework is designed to be modular, allowing for easy configuration and execution of complex test scenarios involving Radio Units (RU), gNodeB (gNB), Core Network (CN), and User Equipment (UE).
 
 The core workflow involves setting up the network components (RU bandwidth, gNB), managing the UE connection, executing performance tests (iPerf3 and ping) based on defined parameters, collecting results, and cleaning up the environment. Configuration is managed through separate files (`variable.sh`, `run_config.sh`) for clarity and ease of modification.
+
+**Enhanced Analysis Features:**
+- **Automatic Data Source Selection**: The system remembers your last data directory selection for streamlined analysis
+- **Comprehensive Logging**: All analysis output is saved to log files with only status messages shown to users
+- **Mode Auto-Detection**: Automatically extracts testing mode (e.g., "nFAPI", "Monolithic") from folder names
+- **Professional Visualizations**: Enhanced color schemes and styling suitable for academic presentations and publications
+- **Interactive Analysis Menu**: Comprehensive analysis runner with selectable individual or grouped analyses
 
 ## Features
 
@@ -25,7 +32,7 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
 - **Data Collection**: Saves iPerf JSON results and ping logs for each test run.
 - **Robust Execution**: Includes retry logic for establishing UE connection.
 - **Advanced Analytics**:
-    - Network packet loss analysis (`VNF-lossPacket.py`)
+    - Network packet loss analysis (`VNF-lossPacket.py`) with interactive data folder selection
     - Comprehensive performance data processing (`network_analysis.py`)
     - Log analysis for timestamp differences (`Measure/analyze_logs.py`) 
     - Latency comparison across deployment models (`Measure/compare_latency.py`)
@@ -173,15 +180,27 @@ Modify the following files to match your environment:
 
 ### Data Analysis
 
-After collecting test data, you can analyze the results using the provided Python scripts:
+After collecting test data, you can analyze the results using the provided Python scripts. Each script focuses on a specific aspect of network performance:
 
-1. **Clean iPerf JSON Files (if needed)**:
+1. **Individual Metric Analysis**:
    ```bash
-   # Modify DATA_DIR in the script if necessary
-   python3 clean_iperf_json.py
+   # Throughput analysis
+   python3 scripts/analyze_throughput.py
+   
+   # Packet loss analysis
+   python3 scripts/analyze_packet_loss.py
+   
+   # Jitter analysis
+   python3 scripts/analyze_jitter.py
+   
+   # CPU utilization analysis
+   python3 scripts/analyze_cpu_utilization.py
+   
+   # Packet count analysis
+   python3 scripts/analyze_packet_count.py
    ```
 
-2. **Run the Network Analysis Script**:
+2. **Comprehensive Network Analysis**:
    ```bash
    python3 network_analysis.py
    ```
@@ -190,44 +209,22 @@ After collecting test data, you can analyze the results using the provided Pytho
    - Generate visualizations and statistics
    - Save results to `./results/YYYYMMDD/`
 
-3. **Analyze VNF-PNF Logs**:
+3. **VNF-PNF Communication Analysis**:
    ```bash
    python3 Measure/analyze_logs.py /path/to/vnf/log /path/to/pnf/log
    ```
-   This will:
-   - Calculate timestamp differences between VNF and PNF logs
-   - Generate statistical reports and visualizations
-   - Save results to `Measure/result/` directory
 
-4. **Compare Latency Across Deployment Models**:
+4. **Deployment Model Comparison**:
    ```bash
    python3 Measure/compare_latency.py
    ```
-   This will:
-   - Compare latency metrics across different deployment configurations
-   - Generate comparison charts and tables
-   - Save results to `Measure/result/` directory
 
-5. **Analyze Packet Loss**:
+5. **Clean iPerf JSON Files (if needed)**:
    ```bash
-   python3 VNF-lossPacket.py
+   python3 clean_iperf_json.py
    ```
-   Follow the prompts to input log data and analyze packet loss rates.
 
-6. **Analyze Ping Latency**:
-   ```bash
-   python3 Measure/analyze_ping_latency.py
-   ```
-   This will:
-   - Analyze ping latency data from the test results
-   - Generate latency distribution plots and statistics
-   - Save results to `Measure/result/` directory
-
-7. **Review the Results**:
-   - Summary plots show ping latency vs. throughput trends
-   - Detailed plots show per-test performance
-   - CSV files contain comprehensive metrics
-   - For detailed interpretation, refer to the [Visualization Guide](docs/visualization_guide.md)
+Each analysis script creates organized output in separate directories under `Analysis/analysis-<folder_name>/` for better organization and focused analysis.
 
 ## Script Details
 
@@ -239,7 +236,11 @@ After collecting test data, you can analyze the results using the provided Pytho
 - **[`user_equipment_utils.sh`](docs/modify_UE_details.md)**: Contains functions (`toggle_airplane_mode`, `get_ue_ip`, `run_iperf`) to interact with the UE via ADB. Called by `main.sh`. [See Details](docs/modify_UE_details.md)
 - **[`core_network_utils.sh`](docs/collect_data_fromCN_details.md)**: Contains functions (`ping-start`, `ping-stop`, `iperf-start`, `iperf-stop`) to manage test processes (ping, iperf3 server) on the CN server via SSH. Called by `main.sh`. [See Details](docs/collect_data_fromCN_details.md)
 - **`network_analysis.py`**: Python script for post-processing test results and generating visualizations. [See Details](docs/python_analysis.md)
-- **`VNF-lossPacket.py`**: Analyzes packet loss from VNF logs.
+- **`VNF-lossPacket.py`**: Analyzes packet loss from VNF logs with comprehensive statistical analysis.
+- **`scripts/analyze_loss_rate.py`**: Advanced loss rate analysis with merged CN vs UE comparison and trend analysis with enhanced output organization.
+- **`scripts/analyze_packet_loss.py`**: Publication-quality UE packet loss analysis with enhanced color coding and categorization.
+- **`scripts/analyze_packet_count.py`**: Network packet count analysis comparing CN transmission vs UE reception.
+- **`scripts/analyze_ping_latency.py`**: Comprehensive ping latency analysis with quartile statistics and organized output structure.
 - **`clean_iperf_json.py`**: Cleans iPerf JSON output files to fix parsing issues.
 - **`Measure/analyze_logs.py`**: Calculates timestamp differences between VNF and PNF logs.
 - **`Measure/compare_latency.py`**: Compares latency across different deployment models.

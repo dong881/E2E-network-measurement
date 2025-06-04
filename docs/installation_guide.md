@@ -113,8 +113,8 @@ pip3 install matplotlib numpy pandas seaborn
 ### 7. Create Required Directories
 
 ```bash
-# Create data directories
-mkdir -p data results Measure/log Measure/result
+# Create data and analysis directories
+mkdir -p data Analysis Measure/log Measure/result
 ```
 
 ## Configuration Setup

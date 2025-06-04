@@ -62,129 +62,185 @@ pip install matplotlib numpy pandas seaborn
 - `plot_results(groups, direction, output_dir)`: Creates summary plots and individual test plots
 - `create_comparison_table(results, direction, output_dir)`: Creates comparison tables and plots
 
-### Usage
+## 2. Individual Analysis Scripts
 
+### 2.1 `scripts/analyze_throughput.py`
+
+**Purpose**: Analyzes network throughput performance between CN (sender) and UE (receiver) with professional styling.
+
+**Key Features**:
+- Extracts throughput data from both CN and UE iPerf files
+- Creates comparative bar charts with professional color scheme matching throughput_comparison
+- Calculates throughput efficiency and displays percentage values with background styling
+- Professional value labeling with meaningful colors: Blue (#2E86AB) for CN, Pink (#A23B72) for UE, Yellow (#F8E71C) for efficiency
+- Outputs to `output/throughput_analysis/` directory
+
+### 2.2 `scripts/analyze_packet_loss.py`
+
+**Purpose**: Analyzes packet loss rates from the receiver (UE) perspective with publication-quality visualizations.
+
+**Key Features**:
+- Extracts UE-measured loss rates from `sum_received.lost_percent` (preferred) or fallback to `sum.lost_percent`
+- Publication-quality color scheme with six distinct loss rate ranges
+- Professional styling suitable for academic papers and presentations
+- Legend positioned at top-left showing loss rate ranges without quality classifications
+- Precise value labels (2 decimal places) for accurate data representation
+- Enhanced grid and professional typography
+- **Output**: PNG image file (`ue_packet_loss_analysis.png`), not log files
+- Generates visualizations directly to the output directory without creating logs subdirectory
+
+**Generated Files**:
+- `ue_packet_loss_analysis.png`: Comprehensive UE packet loss analysis with rate range categorization
+
+**Usage**:
 ```bash
-python3 network_analysis.py
+# Interactive mode (recommended)
+python3 scripts/analyze_packet_loss.py
+
+# Command line mode with specific directory
+python3 scripts/analyze_packet_loss.py /path/to/data/directory
 ```
 
-When prompted, select a test directory from the menu. The script will automatically process all files and generate visualizations.
+### 2.3 `tools/VNF-lossPacket.py`
 
-### Output Files
+**Purpose**: Analyzes packet loss between VNF and PNF components with interactive data selection.
 
-All outputs are saved to the `/home/ming/E2E-network-measurement/results/<directory_name>/` path:
+**Key Features**:
+- Interactive data folder selection using the data_selector module
+- Automatic discovery of VNF and PNF log files in selected directories
+- Packet ID-based loss analysis between network components
+- SFN/Slot specific packet loss analysis for cellular networks
+- Consecutive packet loss pattern analysis with visualization
+- Supports both command-line arguments and interactive mode
+- Enhanced error handling for file I/O operations
+- Outputs comprehensive packet loss statistics and visualizations
 
-- **CSV files**: `<direction>_udp_comparison.csv` (detailed metrics tables)
-- **Summary plot**: `ping_latency_<direction>_udp.png` (full-scale summary plot)
-- **Limited range plot**: `ping_latency_<direction>_udp-max100ms.png` (plot with 100ms limit)
-- **Detailed plots**: `<direction>_udp_<bandwidth>M_detailed.png` (one per test)
-- **Metrics comparison**: `<direction>_udp_metrics_comparison.png` (four-panel detailed metrics)
-
-## 2. `VNF-lossPacket.py`
-
-### Purpose
-Analyzes packet loss patterns from network logs, particularly focusing on VNF/gNB packet timing.
-
-### Features
-- Extracts packet information from log files
-- Calculates packet loss rate based on sequence numbers
-- Identifies patterns of consecutive packet losses
-- Generates statistical reports on packet loss characteristics
-- Produces visualizations of consecutive packet loss distribution
-
-### Key Functions
-- `calculate_packet_loss_rate(input_text)`: Analyzes text logs to determine packet loss metrics
-- `find_consecutive_losses(lost_packets)`: Identifies patterns of consecutive packet losses
-- `plot_consecutive_loss_distribution(consecutive_losses)`: Creates visualizations of loss patterns
-
-### Usage
+**Usage**:
 ```bash
-python3 VNF-lossPacket.py
+# Interactive mode (recommended)
+python3 tools/VNF-lossPacket.py -i
+
+# Command line mode
+python3 tools/VNF-lossPacket.py /path/to/vnf.log /path/to/pnf.log
+
+# With custom output file
+python3 tools/VNF-lossPacket.py -i -o custom_analysis.png
 ```
 
-Follow the prompts to input log content. Enter "END" on a new line when finished.
+### 2.4 `scripts/analyze_loss_rate.py`
 
-## 3. `Measure/analyze_logs.py`
+**Purpose**: Advanced loss rate analysis comparing CN (sender) and UE (receiver) perspectives with merged visualization and enhanced output organization.
 
-### Purpose
-Analyzes timestamp differences between VNF and PNF logs to measure communication latency and synchronization.
+**Key Features**:
+- Merged bar chart and trend line analysis in a single comprehensive plot
+- Precise data values displayed with 2 decimal places
+- CN vs UE comparison with distinct colors and markers
+- Trend lines overlaid on bar charts for pattern identification
+- Professional styling with enhanced legends and grid
+- Removes manual calculation redundancy, focuses on CN and UE measurements
+- Enhanced output organization with dedicated `loss_rate_analysis/` subdirectory
+- Proper file verification and error handling
+- Outputs to `output/loss_rate_analysis/` directory with merged analysis
 
-### Features
-- Extracts timestamps from VNF and PNF log files
-- Calculates time differences between corresponding log entries
-- Provides comprehensive statistical analysis of timestamp differences
-- Generates visualizations showing raw differences, filtered data, and box plots
-- Creates detailed reports with min/max/mean/median/standard deviation metrics
+**Generated Files**:
+- `merged_loss_rate_analysis.png`: Comprehensive CN vs UE loss rate comparison with trends and clean layout
 
-### Key Functions
-- `calculate_timestamp_differences(vnf_path, pnf_path)`: Extracts and calculates timestamp differences
-- `generate_report(vnf_path, pnf_path, differences, report_path)`: Creates a comprehensive report
-- `plot_timestamp_differences(differences, output_filename)`: Visualizes raw timestamp differences
-- `plot_filtered_differences(differences, output_filename)`: Creates filtered visualizations
-- `create_box_plot(data_dict, output_filename)`: Generates statistical box plots
+### 2.5 `scripts/analyze_jitter.py`
 
-### Usage
-```bash
-python3 Measure/analyze_logs.py /path/to/vnf_log /path/to/pnf_log
+**Purpose**: Analyzes network jitter (timing variation) from UE measurements.
+
+**Key Features**:
+- Extracts jitter data from UE iPerf files
+- Color-codes results based on jitter quality levels (Excellent ≤1ms, Good 1-3ms, Fair 3-5ms, Poor 5-10ms, Very Poor >10ms)
+- Shows jitter trends across bandwidth configurations with directional trend indicators
+- Includes enhanced aesthetics with meaningful color scheme and quality legend
+- Outputs to `output/jitter_analysis/` directory
+
+### 2.6 `scripts/analyze_cpu_utilization.py`
+
+**Purpose**: Analyzes CPU utilization for both CN and UE devices with enhanced visualizations.
+
+**Key Features**:
+- Creates stacked bar charts showing User + System CPU breakdown for both CN and UE
+- Displays user CPU values within the user sections and total values above bars for clear visibility
+- Smart label positioning to avoid layout overflow while maintaining readability
+- Generates comprehensive statistical summary tables with CPU difference analysis
+- Enhanced styling with professional color schemes and detailed labeling
+- Outputs to `output/cpu_analysis/` directory
+
+**Generated Plots**:
+- `cpu_total_utilization_stacked_comparison.png`: Enhanced stacked comparison of CN vs UE with user values displayed
+- `cpu_utilization_enhanced_summary_table.png`: Comprehensive statistical summary
+
+### 2.7 `scripts/analyze_ping_latency.py`
+
+**Purpose**: Analyzes ping latency with comprehensive statistical analysis and organized output.
+
+**Key Features**:
+- Creates comprehensive analysis plots combining all bandwidth configurations
+- Generates individual detailed analysis plots for each bandwidth configuration
+- Provides quartile analysis, outlier detection, and trend analysis
+- Enhanced styling with professional color schemes and improved readability
+- Outputs to centralized directory with organized structure
+
+**Generated Plots**:
+- `ping_latency_comprehensive_analysis_{direction}.png`: Overall analysis across all bandwidth configurations with professional styling and trend analysis
+- `ping_latency_comprehensive_analysis_{direction}_{bandwidth}M.png`: Individual detailed analysis for each bandwidth configuration with enhanced professional theming
+- Enhanced statistical summaries with professional color schemes suitable for academic papers
+- **Professional Theme**: Consistent color palette with no outliers displayed for cleaner visualizations
+- **Enhanced Readability**: Professional background styling for all statistical annotations and value labels
+
+## 3. Updated Analysis Workflow
+
+The improved analysis workflow now separates different metrics into individual scripts:
+
+1. **Data Collection**: Run tests using `main.sh`
+2. **Data Cleaning**: Use `clean_iperf_json.py` if needed
+3. **Individual Analysis**:
+   ```bash
+   python3 scripts/analyze_throughput.py
+   python3 scripts/analyze_packet_loss.py
+   python3 scripts/analyze_jitter.py
+   python3 scripts/analyze_cpu_utilization.py
+   python3 scripts/analyze_packet_count.py
+   ```
+4. **Comprehensive Analysis**: Use `network_analysis.py` for overall performance
+5. **Log Analysis**: Use `Measure/analyze_logs.py` for VNF-PNF timing
+6. **Comparison**: Use `Measure/compare_latency.py` for deployment model comparison
+
+## 4. Output Organization
+
+Each analysis script creates its own output directory structure with enhanced organization under `Analysis/analysis-<folder_name>/`:
+```
+Analysis/
+└── analysis-20250528-nFAPI(100-500M)/
+    ├── throughput_analysis/
+    │   └── throughput_comparison.png
+    ├── packet_loss_analysis/
+    │   └── ue_packet_loss_analysis.png
+    ├── jitter_analysis/
+    │   └── ue_jitter_analysis.png
+    ├── cpu_analysis/
+    │   ├── cpu_total_utilization_stacked_comparison.png
+    │   ├── cn_cpu_user_vs_system.png
+    │   ├── ue_cpu_user_vs_system.png
+    │   └── cpu_utilization_enhanced_summary_table.png
+    ├── packet_count_analysis/
+    │   └── packet_count_comparison.png
+    ├── ping_latency/
+    │   ├── ping_latency_raw_distribution_dl.png
+    │   ├── ping_latency_core_performance_dl.png
+    │   ├── ping_latency_quartile_boxplot_dl.png
+    │   ├── ping_latency_q2q3_analysis_dl.png
+    │   ├── ping_latency_outlier_analysis_dl.png
+    │   ├── ping_latency_statistical_summary_dl.png
+    │   ├── ping_latency_trend_analysis_dl.png
+    │   └── [similar files for ul direction]
+    └── network_analysis/
+        └── comprehensive_analysis_results.png
 ```
 
-### Output Files
-Results are saved to `Measure/result/` with filenames based on the input files:
-- `*_report.txt`: Detailed statistical report
-- `*_plot.png`: Raw timestamp difference plot
-- `*_filtered_plot.png`: Filtered timestamp difference plot (outliers removed)
-- `*_box_plot.png`: Statistical box plot
-
-## 4. `Measure/compare_latency.py`
-
-### Purpose
-Compares latency metrics across different deployment models (Monolithic, NFAPI with socket, NFAPI with raw socket).
-
-### Features
-- Parses latency report files from different deployment models
-- Extracts key metrics (mean, median, min, max, standard deviation)
-- Creates comparative visualizations showing relative performance
-- Provides statistical analysis of performance differences
-- Generates both graphical and tabular representations of results
-
-### Usage
-```bash
-python3 Measure/compare_latency.py
-```
-
-### Output Files
-- `Measure/result/latency_comparison.png`: Multi-panel comparison of all metrics
-- `Measure/result/latency_table.png`: Tabular summary of all metrics
-
-## 5. `clean_iperf_json.py`
-
-### Purpose
-Cleans and fixes iPerf JSON output files that may contain errors or multiple JSON objects.
-
-### Features
-- Identifies and removes error blocks from iPerf JSON files
-- Handles cases with multiple JSON objects in a single file
-- Preserves valid data while cleaning problematic sections
-- Automatically processes all JSON files in the target directory
-
-### Usage
-```bash
-# Edit the DATA_DIR variable in the script if necessary
-python3 clean_iperf_json.py
-```
-
-## Workflow and Integration
-
-These scripts form a comprehensive analysis pipeline:
-
-1. Run tests using `main.sh` to collect raw data
-2. Use `clean_iperf_json.py` to fix any problematic JSON files
-3. Use `network_analysis.py` to analyze throughput and latency performance
-4. Use `Measure/analyze_logs.py` to analyze VNF-PNF synchronization
-5. Use `Measure/compare_latency.py` to compare different deployment models
-6. Use `VNF-lossPacket.py` to investigate packet loss issues if needed
-
-The modular design allows focusing on specific aspects of network performance while maintaining a consistent analysis methodology.
+This organization makes it easy to find specific types of analysis and ensures each metric gets proper attention and visualization.
 
 ## Installation and Dependencies
 

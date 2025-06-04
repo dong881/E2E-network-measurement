@@ -10,15 +10,15 @@ The `core_network_utils.sh` script provides functions to start and stop network 
 
 ### `ping-start <target_ip>`
 
-*   **Purpose**: Starts a continuous ping process on the CN server targeting the UE's IP address, running in a `screen` session.
+*   **Purpose**: Starts a continuous ping process on the CN server targeting the UE's IP address, running in a `screen` session with enhanced timestamping.
 *   **Parameters**:
     *   `$1` (target\_ip): The IP address to ping (typically the UE's IP stored in `$UE_IP`).
 *   **Actions**:
     1.  Connects to the CN server (`CN_SERVER_USER@CN_SERVER_HOST`) via SSH using credentials from `variable.sh`.
     2.  Creates a screen session named "ping-session" that runs a continuous ping command.
     3.  The ping command uses the interface specified in `$INTERFACE` (from `variable.sh`).
-    4.  Each ping output line is timestamped using `date +"%s"` to add epoch timestamps.
-    5.  The output is redirected to `~/ping_value.log` on the CN server.
+    4.  Each ping output line is timestamped using `date +"%s"` to add high-precision epoch timestamps.
+    5.  The output is redirected to `~/ping_value.log` on the CN server for later analysis.
 *   **Called By**: `main.sh`.
 *   **Environment Variables Used**: `SERVER_PASSWORD`, `CN_SERVER_USER`, `CN_SERVER_HOST`, `INTERFACE`.
 *   **Example Call**:

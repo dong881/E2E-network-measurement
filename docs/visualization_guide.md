@@ -1,216 +1,246 @@
 # Understanding Network Analysis Visualizations
 
-This guide explains how to interpret the various charts and visualizations produced by the network analysis scripts.
+This guide explains how to interpret the various charts and visualizations produced by the network analysis scripts. All visualizations feature enhanced styling with professional value labels and improved readability.
 
-## 1. Ping Latency Summary Plot
+## Enhanced Visualization Features
 
-**Filename**: `ping_latency_<direction>_udp.png`
+All plots now include:
+- **Professional value labels**: Clear, readable labels with background boxes for better visibility
+- **Enhanced styling**: Professional color schemes with consistent theming across all visualizations matching throughput_comparison
+- **Better positioning**: Smart label positioning to avoid overlaps and layout issues
+- **Consistent formatting**: Standardized styling with professional color palette (#2E86AB, #A23B72, #F8E71C)
+- **High-resolution output**: 300 DPI for publication-quality images
+- **No outliers display**: Clean visualizations without outlier points for better readability
+- **Professional color theme**: Consistent use of throughput_comparison colors: Blue (#2E86AB), Pink (#A23B72), and Yellow (#F8E71C)
+- **Meaningful color coding**: Colors represent data categories with logical progression and contrast
 
-![Ping Latency Summary Plot](../assets/ping_latency_example.png)
+## 1. Ping Latency Analysis Plots
 
-This bar chart displays ping latency statistics across different target throughput values:
+### 1.1 Raw Data Distribution
+**Filename**: `ping_latency_raw_distribution_<direction>.png`
 
-- **X-axis**: Target throughput values in Mbps
+Complete data distribution with professional styling:
+- **X-axis**: Bandwidth configurations in Mbps
 - **Y-axis**: Ping latency in milliseconds
-- **Blue sections**: Range from minimum to average ping latency
-- **Red sections**: Range from average to maximum ping latency
-- **Black line with dots**: Average ping latency
-- **Text labels**: Actual values for minimum, average, and maximum latency
+- **Features**: All data points included with no outliers displayed for cleaner visualization
+- **Color scheme**: Professional blue gradient (#1565C0 to #64B5F6) with enhanced contrast
+- **Enhanced features**: Professional statistical summary boxes with consistent theming
 
-**Interpretation**: 
-- Look for upward trends as throughput increases, which indicate increased latency under load
-- Note any sudden spikes in maximum latency, which may indicate network instability at certain bandwidths
-- Compare downlink vs. uplink patterns to understand asymmetric performance characteristics
+### 1.2 Core Performance Analysis  
+**Filename**: `ping_latency_core_performance_<direction>.png`
 
-## 2. Limited Range Ping Latency Plot (100ms)
+Focuses on Q2-Q3 range with professional green theming:
+- **Purpose**: Shows typical performance without outlier influence
+- **Color scheme**: Professional green gradient (#1B5E20 to #A5D6A7) for stability indication
+- **Use case**: Better for understanding normal operating conditions
+- **Enhanced features**: Professional value labels with color-coordinated backgrounds
+- **No outliers**: Clean visualization focusing on core performance data
 
-**Filename**: `ping_latency_<direction>_udp-max100ms.png`
+### 1.3 Comprehensive Analysis
+**Filename**: `ping_latency_comprehensive_analysis_<direction>.png`
 
-![Limited Range Ping Latency Plot](../assets/ping_latency_max100ms_example.png)
+Enhanced professional styling with comprehensive analysis:
+- **Focus**: Complete statistical analysis with professional annotations
+- **Color scheme**: Consistent professional theme with blue and green accents
+- **Purpose**: Publication-ready analysis suitable for academic presentations
+- **Enhanced features**: Professional background styling for all statistical elements
+- **Clean design**: No outliers displayed for optimal readability
 
-This is a modified version of the summary plot with the y-axis limited to 100ms:
+### 1.4 Quartile Box Plot
+**Filename**: `ping_latency_quartile_boxplot_<direction>.png`
 
-- **Y-axis limit**: Fixed at 100ms for better visibility of lower latency values
-- **Values exceeding 100ms**: Displayed with upward arrows (↑) and exact values in small boxes
-- **Color coding**: Blue boxes for minimum values, black for average, red for maximum
+Traditional statistical box plot with quartile analysis:
+- **Box components**: Q1 (25th percentile), median (Q2), Q3 (75th percentile)  
+- **Whiskers**: Min/max values within 1.5×IQR
+- **Color gradient**: Professional blue gradient representing different bandwidth levels
+- **Features**: Automatically saved with high DPI (300) for publication quality
+- **Purpose**: Statistical distribution analysis with quartile boundaries clearly marked
+- **Enhanced features**: Comprehensive statistical annotations with professional styling
 
-**Interpretation**:
-- Provides better resolution for comparing latency in the normal operating range (under 100ms)
-- Clearly indicates when values exceed the "good performance" threshold
-- Helps identify subtle patterns that might be obscured in the full-scale plot
+### 1.5 Q2-Q3 Range Analysis
+**Filename**: `ping_latency_q2q3_analysis_<direction>.png`
 
-## 3. Detailed Test Results Plot
+Detailed analysis of the interquartile range (Q2-Q3):
+- **Focus**: Core performance without outliers
+- **Color scheme**: Green gradient for stability indication
+- **Purpose**: Identifies stable performance characteristics
+- **Enhanced features**: Enhanced trend analysis with professional value display
 
-**Filename**: `<direction>_udp_<bandwidth>M_detailed.png`
+### 1.6 Outlier Analysis
+**Filename**: `ping_latency_outlier_analysis_<direction>.png`
 
-![Detailed Test Results](../assets/detailed_test_example.png)
+Shows the percentage of outlier measurements for each bandwidth:
+- **Y-axis**: Percentage of measurements that are outliers
+- **Definition**: Outliers are values beyond 1.5×IQR from Q1/Q3
+- **Purpose**: Identifies bandwidth settings with unstable performance
+- **Enhanced features**: Color-coded value labels matching the outlier severity
 
-This dual-panel plot shows the correlation between ping latency and throughput over time:
+### 1.7 Statistical Summary Table
+**Filename**: `ping_latency_statistical_summary_<direction>.png`
 
-**Top Panel (Ping Latency)**:
-- **X-axis**: Time in seconds
-- **Y-axis**: Ping latency in milliseconds
-- **Blue dots**: Test period ping measurements
-- **Red dots**: Buffer period ping measurements (excluded from statistics)
-- **Vertical red lines**: Test start and end boundaries
+Comprehensive tabular view with key statistics for each bandwidth configuration.
+- **Enhanced features**: Professional table styling with improved readability
 
-**Bottom Panel (Throughput)**:
-- **X-axis**: Time in seconds (aligned with top panel)
-- **Y-axis**: Throughput in Mbps
-- **Blue line**: UE throughput measurements
-- **Green line**: CN throughput measurements (uplink mode only)
-- **Horizontal red line**: Target throughput
-- **Vertical red lines**: Test start and end boundaries
+### 1.8 Trend Analysis
+**Filename**: `ping_latency_trend_analysis_<direction>.png`
 
-**Interpretation**:
-- Observe how ping latency correlates with throughput fluctuations
-- Identify any periodic patterns in either metric
-- Look for isolated latency spikes and their relationship to throughput drops
-- Assess how closely achieved throughput matches the target
+Line plot showing how latency metrics change with bandwidth:
+- **Red line**: Mean latency trend
+- **Blue line**: Median (Q2) latency trend
+- **Enhanced features**: Statistical summary boxes with professional background styling
 
-## 4. Metrics Comparison Plot
+## 2. Loss Rate Analysis Plots
 
-**Filename**: `<direction>_udp_metrics_comparison.png`
+### 2.1 Merged Loss Rate Analysis
+**Filename**: `merged_loss_rate_analysis.png`
 
-![Metrics Comparison](../assets/metrics_comparison_example.png)
+Comprehensive comparison combining bar charts and trend lines:
+- **Blue bars/line**: CN (sender) loss rate measurements
+- **Red bars/line**: UE (receiver) loss rate measurements
+- **Features**: Combined bar and line visualization, precise data values (3 decimal places)
+- **Purpose**: Complete sender-receiver comparison with trend identification
+- **Layout**: Clean design without overlapping elements for optimal readability
+- **Enhanced features**: Professional value labels with color-coordinated backgrounds, streamlined layout for better visibility
 
-This four-panel plot provides comprehensive performance comparisons:
+### 2.2 UE Packet Loss Analysis
+**Filename**: `ue_packet_loss_analysis.png`
 
-**Top Left (Throughput Comparison)**:
-- **X-axis**: Target throughput values
-- **Y-axis**: Achieved throughput in Mbps
-- **Blue line**: UE throughput
-- **Green line**: CN throughput (uplink mode only)
-- **Red dashed line**: Target throughput (ideal performance)
+Publication-quality analysis of packet loss from receiver (UE) perspective:
+- **Blue to Red gradient**: Quality-based color coding (Excellent to Critical)
+- **Quality categories**: Six distinct quality levels with specific loss rate ranges
+- **Bar chart**: Shows packet loss percentage for each bandwidth configuration
+- **Trend line**: Overlaid line showing loss rate trends across bandwidths
+- **Value labels**: Precise loss rate values (2 decimal places) with quality categories
+- **Features**: Professional styling suitable for academic presentations
+- **Purpose**: Receiver-side packet loss analysis with quality assessment
+- **Enhanced features**: Color-coordinated value labels with matching background boxes for optimal visibility
 
-**Top Right (Ping Latency vs Throughput)**:
-- **X-axis**: Target throughput values
-- **Y-axis**: Ping latency in milliseconds
-- **Black line**: Average ping latency
-- **Gray region**: Range between minimum and maximum ping latency
+**Quality Categories**:
+- **Excellent (0%)**: Sea Green - Perfect transmission
+- **Very Good (≤0.1%)**: Lime Green - Excellent quality
+- **Good (≤0.5%)**: Gold - Good quality  
+- **Acceptable (≤1.0%)**: Dark Orange - Acceptable for most applications
+- **Poor (≤3.0%)**: Orange Red - Degraded performance
+- **Critical (>3.0%)**: Crimson - Severe packet loss issues
 
-**Bottom Left (CPU Utilization)**:
-- **X-axis**: Target throughput values
-- **Y-axis**: CPU utilization percentage
-- **Magenta line**: Host CPU utilization
-- **Cyan line**: Remote CPU utilization
+### 2.3 VNF Packet Loss Analysis
+**Filename**: `vnf_packet_loss_analysis.png`
 
-**Bottom Right (Throughput Efficiency)**:
-- **X-axis**: Target throughput values
-- **Y-axis**: Efficiency percentage (achieved/target × 100%)
-- **Blue bars**: Efficiency percentage
-- **Red dashed line**: 100% efficiency mark (ideal performance)
-- **Text labels**: Actual efficiency percentage values
+Analyzes packet loss between VNF and PNF components:
+- **Pie chart**: Distribution of received vs lost packets
+- **Bar chart**: Absolute numbers of sent, received, and lost packets
+- **Features**: Interactive data folder selection, SFN/Slot analysis
+- **Purpose**: Component-level packet loss analysis for network debugging
+- **Enhanced features**: Professional value labels with background styling for improved readability
 
-**Interpretation**:
-- **Throughput Comparison**: Assess how well the achieved throughput tracks the target
-- **Ping Latency**: Identify throughput values where latency begins to increase significantly
-- **CPU Utilization**: Look for CPU bottlenecks that correlate with performance issues
-- **Throughput Efficiency**: Quickly identify which bandwidth settings achieve the highest efficiency
+### 2.4 Consecutive Loss Distribution
+**Filename**: Generated during SFN/Slot analysis
 
-## 5. CSV Comparison Table
+Shows distribution of consecutive packet losses:
+- **X-axis**: Length of consecutive packet loss (number of packets)
+- **Y-axis**: Frequency of occurrence
+- **Purpose**: Identifies patterns in packet loss behavior
+- **Enhanced features**: Statistical annotations with professional background styling
 
-**Filename**: `<direction>_udp_comparison.csv`
+## 3. CPU Utilization Analysis Plots
 
-This CSV file contains all the numeric data used to generate the plots, allowing for further analysis in spreadsheet software.
+### 3.1 Total CPU Utilization Comparison
+**Filename**: `cpu_total_utilization_comparison.png`
 
-**Columns**:
-- **Target (Mbps)**: Target throughput value
-- **UE Avg/Min/Max (Mbps)**: UE throughput statistics
-- **CN Avg/Min/Max (Mbps)**: CN throughput statistics (uplink mode only)
-- **Ping Avg/Min/Max (ms)**: Ping latency statistics
-- **Remote CPU (%)**: UE CPU utilization
-- **Host CPU (%)**: CN CPU utilization (uplink mode only)
+Compares total CPU usage between CN and UE across different bandwidths:
+- **Blue bars**: CN CPU utilization (host_total from CN data)
+- **Red bars**: UE CPU utilization (host_total from UE data)
+- **Note**: Each device reports its own host CPU usage
+- **Enhanced features**: Professional value labels with color-coordinated backgrounds
 
-**Interpretation**:
-- Use for detailed numerical analysis
-- Create custom visualizations
-- Export to reports
-- Calculate additional derived metrics
+### 3.2 UE CPU: User vs System  
+**Filename**: `ue_cpu_user_vs_system.png`
 
-## 6. VNF vs PNF Timestamp Difference Plots
+Shows the breakdown of UE CPU usage:
+- **Orange bars**: UE user space CPU utilization
+- **Red bars**: UE system space CPU utilization
+- **Purpose**: Identifies whether CPU load is from user applications or system processes
+- **Enhanced features**: Enhanced value display with professional background styling
 
-**Filename**: `*_VNF_vs_*_PNF_plot.png`, `*_VNF_vs_*_PNF_filtered_plot.png`, `*_VNF_vs_*_PNF_box_plot.png`
+### 3.3 CPU Utilization Summary Table
+**Filename**: `cpu_utilization_summary_table.png`
 
-These plots provide analysis of timestamp differences between VNF and PNF components:
+Comprehensive tabular summary of all CPU metrics including:
+- **CN Total CPU**: Overall CPU utilization on CN device
+- **CN User CPU**: CN user space CPU utilization  
+- **CN System CPU**: CN system space CPU utilization
+- **UE Total CPU**: Overall CPU utilization on UE device
+- **UE User CPU**: UE user space CPU utilization
+- **UE System CPU**: UE system space CPU utilization
 
-**Raw Plot**:
-- **X-axis**: Packet number
-- **Y-axis**: Time difference in ms
-- **Blue line**: VNF-PNF timestamp differences
-- **Red line**: Mean value
-- **Green line**: Median value
+This table provides a complete breakdown of CPU usage patterns for both sender (CN) and receiver (UE) devices across all bandwidth configurations.
+- **Enhanced features**: Professional table layout with improved typography and color scheme
 
-**Filtered Plot**:
-- Shows the same data with outliers removed based on IQR
+## 4. Latency Comparison Plots (Deployment Models)
 
-**Box Plot**:
-- Shows statistical distribution of timestamp differences in log scale
-- Displays median, quartiles, and outliers
+### 4.1 Latency Metrics Comparison
+**Filename**: `latency_metrics_comparison.png`
 
-**Interpretation**:
-- Lower values indicate better synchronization between components
-- Consistency (lower standard deviation) is often more important than absolute values
-- Outliers may indicate network disruptions or processing issues
+Bar chart comparing all latency metrics across deployment models in normal scale.
+- **Enhanced features**: Professional value labels with deployment-specific color coding
 
-## 7. Latency Comparison Visualizations
+### 4.2 Latency Metrics Comparison (Log Scale)
+**Filename**: `latency_metrics_comparison_log.png`
 
-**Filename**: `latency_comparison.png`, `latency_table.png`
+Same comparison but with logarithmic y-axis for better visibility of small differences.
+- **Enhanced features**: Improved label positioning for log scale visualization
 
-These visualizations compare latency metrics across different deployment models:
+### 4.3 Mean Latency Comparison
+**Filename**: `mean_latency_comparison.png`
 
-**Comparison Plot**:
-- Bar charts comparing mean, median, min, max, and standard deviation across models
-- Log scale comparison to highlight differences in smaller values
-- Direct comparison of mean latency between models with percentage differences
+Focused comparison of mean latency with percentage difference annotations.
+- **Enhanced features**: Professional value labels with color-coordinated backgrounds matching deployment models
 
-**Summary Table**:
-- Tabular representation of all latency metrics for each deployment model
+### 4.4 Latency Summary Table
+**Filename**: `latency_summary_table.png`
 
-**Interpretation**:
-- Compare different deployment architectures (Monolithic, NFAPI with raw socket, NFAPI with socket)
-- Identify which model provides the lowest and most consistent latency
-- Quantify the performance impact of architectural choices
+Comprehensive table with all latency statistics for each deployment model.
+- **Enhanced features**: Professional table styling with improved readability and color scheme
 
-## 8. Packet Loss Analysis Charts
+## 5. VNF vs PNF Analysis Plots
 
-**Generated by**: `VNF-lossPacket.py`
+Generated by `Measure/analyze_logs.py`:
 
-When analyzing packet loss, the script generates:
+### 5.1 Raw Timestamp Differences
+**Filename**: `*_VNF_vs_*_PNF_plot.png`
 
-**Consecutive Loss Distribution Chart**:
-- **X-axis**: Length of consecutive packet losses
-- **Y-axis**: Frequency (count)
-- **Bars**: Frequency of each consecutive loss length
+Shows raw timestamp differences between VNF and PNF logs.
+- **Enhanced features**: Statistical summary box with professional background styling
 
-**Interpretation**:
-- Single packet losses (value of 1) are usually less problematic than consecutive losses
-- Higher values indicate more severe disruptions
-- Distribution shape helps identify whether losses are random or bursty
+### 5.2 Filtered Timestamp Differences  
+**Filename**: `*_VNF_vs_*_PNF_filtered_plot.png`
 
-## Key Performance Indicators
+Same data with outliers removed for clearer trend visibility.
+- **Enhanced features**: Enhanced statistical annotations and improved trend visualization
 
-When analyzing these visualizations, focus on these key performance indicators:
+### 5.3 Statistical Box Plot
+**Filename**: `*_VNF_vs_*_PNF_box_plot.png`
 
-1. **Throughput Efficiency**: How close the achieved throughput gets to the target
-2. **Latency Stability**: Consistency of ping times (small difference between min and max)
-3. **Latency vs Throughput Curve**: How quickly latency increases with throughput
-4. **CPU Utilization Impact**: Whether performance issues correlate with high CPU usage
-5. **Maximum Stable Throughput**: Highest throughput before performance degrades significantly
-6. **VNF-PNF Synchronization**: Consistency of timestamp differences between components
-7. **Packet Loss Rate**: Overall percentage and distribution of lost packets
-8. **Deployment Model Impact**: Relative performance differences between architectural choices
+Box plot showing the statistical distribution of timestamp differences.
+- **Enhanced features**: Professional component annotations with background styling
 
-## Comparing Uplink vs Downlink
+## Key Improvements in Enhanced Plot Generation
 
-The script generates separate sets of visualizations for uplink and downlink tests:
+1. **Professional Value Labels**: All plots feature value labels with professional background styling
+2. **Consistent Professional Color Theme**: Unified color palette using professional blues, reds, and greens
+3. **No Outliers Display**: All visualizations exclude outlier points for cleaner, more readable charts
+4. **Enhanced Typography**: Improved font sizing, weighting, and professional styling
+5. **Professional Statistical Annotations**: Statistical summary boxes with consistent background theming
+6. **High-Resolution Output**: All plots saved at 300 DPI for publication quality
+7. **Better Error Handling**: Enhanced error handling in data parsing and visualization generation
+8. **Improved Professional Aesthetics**: Better contrast, readability, and professional appearance
 
-- **Downlink**: Data sent from network to UE (CN → UE)
-- **Uplink**: Data sent from UE to network (UE → CN)
+## Data Source Corrections
 
-When comparing these visualizations, note:
+The loss rate analysis now correctly uses:
+- **Primary source**: `end.sum.lost_percent` from iPerf JSON output
+- **Verification**: Manual calculation from packet counts
+- **Separate metrics**: CN (sender) vs UE (receiver) perspectives
+- **Comprehensive analysis**: Multiple visualization approaches for complete understanding
 
-- Uplink typically has lower maximum throughput
-- Latency characteristics may differ between directions
-- CPU utilization patterns are often asymmetric
-- Buffer bloat effects may manifest differently
+This ensures accurate loss rate measurements and provides multiple perspectives on packet loss behavior across different bandwidth configurations.
