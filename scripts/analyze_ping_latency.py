@@ -87,8 +87,96 @@ def extract_mode_from_folder(folder_path):
     
     return mode.strip() if mode.strip() else "Unknown"
 
-def create_quartile_analysis_plot(results_dict, output_dir, direction, mode):
-    """Create comprehensive quartile analysis visualization"""
+def extract_throughput_data(file_path):
+    """Extract throughput data from iPerf JSON file (borrowed from analyze_throughput.py)"""
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        end_summary = data.get('end', {})
+        sum_sent = end_summary.get('sum_sent', {})
+        sum_received = end_summary.get('sum_received', {})
+        
+        # For CN data, use bits_per_second from sum section if available
+        cn_bits_per_second = end_summary.get('sum', {}).get('bits_per_second', 0)
+        if cn_bits_per_second == 0:
+            cn_bits_per_second = sum_sent.get('bits_per_second', 0)
+        
+        return {
+            'sent_mbps': cn_bits_per_second / 1_000_000,
+            'received_mbps': sum_received.get('bits_per_second', 0) / 1_000_000,
+        }
+    except Exception as e:
+        print(f"Error extracting throughput data from {file_path}: {e}")
+        return None
+
+def find_iperf_files_for_bandwidth(data_dir, bandwidth_val):
+    """Find CN and UE iPerf files for throughput data"""
+    cn_file = None
+    ue_file = None
+    
+    # Multiple patterns to search for files
+    cn_patterns = [
+        f'*CN*{bandwidth_val}M*.json',
+        f'*CN*{bandwidth_val}*.json',
+        f'*cn*{bandwidth_val}m*.json',
+        f'*{bandwidth_val}*CN*.json',
+        f'*{bandwidth_val}*cn*.json'
+    ]
+    
+    ue_patterns = [
+        f'*UE*{bandwidth_val}M*.json', 
+        f'*UE*{bandwidth_val}*.json',
+        f'*ue*{bandwidth_val}m*.json',
+        f'*{bandwidth_val}*UE*.json',
+        f'*{bandwidth_val}*ue*.json'
+    ]
+    
+    # Search for CN files
+    for pattern in cn_patterns:
+        for file_path in data_dir.glob(pattern):
+            if 'iperf' in file_path.name.lower():
+                cn_file = file_path
+                break
+        if cn_file:
+            break
+    
+    # Search for UE files
+    for pattern in ue_patterns:
+        for file_path in data_dir.glob(pattern):
+            if 'iperf' in file_path.name.lower():
+                ue_file = file_path
+                break
+        if ue_file:
+            break
+    
+    return cn_file, ue_file
+
+def get_throughput_data_for_bandwidths(data_dir, bandwidths):
+    """Get throughput data for all bandwidth configurations"""
+    throughput_data = {}
+    
+    for bandwidth_val in bandwidths:
+        cn_file, ue_file = find_iperf_files_for_bandwidth(data_dir, bandwidth_val)
+        
+        cn_data = None
+        ue_data = None
+        
+        if cn_file:
+            cn_data = extract_throughput_data(cn_file)
+        
+        if ue_file:
+            ue_data = extract_throughput_data(ue_file)
+        
+        throughput_data[bandwidth_val] = {
+            'cn_sent': cn_data['sent_mbps'] if cn_data else 0,
+            'ue_received': ue_data['received_mbps'] if ue_data else 0
+        }
+    
+    return throughput_data
+
+def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, data_dir=None):
+    """Create comprehensive quartile analysis visualization with throughput labels"""
     
     plt.rcParams.update({
         'font.family': 'serif',
@@ -99,7 +187,24 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode):
     })
     
     bandwidths = sorted(results_dict.keys())
-    labels = [f"{bw}M" for bw in bandwidths]
+    
+    # Get throughput data for enhanced labels
+    throughput_data = {}
+    if data_dir:
+        throughput_data = get_throughput_data_for_bandwidths(data_dir, bandwidths)
+    
+    # Create enhanced labels with throughput information
+    labels = []
+    for bw in bandwidths:
+        if bw in throughput_data:
+            recv_mbps = throughput_data[bw]['ue_received']
+            sent_mbps = throughput_data[bw]['cn_sent']
+            if recv_mbps > 0 and sent_mbps > 0:
+                labels.append(f"{recv_mbps:.1f}M\n({sent_mbps:.1f}M send)")
+            else:
+                labels.append(f"{bw}M")
+        else:
+            labels.append(f"{bw}M")
     
     # Color scheme
     box_color = '#2E7D32'
@@ -145,9 +250,9 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode):
             label='Q2 Median Trend', 
             zorder=10)
 
-    plt.xlabel('Iperf Bandwidth Configuration (Mbps)')
+    plt.xlabel('Throughput Configuration (recv/send Mbps)')
     plt.ylabel('Ping Latency (ms)')
-    plt.title(f'Latency Distribution Analysis: {mode} Mode ({direction.upper()})')
+    plt.title(f'Latency Distribution Analysis: {mode} Mode ({direction.upper()}) - Throughput Impact (recv/send)')
     plt.grid(True, alpha=0.3, linestyle=':', color='gray')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -161,7 +266,7 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode):
     plt.close()
     output_files.append(output_file1)
     
-    # 2. Quality Analysis
+    # 2. Quality Analysis - also update labels
     fig, ax = plt.subplots(figsize=(12, 7))
     
     outlier_counts = [results_dict[bw]['outlier_count'] for bw in bandwidths]
@@ -203,9 +308,9 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode):
     ax.legend(handles=legend_elements, loc='upper left', frameon=True, 
              fancybox=True, shadow=True, framealpha=0.9)
     
-    plt.xlabel('Iperf Bandwidth Configuration (Mbps)')
+    plt.xlabel('Throughput Configuration (recv/send Mbps)')
     plt.ylabel('Outlier Percentage (%)')
-    plt.title(f'Network Quality Assessment: {mode} Mode ({direction.upper()})')
+    plt.title(f'Network Quality Assessment: {mode} Mode ({direction.upper()}) - Throughput Impact (recv/send)')
     plt.grid(True, alpha=0.3, linestyle=':', axis='y', color='gray')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -307,7 +412,7 @@ def create_ping_summary_table(results_dict, output_dir, direction, mode):
     
     return output_file
 
-def create_comprehensive_ping_analysis(ping_data, mode, output_dir):
+def create_comprehensive_ping_analysis(ping_data, mode, output_dir, data_dir):
     """Create comprehensive ping latency analysis"""
     
     for direction in ['dl', 'ul']:
@@ -332,7 +437,7 @@ def create_comprehensive_ping_analysis(ping_data, mode, output_dir):
         
         # Create analysis plots
         try:
-            analysis_files = create_quartile_analysis_plot(results_dict, output_dir, direction, mode)
+            analysis_files = create_quartile_analysis_plot(results_dict, output_dir, direction, mode, data_dir)
             
             # Create summary table
             table_file = create_ping_summary_table(results_dict, output_dir, direction, mode)
@@ -407,7 +512,7 @@ def analyze_ping_latency(data_dir=None):
             print(f"  📤 Uplink: {len(ul_data)} ping measurements")
     
     # Create comprehensive analysis
-    create_comprehensive_ping_analysis(ping_data, mode, output_dir)
+    create_comprehensive_ping_analysis(ping_data, mode, output_dir, data_dir)
     
     print(f"✅ Ping latency analysis complete! Results saved to {output_dir}")
     if log_file:
