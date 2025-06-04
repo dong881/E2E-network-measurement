@@ -195,15 +195,18 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
     
     # Create enhanced labels with throughput information
     labels = []
+    recv_values = []  # Store received throughput values for background bars
     for bw in bandwidths:
         if bw in throughput_data:
             recv_mbps = throughput_data[bw]['ue_received']
             sent_mbps = throughput_data[bw]['cn_sent']
+            recv_values.append(recv_mbps)
             if recv_mbps > 0 and sent_mbps > 0:
-                labels.append(f"{recv_mbps:.1f}M\n({sent_mbps:.1f}M send)")
+                labels.append(f"{recv_mbps:.1f}/{sent_mbps:.1f}")
             else:
                 labels.append(f"{bw}M")
         else:
+            recv_values.append(bw)  # Fallback to bandwidth value
             labels.append(f"{bw}M")
     
     # Color scheme
@@ -211,35 +214,54 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
     median_color = '#1B5E20'
     whisker_color = '#4B5563'
     q2_trend_color = '#FF5722'
+    bar_edge_color = '#FF0000'  # Red outline for bars
     
     output_files = []
     
-    # 1. Box Plot with Q2 Trend Line
+    # 1. Box Plot with Q2 Trend Line and Background Throughput Bars
     fig, ax = plt.subplots(figsize=(12, 7))
     
+    # Create twin axis for throughput bars
+    ax2 = ax.twinx()
+    
+    # FIRST: Add background bars for received throughput (unfilled with red outline)
+    x_positions = range(1, len(bandwidths) + 1)
+    bars = ax2.bar(x_positions, recv_values, alpha=0.5, color='none', 
+                   width=0.9, edgecolor=bar_edge_color, linewidth=2.0,
+                   label='Received Throughput (Background)', zorder=0)
+    
+    # Set throughput axis scale with red color
+    ax2.set_ylabel('Received Throughput (Mbps)', color='#FF0000')
+    ax2.tick_params(axis='y', labelcolor='#FF0000')
+    ax2.set_ylim(0, max(recv_values) * 1.2 if recv_values else 100)
+    
+    # SECOND: Create box plot on primary axis (middle layer)
     box_data = [results_dict[bw]['raw_data'] for bw in bandwidths]
     
-    box_plot = plt.boxplot(box_data, tick_labels=labels, patch_artist=True, 
-                          showfliers=False, widths=0.5)
+    box_plot = ax.boxplot(box_data, tick_labels=labels, patch_artist=True, 
+                          showfliers=False, widths=0.5, zorder=2)
     
     for patch in box_plot['boxes']:
         patch.set_facecolor(box_color)
         patch.set_alpha(0.8)
         patch.set_edgecolor(whisker_color)
+        patch.set_zorder(2)
     
     for whisker in box_plot['whiskers']:
         whisker.set_color(whisker_color)
         whisker.set_linewidth(1.8)
+        whisker.set_zorder(2)
     for cap in box_plot['caps']:
         cap.set_color(whisker_color)
         cap.set_linewidth(1.8)
+        cap.set_zorder(2)
     for median in box_plot['medians']:
         median.set_color(median_color)
         median.set_linewidth(3.0)
+        median.set_zorder(2)
 
-    # Add Q2 trend line
+    # THIRD: Add Q2 trend line (top layer with highest z-order)
     q2_values = [results_dict[bw]['q2'] for bw in bandwidths]
-    x_positions = range(1, len(bandwidths) + 1)
     
     ax.plot(x_positions, q2_values, 'o-', 
             linewidth=2.5, markersize=6, 
@@ -248,16 +270,22 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
             markeredgewidth=2.0, 
             markeredgecolor=q2_trend_color,
             label='Q2 Median Trend', 
-            zorder=10)
+            zorder=3)
 
-    plt.xlabel('Throughput Configuration (recv/send Mbps)')
-    plt.ylabel('Ping Latency (ms)')
-    plt.title(f'Latency Distribution Analysis: {mode} Mode ({direction.upper()}) - Throughput Impact (recv/send)')
-    plt.grid(True, alpha=0.3, linestyle=':', color='gray')
+    # Set primary axis properties with green color
+    ax.set_xlabel('Throughput Configuration (recv/send Mbps)')
+    ax.set_ylabel('Ping Latency (ms)', color='#2E7D32')
+    ax.tick_params(axis='y', labelcolor='#2E7D32')
+    ax.set_title(f'Latency Distribution Analysis: {mode} Mode ({direction.upper()}) - Throughput Impact (recv/send)')
+    ax.grid(True, alpha=0.3, linestyle=':', color='gray', zorder=1)
     ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    plt.ylim(0, 100)
-    plt.legend()
+    ax.set_ylim(0, 100)
+    
+    # Create combined legend
+    lines1, labels1 = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    
     plt.tight_layout()
     
     output_file1 = output_dir / f'ping_latency_boxplot_{direction}.png'

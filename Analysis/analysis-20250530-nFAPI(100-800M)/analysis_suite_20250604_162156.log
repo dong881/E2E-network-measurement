@@ -1,0 +1,169 @@
+Network Analysis Suite Log
+Started: 2025-06-04 16:21:56
+Data Directory: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
+Selected Analyses: throughput, packet_loss, ping_latency, jitter, cpu
+================================================================================
+
+================================================================================
+Analysis: analyze_throughput.py
+Started: 2025-06-04 16:21:58
+================================================================================
+STDOUT:
+Analyzing throughput data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
+Processing throughput data:
+📊 Processing 100M bandwidth...
+  📤 CN: 100.0 Mbps sent
+  📥 UE: 100.0 Mbps received
+📊 Processing 200M bandwidth...
+  📤 CN: 200.0 Mbps sent
+  📥 UE: 200.0 Mbps received
+📊 Processing 300M bandwidth...
+  📤 CN: 300.0 Mbps sent
+  📥 UE: 299.6 Mbps received
+📊 Processing 400M bandwidth...
+  📤 CN: 400.0 Mbps sent
+  📥 UE: 387.9 Mbps received
+📊 Processing 500M bandwidth...
+  📤 CN: 500.0 Mbps sent
+  📥 UE: 497.2 Mbps received
+📊 Processing 600M bandwidth...
+  📤 CN: 600.0 Mbps sent
+  📥 UE: 578.7 Mbps received
+📊 Processing 700M bandwidth...
+  📤 CN: 700.0 Mbps sent
+  📥 UE: 624.9 Mbps received
+📊 Processing 800M bandwidth...
+  📤 CN: 800.0 Mbps sent
+  📥 UE: 627.6 Mbps received
+✅ Throughput comparison plot saved: throughput_comparison.png
+✅ Throughput analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)
+
+Return Code: 0
+Completed: 2025-06-04 16:21:58
+
+================================================================================
+Analysis: analyze_packet_loss.py
+Started: 2025-06-04 16:21:59
+================================================================================
+STDOUT:
+Analyzing UE packet loss data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
+Processing UE packet loss data:
+📊 Processing 100M bandwidth...
+  📉 UE Loss Rate: 0.005%
+📊 Processing 200M bandwidth...
+  📉 UE Loss Rate: 0.000%
+📊 Processing 300M bandwidth...
+  📉 UE Loss Rate: 0.152%
+📊 Processing 400M bandwidth...
+  📉 UE Loss Rate: 3.047%
+📊 Processing 500M bandwidth...
+  📉 UE Loss Rate: 0.583%
+📊 Processing 600M bandwidth...
+  📉 UE Loss Rate: 3.566%
+📊 Processing 700M bandwidth...
+  📉 UE Loss Rate: 10.739%
+📊 Processing 800M bandwidth...
+  📉 UE Loss Rate: 21.584%
+✅ UE packet loss analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)/ue_packet_loss_analysis.png
+
+Return Code: 0
+Completed: 2025-06-04 16:21:59
+
+================================================================================
+Analysis: analyze_ping_latency.py
+Started: 2025-06-04 16:22:03
+================================================================================
+STDOUT:
+📋 Detected mode: nFAPI
+Analyzing ping latency data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
+Processing ping latency data:
+📊 Processing 100M bandwidth...
+  📥 Downlink: 1819 ping measurements
+📊 Processing 200M bandwidth...
+  📥 Downlink: 1819 ping measurements
+📊 Processing 300M bandwidth...
+  📥 Downlink: 1813 ping measurements
+📊 Processing 400M bandwidth...
+  📥 Downlink: 1697 ping measurements
+📊 Processing 500M bandwidth...
+  📥 Downlink: 1813 ping measurements
+📊 Processing 600M bandwidth...
+  📥 Downlink: 1742 ping measurements
+📊 Processing 700M bandwidth...
+  📥 Downlink: 1552 ping measurements
+📊 Processing 800M bandwidth...
+  📥 Downlink: 1273 ping measurements
+📊 Creating DL ping analysis...
+✅ Analysis plots saved: 3 files
+
+📋 DL Ping Latency Summary:
+--------------------------------------------------
+100M: Mean=21.05ms, Median=18.70ms, Std=7.86ms, Outliers=35
+200M: Mean=21.78ms, Median=20.00ms, Std=10.05ms, Outliers=40
+300M: Mean=23.22ms, Median=20.40ms, Std=17.08ms, Outliers=53
+400M: Mean=25.27ms, Median=22.40ms, Std=24.38ms, Outliers=70
+500M: Mean=24.21ms, Median=19.90ms, Std=31.62ms, Outliers=75
+600M: Mean=32.53ms, Median=26.60ms, Std=37.57ms, Outliers=108
+700M: Mean=51.20ms, Median=32.30ms, Std=55.81ms, Outliers=214
+800M: Mean=62.99ms, Median=34.20ms, Std=75.81ms, Outliers=188
+⚠️ No UL ping data found, skipping...
+✅ Ping latency analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)
+
+Return Code: 0
+Completed: 2025-06-04 16:22:03
+
+================================================================================
+Analysis: analyze_jitter.py
+Started: 2025-06-04 16:22:05
+================================================================================
+STDOUT:
+Analyzing jitter data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
+Processing jitter data:
+📊 Processing 100M bandwidth...
+  📈 UE Jitter: 0.075ms
+📊 Processing 200M bandwidth...
+  📈 UE Jitter: 0.030ms
+📊 Processing 300M bandwidth...
+  📈 UE Jitter: 0.025ms
+📊 Processing 400M bandwidth...
+  📈 UE Jitter: 0.014ms
+📊 Processing 500M bandwidth...
+  📈 UE Jitter: 0.012ms
+📊 Processing 600M bandwidth...
+  📈 UE Jitter: 0.034ms
+📊 Processing 700M bandwidth...
+  📈 UE Jitter: 0.013ms
+📊 Processing 800M bandwidth...
+  📈 UE Jitter: 0.022ms
+✅ Jitter analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)/ue_jitter_analysis.png
+
+Return Code: 0
+Completed: 2025-06-04 16:22:05
+
+================================================================================
+Analysis: analyze_cpu_utilization.py
+Started: 2025-06-04 16:22:08
+================================================================================
+STDOUT:
+Analyzing CPU utilization data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
+✅ Processing CPU utilization data...
+📊 Processing 100M bandwidth...
+📊 Processing 200M bandwidth...
+📊 Processing 300M bandwidth...
+📊 Processing 400M bandwidth...
+📊 Processing 500M bandwidth...
+📊 Processing 600M bandwidth...
+📊 Processing 700M bandwidth...
+📊 Processing 800M bandwidth...
+📈 Creating CPU utilization visualizations...
+✅ CPU analysis complete! Generated 2 plots in /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)
+
+Return Code: 0
+Completed: 2025-06-04 16:22:08
+
+================================================================================
+Analysis Suite Summary
+Completed: 2025-06-04 16:22:08
+Successful: 5
+Failed: 0
+================================================================================
