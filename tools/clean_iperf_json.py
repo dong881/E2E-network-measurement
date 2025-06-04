@@ -11,7 +11,7 @@ import os
 import glob
 from pathlib import Path
 
-DATA_DIR = "/home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)"
+DATA_DIR = "/home/ming/E2E-network-measurement/data/20250530-NFAPI(100-800M)"
 
 def is_error_block(obj):
     return (
