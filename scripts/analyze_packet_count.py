@@ -163,9 +163,9 @@ def analyze_packet_count(data_dir=None):
             plt.text(i - width/2 - 0.05, cn_val + label_spacing, 
                     format_large_number(cn_val), 
                     ha='center', va='bottom', fontsize=9, fontweight='bold',
-                    bbox=dict(boxstyle="round,pad=0.3", facecolor='white', 
-                             edgecolor='#C85A90', alpha=0.9),
-                    rotation=0)
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor='#C85A90', 
+                             edgecolor='white', alpha=0.9),
+                    rotation=0, color='white')
         
         # UE labels - positioned above bars with formatted numbers
         if ue_val > 0:
@@ -173,9 +173,9 @@ def analyze_packet_count(data_dir=None):
             plt.text(i + width/2 + 0.05, ue_val + label_spacing, 
                     format_large_number(ue_val), 
                     ha='center', va='bottom', fontsize=9, fontweight='bold',
-                    bbox=dict(boxstyle="round,pad=0.3", facecolor='white', 
-                             edgecolor='#5BA3C7', alpha=0.9),
-                    rotation=0)
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor='#5BA3C7', 
+                             edgecolor='white', alpha=0.9),
+                    rotation=0, color='white')
     plt.xlabel('Bandwidth Configuration', fontsize=14, fontweight='bold')
     plt.ylabel('Packet Count', fontsize=14, fontweight='bold')
     plt.title(f'Network Packet Count Analysis - {mode} Mode\nCN Transmission vs UE Reception Comparison', 

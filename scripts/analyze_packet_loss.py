@@ -57,19 +57,19 @@ def find_ue_iperf_files(data_dir, bandwidth_val):
     return None
 
 def get_loss_rate_color(loss_rate):
-    """Get color based on loss rate (REVERSED ORDER - Red for good, Green for bad)"""
+    """Get color based on loss rate (Green for good, Red for bad)"""
     if loss_rate == 0:
-        return '#DC143C'  # Crimson (Best)
+        return '#2E8B57'  # Sea Green (Best)
     elif loss_rate <= 0.1:
-        return '#FF4500'  # Orange Red  
+        return '#32CD32'  # Lime Green  
     elif loss_rate <= 0.5:
-        return '#FF8C00'  # Dark Orange
-    elif loss_rate <= 1.0:
         return '#FFD700'  # Gold
+    elif loss_rate <= 1.0:
+        return '#FF8C00'  # Dark Orange
     elif loss_rate <= 3.0:
-        return '#32CD32'  # Lime Green
+        return '#FF4500'  # Orange Red
     else:
-        return '#2E8B57'  # Sea Green (Worst)
+        return '#DC143C'  # Crimson (Worst)
 
 def extract_mode_from_folder(folder_path):
     """Extract mode from folder name"""
@@ -166,14 +166,14 @@ def analyze_packet_loss(data_dir=None):
     plt.title(f'UE Network Packet Loss Analysis - {mode} Mode\nReceiver-Side Loss Rate Assessment', 
               fontsize=16, fontweight='bold', pad=25)
     
-    # Create custom legend for loss rate ranges (REVERSED)
+    # Create custom legend for loss rate ranges (Natural order)
     legend_elements = [
-        plt.Rectangle((0,0),1,1, facecolor='#DC143C', label='Perfect (0%)'),
-        plt.Rectangle((0,0),1,1, facecolor='#FF4500', label='Excellent (≤0.1%)'),
-        plt.Rectangle((0,0),1,1, facecolor='#FF8C00', label='Very Good (≤0.5%)'),
-        plt.Rectangle((0,0),1,1, facecolor='#FFD700', label='Good (≤1.0%)'),
-        plt.Rectangle((0,0),1,1, facecolor='#32CD32', label='Poor (≤3.0%)'),
-        plt.Rectangle((0,0),1,1, facecolor='#2E8B57', label='Critical (>3.0%)')
+        plt.Rectangle((0,0),1,1, facecolor='#2E8B57', label='Perfect (0%)'),
+        plt.Rectangle((0,0),1,1, facecolor='#32CD32', label='Excellent (≤0.1%)'),
+        plt.Rectangle((0,0),1,1, facecolor='#FFD700', label='Very Good (≤0.5%)'),
+        plt.Rectangle((0,0),1,1, facecolor='#FF8C00', label='Good (≤1.0%)'),
+        plt.Rectangle((0,0),1,1, facecolor='#FF4500', label='Poor (≤3.0%)'),
+        plt.Rectangle((0,0),1,1, facecolor='#DC143C', label='Critical (>3.0%)')
     ]
     
     plt.legend(handles=legend_elements, loc='upper left', fontsize=10, 

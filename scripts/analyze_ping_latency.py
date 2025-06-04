@@ -181,7 +181,27 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode):
         else:
             bar_colors.append('#F44336')    # Critical
     
-    plt.bar(labels, outlier_percentages, color=bar_colors, alpha=0.8)
+    bars = plt.bar(labels, outlier_percentages, color=bar_colors, alpha=0.8)
+    
+    # Add professional value labels on bars
+    for i, (bar, pct) in enumerate(zip(bars, outlier_percentages)):
+        if pct > 0:
+            label_y = min(pct + 1, 98)
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5, f'{pct:.1f}%', 
+                   ha='center', va='bottom', fontsize=10, fontweight='bold',
+                   bbox=dict(boxstyle="round,pad=0.3", facecolor='white', 
+                            edgecolor=bar_colors[i], alpha=0.9, linewidth=1.5))
+    
+    # Add color legend for quality levels
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor='#4CAF50', alpha=0.8, label='Excellent (0% outliers)'),
+        Patch(facecolor='#66BB6A', alpha=0.8, label='Good (≤5% outliers)'),
+        Patch(facecolor='#FFA726', alpha=0.8, label='Moderate (6-15% outliers)'),
+        Patch(facecolor='#F44336', alpha=0.8, label='Critical (>15% outliers)')
+    ]
+    ax.legend(handles=legend_elements, loc='upper left', frameon=True, 
+             fancybox=True, shadow=True, framealpha=0.9)
     
     plt.xlabel('Iperf Bandwidth Configuration (Mbps)')
     plt.ylabel('Outlier Percentage (%)')
@@ -230,6 +250,63 @@ def find_ping_files(data_dir, bandwidth_val):
     
     return dl_file, ul_file
 
+def create_ping_summary_table(results_dict, output_dir, direction, mode):
+    """Create enhanced summary table for ping latency statistics"""
+    
+    plt.rcParams.update({
+        'font.family': 'serif',
+        'font.size': 11,
+        'axes.titlesize': 13,
+        'axes.labelsize': 12,
+    })
+    
+    fig, ax = plt.subplots(figsize=(14, 8))
+    ax.axis('off')
+    
+    bandwidths = sorted(results_dict.keys())
+    
+    # Create enhanced summary table with detailed breakdown
+    table_data = []
+    for bw in bandwidths:
+        stats = results_dict[bw]
+        row = [
+            f"{bw}M",
+            f"{stats['mean']:.2f}",
+            f"{stats['q2']:.2f}",  # Median
+            f"{stats['q1']:.2f}",
+            f"{stats['q3']:.2f}",
+            f"{stats['iqr']:.2f}",
+            f"{stats['std']:.2f}",
+            f"{stats['outlier_count']}"
+        ]
+        table_data.append(row)
+    
+    table = ax.table(
+        cellText=table_data,
+        colLabels=['Bandwidth', 'Mean (ms)', 'Median (ms)', 'Q1 (ms)', 'Q3 (ms)', 'IQR (ms)', 'Std Dev (ms)', 'Outliers'],
+        loc='center',
+        cellLoc='center'
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1.4, 2.0)
+    
+    # Style the table headers with professional colors matching CPU analysis
+    for i in range(len(table_data[0])):
+        table[(0, i)].set_facecolor('#2E86AB')
+        table[(0, i)].set_text_props(weight='bold', color='white')
+    
+    ax.set_title(f'Ping Latency Statistical Summary - {mode} Mode ({direction.upper()})', 
+                  fontsize=14, fontweight='bold', pad=25)
+    
+    plt.tight_layout()
+    output_file = output_dir / f'ping_latency_summary_table_{direction}.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.show()
+    plt.close()
+    
+    return output_file
+
 def create_comprehensive_ping_analysis(ping_data, mode, output_dir):
     """Create comprehensive ping latency analysis"""
     
@@ -256,6 +333,11 @@ def create_comprehensive_ping_analysis(ping_data, mode, output_dir):
         # Create analysis plots
         try:
             analysis_files = create_quartile_analysis_plot(results_dict, output_dir, direction, mode)
+            
+            # Create summary table
+            table_file = create_ping_summary_table(results_dict, output_dir, direction, mode)
+            analysis_files.append(table_file)
+            
             print(f"✅ Analysis plots saved: {len(analysis_files)} files")
         except Exception as e:
             print(f"❌ Error creating analysis for {direction}: {e}")

@@ -21,11 +21,11 @@ def get_available_analyses():
             'name': 'Throughput Analysis',
             'description': 'Analyze CN transmission vs UE reception throughput'
         },
-        'packet_count': {
-            'script': script_dir / 'analyze_packet_count.py', 
-            'name': 'Packet Count Analysis',
-            'description': 'Compare packet counts between CN and UE'
-        },
+        # 'packet_count': {
+        #     'script': script_dir / 'analyze_packet_count.py', 
+        #     'name': 'Packet Count Analysis',
+        #     'description': 'Compare packet counts between CN and UE'
+        # },
         'packet_loss': {
             'script': script_dir / 'analyze_packet_loss.py',
             'name': 'Packet Loss Analysis', 
