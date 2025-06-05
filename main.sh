@@ -32,8 +32,7 @@ done
 
 if [ "$SHUTDOWN_MODE" = true ]; then
     echo "Shutdown mode enabled. Stopping gNB and exiting."
-    stop_gNB "MONO"
-    stop_gNB "NFAPI"
+    reset_all
     exit 0
 fi
 
@@ -159,7 +158,7 @@ else
         
         if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
             echo "ERROR: Failed to get UE IP after $MAX_RETRIES attempts. Exiting script."
-            stop_gNB "$CURRENT_MODE"
+            reset_all
             exit 1
         fi
         
@@ -231,7 +230,7 @@ for direction in $directions; do
     done
 done
 
-stop_gNB "$CURRENT_MODE"
+reset_all
 sleep 5
 fetch_and_analyze_logs "$CURRENT_MODE"
 # toggle_airplane_mode "on"

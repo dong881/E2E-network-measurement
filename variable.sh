@@ -58,6 +58,11 @@ export CONTROL_PC_IP="140.118.162.81" # DESKTOP-3NKR1VR for Samsung UE
 export CONTROL_PC_USER="sshuser"
 export SERVER_PASSWORD="bmwlab"
 
+# KSMO host configuration
+export KSMO_HOST="192.168.8.121"
+export KSMO_USER="ksmo"
+export KSMO_HOME="/home/ksmo"
+
 # Core Network settings
 export CN_SERVER_USER="oai-cn"
 export CN_SERVER_HOST="192.168.8.108"
@@ -77,6 +82,7 @@ export PNF_BASE_PATH="~/oai_mp_f_ming/openairinterface5g"
 # Common build directory and log files
 export VNF_LOG_FILE="VNF.txt"
 export PNF_LOG_FILE="PNF.txt"
+export GNF_LOG_FILE="~/ming.log"
 
 # Local measurement directory
 export LOCAL_MEASURE_DIR="/home/ming/E2E-network-measurement/Measure/log"

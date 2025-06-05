@@ -304,6 +304,10 @@ reset_all() {
     #     echo "Setting RU bandwidth to 100M..."
     #     radio_unit_utils "100000000"
     # fi
+
+    # Optional: Reset Jura RU configuration
+    source smo.sh
+    configure_jura_ru
     
     echo "Reset complete."
 }
