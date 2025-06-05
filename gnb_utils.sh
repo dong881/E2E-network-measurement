@@ -48,6 +48,8 @@ CMD_VNF_100M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PRO
 CMD_VNF_40M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_40M $VNF_OPTS"
 CMD_PNF_SPLIT="$PNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_PNF_SPLIT $PNF_OPTS"
 
+
+
 # Function to start a screen session
 start_session() {
     local session_name=$1
@@ -55,7 +57,7 @@ start_session() {
     local target_user=$3
     local target_host=$4
     
-    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command &> ~/ming.log'"
+    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command &> $GNF_LOG_FILE'"
 }
 
 # Function to stop a screen session
@@ -65,6 +67,26 @@ stop_session() {
     local target_host=$3
     
     sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -X -S $session_name quit"
+}
+
+# Function to wait for UE parameters in log file
+wait_for_ue_parameters() {
+    local target_user=${1:-$GNB_SERVER_USER}
+    local target_host=${2:-$GNB_SERVER_HOST}
+    local search_pattern="Command line parameters for OAI UE:"
+    
+    echo "Waiting for UE parameters to appear in log file on $target_user@$target_host..."
+    
+    while true; do
+        # Check if the pattern exists in the log file
+        if sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "grep -q '$search_pattern' $GNF_LOG_FILE 2>/dev/null"; then
+            echo "Found '$search_pattern' in log file"
+            return 1
+        fi
+        
+        # Wait 2 seconds before checking again
+        sleep 2
+    done
 }
 
 # Function to start split machine setup

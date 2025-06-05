@@ -119,10 +119,16 @@ if [ "$MANUAL_MODE_ENABLED" = true ]; then
         reset_all "$CURRENT_MODE"
         start_gNB "$CURRENT_MODE"
     fi
-    echo "Manual mode enabled. Press Enter to continue and get UE IP automatically..."
-    read -r
-    get_ue_ip
-    echo "UE IP address obtained: $UE_IP"
+    wait_for_ue_parameters
+    echo "Manual mode enabled. Waiting for UE to connect and get IP automatically..."
+    while true; do
+        get_ue_ip
+        if [ -n "$UE_IP" ]; then
+            echo "Successfully obtained UE IP: $UE_IP"
+            break
+        fi
+        sleep 1
+    done
 else
     reset_all "$CURRENT_MODE"
     start_gNB "$CURRENT_MODE"
@@ -163,8 +169,6 @@ else
 fi
 
 sleep 1
-# Create directory for results if it doesn't exist
-# mkdir -p "./data/$(date +"%Y%m%d")"
 
 # Define test protocols
 protocols=""
