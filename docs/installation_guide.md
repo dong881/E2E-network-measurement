@@ -322,7 +322,7 @@ After successful installation and configuration:
    ```bash
    ./main.sh --manual-mode  # For interactive mode
    # OR
-   ./main.sh --mode MONO    # For automatic mode
+   ./main.sh --mode Monolithic    # For automatic mode
    ```
 
 2. Check the generated test data in the `data/` directory

@@ -104,7 +104,7 @@ start_split_setup() {
 # Function to start single machine setup
 start_single_setup() {
     local bandwidth=$1  # 100M or 40M
-    local mode=$2      # NFAPI or MONO
+    local mode=$2      # NFAPI or Monolithic
     
     if [ "$bandwidth" = "100M" ]; then
         if [ "$mode" = "NFAPI" ]; then
@@ -136,9 +136,9 @@ start_single_setup() {
 # start_single_setup "100M" "NFAPI"    # 100M bandwidth
 # start_single_setup "40M" "NFAPI"     # 40M bandwidth
 
-# Single machine setup (MONO mode)
-# start_single_setup "100M" "MONO"    # 100M bandwidth
-# start_single_setup "40M" "MONO"     # 40M bandwidth
+# Single machine setup (Monolithic mode)
+# start_single_setup "100M" "Monolithic"    # 100M bandwidth
+# start_single_setup "40M" "Monolithic"     # 40M bandwidth
 
 # Stop sessions
 # Function to stop split machine setup
@@ -157,7 +157,7 @@ stop_split_setup() {
 # Function to stop single machine setup
 stop_single_setup() {
     local bandwidth=$1  # 100M or 40M
-    local mode=$2      # NFAPI or MONO
+    local mode=$2      # NFAPI or Monolithic
     
     if [ "$bandwidth" = "100M" ]; then
         if [ "$mode" = "NFAPI" ]; then
@@ -178,8 +178,8 @@ stop_single_setup() {
 
 start_gNB() {
     local mode=${1:-$CURRENT_MODE}  # Use provided mode or default to CURRENT_MODE
-    if [ "$mode" = "MONO" ]; then
-        start_single_setup "100M" "MONO"
+    if [ "$mode" = "Monolithic" ]; then
+        start_single_setup "100M" "Monolithic"
     else
         start_split_setup "100M"
     fi
@@ -187,8 +187,8 @@ start_gNB() {
 
 stop_gNB() {
     local mode=${1:-$CURRENT_MODE}  # Use provided mode or default to CURRENT_MODE
-    if [ "$mode" = "MONO" ]; then
-        stop_single_setup "100M" "MONO"
+    if [ "$mode" = "Monolithic" ]; then
+        stop_single_setup "100M" "Monolithic"
     else
         stop_split_setup "100M"
     fi
@@ -196,12 +196,12 @@ stop_gNB() {
 
 # Function to fetch log files and analyze them
 fetch_and_analyze_logs() {
-    local mode=$1  # "MONO" or "NFAPI"
+    local mode=$1  # "Monolithic" or "NFAPI"
 
     # Create measurement directory if it doesn't exist
     mkdir -p $LOCAL_MEASURE_DIR
     
-    if [ "$mode" = "MONO" ]; then
+    if [ "$mode" = "Monolithic" ]; then
         # For Monolithic mode
         local vnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
@@ -240,14 +240,14 @@ fetch_and_analyze_logs() {
             echo "Failed to copy one or more log files"
         fi
     else
-        echo "Invalid mode. Please specify either 'MONO' or 'NFAPI'."
+        echo "Invalid mode. Please specify either 'Monolithic' or 'NFAPI'."
     fi
 }
 
 # Function to clean log files on servers
 clean_log_files() {
-    local mode=$1  # "MONO" or "NFAPI"    
-    if [ "$mode" = "MONO" ]; then
+    local mode=$1  # "Monolithic" or "NFAPI"    
+    if [ "$mode" = "Monolithic" ]; then
         # For Monolithic mode, both logs are on the same server
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
@@ -267,16 +267,16 @@ clean_log_files() {
         sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $pnf_remote_log" &>/dev/null
         
     else
-        echo "Invalid mode. Please specify either 'MONO' or 'NFAPI'."
+        echo "Invalid mode. Please specify either 'Monolithic' or 'NFAPI'."
     fi
 }
 
 # Function to reset all states and prepare for a clean start
 reset_all() {
 
-    stop_gNB "MONO"
+    stop_gNB "Monolithic"
     stop_gNB "NFAPI"
-    clean_log_files "MONO"
+    clean_log_files "Monolithic"
     clean_log_files "NFAPI"
 
     # Stop sessions on CN server
@@ -313,11 +313,11 @@ reset_all() {
 }
 
 # Example usage:
-# clean_log_files "MONO"  # Clean log files in monolithic mode
+# clean_log_files "Monolithic"  # Clean log files in monolithic mode
 # clean_log_files "NFAPI" # Clean log files in NFAPI mode
 
 # Example usage:
-# fetch_and_analyze_logs "MONO"  # For monolithic mode
+# fetch_and_analyze_logs "Monolithic"  # For monolithic mode
 # fetch_and_analyze_logs "NFAPI" # For NFAPI mode
 
 # Split machine setup stop examples
@@ -327,5 +327,5 @@ reset_all() {
 # Single machine setup stop examples
 # stop_single_setup "100M" "NFAPI"    # Stop 100M bandwidth NFAPI setup
 # stop_single_setup "40M" "NFAPI"     # Stop 40M bandwidth NFAPI setup
-# stop_single_setup "100M" "MONO"     # Stop 100M bandwidth MONO setup
-# stop_single_setup "40M" "MONO"      # Stop 40M bandwidth MONO setup
+# stop_single_setup "100M" "Monolithic"     # Stop 100M bandwidth Monolithic setup
+# stop_single_setup "40M" "Monolithic"      # Stop 40M bandwidth Monolithic setup

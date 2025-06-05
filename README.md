@@ -158,8 +158,8 @@ Modify the following files to match your environment:
     # Manual mode (requires UE IP input)
     ./main.sh --manual-mode
     
-    # Specify gNB mode (MONO or NFAPI)
-    ./main.sh --mode MONO
+    # Specify gNB mode (Monolithic or NFAPI)
+    ./main.sh --mode Monolithic
     ./main.sh --mode NFAPI
     ```
     The script will:

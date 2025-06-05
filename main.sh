@@ -9,7 +9,7 @@ source gnb_utils.sh
 UE_IP=""
 MANUAL_MODE_ENABLED=false
 PASS=false
-CURRENT_MODE="MONO"
+CURRENT_MODE="Monolithic"
 
 # Parse input arguments (只允許四個參數: --manual-mode, --mode, --pass, 與 --shutdown)
 SHUTDOWN_MODE=false
@@ -21,7 +21,7 @@ while [[ "$#" -gt 0 ]]; do
             echo "Options:"
             echo "  --help, -h          Show this help message and exit"
             echo "  --manual-mode       Enable manual mode (skip automatic UE connection)"
-            echo "  --mode MODE         Set gNB mode (default: MONO)"
+            echo "  --mode MODE         Set gNB mode (default: Monolithic)"
             echo "  --pass              Skip reset and gNB restart (continue from current state)"
             echo "  --shutdown          Shutdown mode - stop gNB and exit"
             echo "  --ru-bw BANDWIDTH   Set LiteOn RU bandwidth and exit"

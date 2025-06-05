@@ -123,7 +123,7 @@ def get_mode_from_data_dir(data_dir):
     
     if 'nfapi' in dir_name:
         return 'NFAPI'
-    elif 'monolithic' in dir_name or 'mono' in dir_name:
+    elif 'monolithic' in dir_name or 'Monolithic' in dir_name:
         return 'Monolithic'
     else:
         return 'Unknown'

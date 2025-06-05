@@ -71,7 +71,7 @@ The script defines multiple configuration variables:
 *   **Purpose**: Starts the gNB in a monolithic (single server) configuration.
 *   **Parameters**:
     *   `$1` (bandwidth\_config): String identifier (e.g., "100M" or "40M").
-    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI" or "MONO").
+    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI" or "Monolithic").
 *   **Actions**:
     1.  Connects via SSH to the designated gNB server (`GNB_SERVER_USER@GNB_SERVER_HOST`).
     2.  Executes commands to start the appropriate gNB process (VNF, PNF, or monolithic) based on mode and bandwidth.
@@ -83,7 +83,7 @@ The script defines multiple configuration variables:
 *   **Purpose**: Stops the gNB running in a monolithic configuration.
 *   **Parameters**:
     *   `$1` (bandwidth\_config): String identifier (e.g., "100M" or "40M").
-    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI" or "MONO").
+    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI" or "Monolithic").
 *   **Actions**:
     1.  Connects via SSH to the gNB server.
     2.  Sends commands to terminate the appropriate gNB process based on mode and bandwidth.
@@ -95,21 +95,21 @@ The script defines multiple configuration variables:
 #### `start_gNB [mode]`
 - **Purpose**: High-level function to start gNB based on mode
 - **Parameters**:
-  - `$1` (mode): Optional. Mode to use (MONO or NFAPI). Defaults to CURRENT_MODE.
-- **Actions**: Calls either `start_single_setup` for MONO mode or `start_split_setup` for other modes
+  - `$1` (mode): Optional. Mode to use (Monolithic or NFAPI). Defaults to CURRENT_MODE.
+- **Actions**: Calls either `start_single_setup` for Monolithic mode or `start_split_setup` for other modes
 
 #### `stop_gNB [mode]`
 - **Purpose**: High-level function to stop gNB based on mode
 - **Parameters**:
-  - `$1` (mode): Optional. Mode to stop (MONO or NFAPI). Defaults to CURRENT_MODE.
-- **Actions**: Calls either `stop_single_setup` for MONO mode or `stop_split_setup` for other modes
+  - `$1` (mode): Optional. Mode to stop (Monolithic or NFAPI). Defaults to CURRENT_MODE.
+- **Actions**: Calls either `stop_single_setup` for Monolithic mode or `stop_split_setup` for other modes
 
 ### Log Management Functions
 
 #### `fetch_and_analyze_logs <mode>`
 - **Purpose**: Retrieves log files from gNB servers and analyzes them
 - **Parameters**:
-  - `$1` (mode): Mode to analyze (MONO or NFAPI)
+  - `$1` (mode): Mode to analyze (Monolithic or NFAPI)
 - **Actions**:
   1. Creates measurement directory if it doesn't exist
   2. Retrieves VNF and PNF logs from appropriate servers based on mode
@@ -118,7 +118,7 @@ The script defines multiple configuration variables:
 #### `clean_log_files <mode>`
 - **Purpose**: Cleans up log files on gNB servers
 - **Parameters**:
-  - `$1` (mode): Mode to clean (MONO or NFAPI)
+  - `$1` (mode): Mode to clean (Monolithic or NFAPI)
 - **Actions**: Removes VNF and PNF log files from appropriate servers based on mode
 
 #### `reset_all [mode]`
@@ -135,7 +135,7 @@ The script defines multiple configuration variables:
 
 ```bash
 # Start gNB in monolithic mode
-start_gNB "MONO"
+start_gNB "Monolithic"
 
 # Stop gNB in NFAPI mode
 stop_gNB "NFAPI"
@@ -144,7 +144,7 @@ stop_gNB "NFAPI"
 reset_all
 
 # Fetch and analyze logs for monolithic mode
-fetch_and_analyze_logs "MONO"
+fetch_and_analyze_logs "Monolithic"
 ```
 
 ## Important Notes
