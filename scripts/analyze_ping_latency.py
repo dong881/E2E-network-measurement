@@ -230,9 +230,9 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
                    width=0.9, edgecolor=bar_edge_color, linewidth=2.0,
                    label='Received Throughput (Background)', zorder=0)
     
-    # Set throughput axis scale with red color
-    ax2.set_ylabel('Received Throughput (Mbps)', color='#FF0000')
-    ax2.tick_params(axis='y', labelcolor='#FF0000')
+    # Set throughput axis scale with blue color to match bar outline
+    ax2.set_ylabel('Received Throughput (Mbps)', color='#1976D2')
+    ax2.tick_params(axis='y', labelcolor='#1976D2')
     ax2.set_ylim(0, max(recv_values) * 1.2 if recv_values else 100)
     
     # SECOND: Create box plot on primary axis (middle layer)
@@ -281,10 +281,19 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
     ax.spines['top'].set_visible(False)
     ax.set_ylim(0, 100)
     
-    # Create combined legend
+    # Create combined legend with additional description
     lines1, labels1 = ax.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
-    ax.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    
+    # Add description for the green box plot
+    from matplotlib.patches import Patch
+    green_patch = Patch(facecolor=box_color, alpha=0.8, label='Green Box Plot: RTT Ping Latency (UE-CN)')
+    
+    # Combine all legend elements
+    all_lines = lines1 + lines2 + [green_patch]
+    all_labels = labels1 + labels2 + ['Green Box Plot: RTT Ping Latency (UE-CN)']
+    
+    ax.legend(all_lines, all_labels, loc='upper left')
     
     plt.tight_layout()
     

@@ -1,12 +1,12 @@
 Network Analysis Suite Log
-Started: 2025-06-04 16:44:27
+Started: 2025-06-05 17:18:37
 Data Directory: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
 Selected Analyses: throughput, packet_loss, ping_latency, jitter, cpu
 ================================================================================
 
 ================================================================================
 Analysis: analyze_throughput.py
-Started: 2025-06-04 16:44:29
+Started: 2025-06-05 17:18:39
 ================================================================================
 STDOUT:
 Analyzing throughput data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
@@ -39,11 +39,11 @@ Processing throughput data:
 ✅ Throughput analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)
 
 Return Code: 0
-Completed: 2025-06-04 16:44:29
+Completed: 2025-06-05 17:18:39
 
 ================================================================================
 Analysis: analyze_packet_loss.py
-Started: 2025-06-04 16:44:31
+Started: 2025-06-05 17:18:41
 ================================================================================
 STDOUT:
 Analyzing UE packet loss data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
@@ -67,11 +67,11 @@ Processing UE packet loss data:
 ✅ UE packet loss analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)/ue_packet_loss_analysis.png
 
 Return Code: 0
-Completed: 2025-06-04 16:44:31
+Completed: 2025-06-05 17:18:41
 
 ================================================================================
 Analysis: analyze_ping_latency.py
-Started: 2025-06-04 16:44:34
+Started: 2025-06-05 17:18:45
 ================================================================================
 STDOUT:
 📋 Detected mode: nFAPI
@@ -110,11 +110,11 @@ Processing ping latency data:
 ✅ Ping latency analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)
 
 Return Code: 0
-Completed: 2025-06-04 16:44:34
+Completed: 2025-06-05 17:18:45
 
 ================================================================================
 Analysis: analyze_jitter.py
-Started: 2025-06-04 16:44:36
+Started: 2025-06-05 17:18:47
 ================================================================================
 STDOUT:
 Analyzing jitter data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
@@ -138,11 +138,11 @@ Processing jitter data:
 ✅ Jitter analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)/ue_jitter_analysis.png
 
 Return Code: 0
-Completed: 2025-06-04 16:44:36
+Completed: 2025-06-05 17:18:47
 
 ================================================================================
 Analysis: analyze_cpu_utilization.py
-Started: 2025-06-04 16:44:39
+Started: 2025-06-05 17:18:50
 ================================================================================
 STDOUT:
 Analyzing CPU utilization data from: /home/ming/E2E-network-measurement/data/20250530-nFAPI(100-800M)
@@ -159,11 +159,11 @@ Analyzing CPU utilization data from: /home/ming/E2E-network-measurement/data/202
 ✅ CPU analysis complete! Generated 2 plots in /home/ming/E2E-network-measurement/Analysis/analysis-20250530-nFAPI(100-800M)
 
 Return Code: 0
-Completed: 2025-06-04 16:44:39
+Completed: 2025-06-05 17:18:50
 
 ================================================================================
 Analysis Suite Summary
-Completed: 2025-06-04 16:44:39
+Completed: 2025-06-05 17:18:50
 Successful: 5
 Failed: 0
 ================================================================================
