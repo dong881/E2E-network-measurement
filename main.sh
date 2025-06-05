@@ -164,7 +164,7 @@ fi
 
 sleep 1
 # Create directory for results if it doesn't exist
-mkdir -p "./data/$(date +"%Y%m%d")"
+# mkdir -p "./data/$(date +"%Y%m%d")"
 
 # Define test protocols
 protocols=""
