@@ -107,19 +107,19 @@ start_single_setup() {
     local mode=$2      # NFAPI or Monolithic
     
     if [ "$bandwidth" = "100M" ]; then
-        if [ "$mode" = "NFAPI" ]; then
-            start_session "VNF_100M" "$CMD_VNF_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
-            start_session "PNF" "$CMD_PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
-        else
+        if [ "$mode" = "Monolithic" ]; then
             # start_session "MONO_100M" "$CMD_MONO_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
             start_session "MONO_100M" "$CMD_MONO_100M_JURA_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+        else
+            start_session "VNF_100M" "$CMD_VNF_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+            start_session "PNF" "$CMD_PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     elif [ "$bandwidth" = "40M" ]; then
-        if [ "$mode" = "NFAPI" ]; then
+        if [ "$mode" = "Monolithic" ]; then
+            start_session "MONO_40M" "$CMD_MONO_40M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+        else
             start_session "VNF_40M" "$CMD_VNF_40M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
             start_session "PNF" "$CMD_PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
-        else
-            start_session "MONO_40M" "$CMD_MONO_40M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     fi
 }
@@ -160,18 +160,18 @@ stop_single_setup() {
     local mode=$2      # NFAPI or Monolithic
     
     if [ "$bandwidth" = "100M" ]; then
-        if [ "$mode" = "NFAPI" ]; then
+        if [ "$mode" = "Monolithic" ]; then
+            stop_session "MONO_100M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+        else
             stop_session "VNF_100M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
             stop_session "PNF" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
-        else
-            stop_session "MONO_100M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     elif [ "$bandwidth" = "40M" ]; then
-        if [ "$mode" = "NFAPI" ]; then
+        if [ "$mode" = "Monolithic" ]; then
+            stop_session "MONO_40M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+        else
             stop_session "VNF_40M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
             stop_session "PNF" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
-        else
-            stop_session "MONO_40M" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         fi
     fi
 }
@@ -220,7 +220,7 @@ fetch_and_analyze_logs() {
         else
             echo "Failed to copy one or more log files"
         fi
-    elif [ "$mode" = "NFAPI" ]; then
+    else
         # For NFAPI mode (need both VNF and PNF logs)
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
@@ -239,8 +239,6 @@ fetch_and_analyze_logs() {
         else
             echo "Failed to copy one or more log files"
         fi
-    else
-        echo "Invalid mode. Please specify either 'Monolithic' or 'NFAPI'."
     fi
 }
 
@@ -255,7 +253,7 @@ clean_log_files() {
         # Execute with a direct command string that handles the password prompt
         sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log $pnf_remote_log" &>/dev/null
         
-    elif [ "$mode" = "NFAPI" ]; then
+    else
         # For NFAPI mode, logs are on different servers
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
@@ -265,9 +263,6 @@ clean_log_files() {
         
         # Adding -t option to allocate a pseudo-terminal
         sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $pnf_remote_log" &>/dev/null
-        
-    else
-        echo "Invalid mode. Please specify either 'Monolithic' or 'NFAPI'."
     fi
 }
 
@@ -454,17 +449,7 @@ backup_crash_logs() {
     echo "Backing up main gNB log..."
     sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$GNB_LOG_FILE" "$crash_dir/gnb_crash.log" 2>/dev/null || echo "Failed to backup main gNB log"
     
-    if [ "$mode" = "NFAPI" ]; then
-        # Backup VNF and PNF logs for NFAPI mode
-        local vnf_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
-        
-        echo "Backing up VNF log..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$vnf_log" "$crash_dir/vnf_crash.log" 2>/dev/null || echo "Failed to backup VNF log"
-        
-        echo "Backing up PNF log..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_log" "$crash_dir/pnf_crash.log" 2>/dev/null || echo "Failed to backup PNF log"
-    else
+    if [ "$mode" = "Monolithic" ]; then
         # Backup monolithic logs
         local vnf_log="$PNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
@@ -474,6 +459,16 @@ backup_crash_logs() {
         
         echo "Backing up monolithic PNF log..."
         sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_log" "$crash_dir/mono_pnf_crash.log" 2>/dev/null || echo "Failed to backup monolithic PNF log"
+    else
+        # Backup VNF and PNF logs for NFAPI mode
+        local vnf_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
+        local pnf_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
+        
+        echo "Backing up VNF log..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$vnf_log" "$crash_dir/vnf_crash.log" 2>/dev/null || echo "Failed to backup VNF log"
+        
+        echo "Backing up PNF log..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_log" "$crash_dir/pnf_crash.log" 2>/dev/null || echo "Failed to backup PNF log"
     fi
     
     echo "Crash logs backed up to: $crash_dir"
@@ -492,10 +487,10 @@ generate_test_report() {
     # Get gNB version information
     local vnf_tag="Unknown"
     local gnb_tag="Unknown"
-    if [ "$mode" = "NFAPI" ]; then
-        vnf_tag=$(get_git_tag "$VNF_GNB_SERVER_USER" "$VNF_GNB_SERVER_HOST" "$VNF_BASE_PATH")
+    if [ "$mode" = "Monolithic" ]; then
         gnb_tag=$(get_git_tag "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$PNF_BASE_PATH")
     else
+        vnf_tag=$(get_git_tag "$VNF_GNB_SERVER_USER" "$VNF_GNB_SERVER_HOST" "$VNF_BASE_PATH")
         gnb_tag=$(get_git_tag "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$PNF_BASE_PATH")
     fi
     
@@ -536,7 +531,7 @@ $([ "$ENABLE_UL" = true ] && echo "- **Uplink Range:** ${UL_START}M - ${UL_END}M
 
 ### gNB Software
 - **Mode:** $mode
-$([ "$mode" = "NFAPI" ] && echo "- **VNF Version Tag:** $vnf_tag
+$([ "$mode" != "Monolithic" ] && echo "- **VNF Version Tag:** $vnf_tag
 - **PNF Version Tag:** $gnb_tag" || echo "- **gNB Version Tag:** $gnb_tag")
 
 ### Fronthaul (FH) Information
@@ -553,7 +548,7 @@ $([ "$mode" = "NFAPI" ] && echo "- **VNF Version Tag:** $vnf_tag
 - **Test Server IP:** $TEST_SERVER_IP
 - **Network Interface:** $INTERFACE
 
-$([ "$mode" = "NFAPI" ] && echo "### NFAPI Split Configuration
+$([ "$mode" != "Monolithic" ] && echo "### NFAPI Split Configuration
 - **VNF Server:** $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST
 - **PNF Server:** $GNB_SERVER_USER@$GNB_SERVER_HOST
 - **VNF Base Path:** $VNF_BASE_PATH
