@@ -66,7 +66,7 @@ stop_session() {
     local target_user=$2
     local target_host=$3
     
-    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -X -S $session_name quit"
+    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -X -S $session_name quit" &>/dev/null
 }
 
 # Function to wait for UE parameters in log file
@@ -75,12 +75,11 @@ wait_for_ue_parameters() {
     local target_host=${2:-$GNB_SERVER_HOST}
     local search_pattern="Command line parameters for OAI UE:"
     
-    echo "Waiting for UE parameters to appear in log file on $target_user@$target_host..."
+    echo "Waiting for gNB to fully start up and be ready for UE connection on $target_user@$target_host..."
     
     while true; do
         # Check if the pattern exists in the log file
         if sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "grep -q '$search_pattern' $GNF_LOG_FILE 2>/dev/null"; then
-            echo "Found '$search_pattern' in log file"
             return 1
         fi
         
@@ -253,22 +252,19 @@ clean_log_files() {
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         
-        echo "Removing VNF and PNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
         # Execute with a direct command string that handles the password prompt
-        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log $pnf_remote_log"
+        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log $pnf_remote_log" &>/dev/null
         
     elif [ "$mode" = "NFAPI" ]; then
         # For NFAPI mode, logs are on different servers
         local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
         local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
         
-        echo "Removing VNF log from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
         # Adding -t option to allocate a pseudo-terminal
-        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log"
+        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log" &>/dev/null
         
-        echo "Removing PNF log from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
         # Adding -t option to allocate a pseudo-terminal
-        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $pnf_remote_log"
+        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $pnf_remote_log" &>/dev/null
         
     else
         echo "Invalid mode. Please specify either 'MONO' or 'NFAPI'."
@@ -286,9 +282,9 @@ reset_all() {
     # Stop sessions on CN server
     if [ -n "$CN_SERVER_USER" ] && [ -n "$CN_SERVER_HOST" ]; then
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$CN_SERVER_USER@$CN_SERVER_HOST" \
-            "screen -X -S iperf-server quit 2>/dev/null || true"
+            "screen -X -S iperf-server quit 2>/dev/null || true" &>/dev/null
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$CN_SERVER_USER@$CN_SERVER_HOST" \
-            "screen -X -S ping-session quit 2>/dev/null || true"
+            "screen -X -S ping-session quit 2>/dev/null || true" &>/dev/null
     else
         echo "CN server information not set, skipping CN server reset."
     fi
@@ -298,7 +294,7 @@ reset_all() {
         # sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
         #     "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S /oai72/Script/oaiLONvf.sh 2>/dev/null || true'"
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
-            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf_demo.sh || true'"
+            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf_demo.sh || true'" &>/dev/null
     else
         echo "gNB server information not set, skipping remote script execution."
     fi

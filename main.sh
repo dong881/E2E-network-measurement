@@ -120,7 +120,7 @@ if [ "$MANUAL_MODE_ENABLED" = true ]; then
         start_gNB "$CURRENT_MODE"
     fi
     wait_for_ue_parameters
-    echo "Manual mode enabled. Waiting for UE to connect and get IP automatically..."
+    echo "gNB is fully started. You can manually turn off UE airplane mode now~"
     while true; do
         get_ue_ip
         if [ -n "$UE_IP" ]; then

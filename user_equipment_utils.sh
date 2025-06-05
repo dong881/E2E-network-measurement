@@ -15,8 +15,7 @@ toggle_airplane_mode() {
 get_ue_ip() {
     UE_IP=$(sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
              "adb -s $ADB_DEVICE shell ip -f inet addr show" | awk '/inet/ && !/127\.0\.0\.1/ {print $2}' | cut -d/ -f1 | head -n1)
-    [ -z "$UE_IP" ] && { echo "Error: Unable to fetch UE IP." >&2; }
-    echo "UE IP: $UE_IP"
+    [ -z "$UE_IP" ] && { return 1; }
 }
 
 # 函數：在 UE 上運行 iperf3 測試
