@@ -16,6 +16,11 @@ def get_available_analyses():
     script_dir = Path(__file__).parent
     
     analyses = {
+        'clean_json': {
+            'script': script_dir / 'clean_iperf_json_analysis.py',
+            'name': 'JSON File Cleaning',
+            'description': 'Clean and validate iperf3 JSON files (fixes formatting issues)'
+        },
         'throughput': {
             'script': script_dir / 'analyze_throughput.py',
             'name': 'Throughput Analysis',
