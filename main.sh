@@ -15,6 +15,24 @@ CURRENT_MODE="MONO"
 SHUTDOWN_MODE=false
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+        --help|-h) 
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --help, -h          Show this help message and exit"
+            echo "  --manual-mode       Enable manual mode (skip automatic UE connection)"
+            echo "  --mode MODE         Set gNB mode (default: MONO)"
+            echo "  --pass              Skip reset and gNB restart (continue from current state)"
+            echo "  --shutdown          Shutdown mode - stop gNB and exit"
+            echo "  --ru-bw BANDWIDTH   Set LiteOn RU bandwidth and exit"
+            echo ""
+            echo "Examples:"
+            echo "  $0                           # Run with default settings"
+            echo "  $0 --manual-mode             # Run in manual mode"
+            echo "  $0 --mode SA --pass          # Run in SA mode, skip reset"
+            echo "  $0 --shutdown                # Stop gNB and exit"
+            echo "  $0 --ru-bw 100               # Set RU bandwidth to 100"
+            exit 0 ;;
         --manual-mode) MANUAL_MODE_ENABLED=true ;;
         --mode) CURRENT_MODE="$2"; shift ;;
         --pass) PASS=true ;;
