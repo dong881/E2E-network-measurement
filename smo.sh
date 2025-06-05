@@ -5,7 +5,7 @@ source ./variable.sh
 
 # Function to SSH to ksmo and execute Mplane.sh
 configure_jura_ru() {
-    echo "Uploading Mplane.sh to K-releaseSMO..."
+    # echo "Uploading Mplane.sh to K-releaseSMO..."
     sshpass -p "$SERVER_PASSWORD" scp -o StrictHostKeyChecking=no ~/E2E-network-measurement/tools/Mplane.sh $KSMO_USER@$KSMO_HOST:$KSMO_HOME/
     
     if [ $? -ne 0 ]; then

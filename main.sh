@@ -85,6 +85,7 @@ ESTIMATED_HOURS=$((ESTIMATED_TIME / 3600))
 ESTIMATED_MINUTES=$(( (ESTIMATED_TIME % 3600) / 60 ))
 
 echo "📊 Test Configuration Summary:"
+echo "  ⏱️  TEST_DURATION: $(($TEST_DURATION / 60))min"
 echo "  🔢 Total test combinations: $TOTAL_TESTS"
 echo "  🔄 Total iterations: $TOTAL_ITERATIONS"
 echo "  ⏱️  Estimated duration: ${ESTIMATED_HOURS}h ${ESTIMATED_MINUTES}m"
@@ -115,16 +116,12 @@ else
 fi
 
 echo "🔎 Current status:"
-echo "  🛠️  MANUAL_MODE_ENABLED = $([ "$MANUAL_MODE_ENABLED" = true ] && echo '✅' || echo '❌')"
+# echo "  🛠️  MANUAL_MODE_ENABLED = $([ "$MANUAL_MODE_ENABLED" = true ] && echo '✅' || echo '❌')"
 echo "  🎛️  CURRENT_MODE        = $CURRENT_MODE"
 echo "  📦 TEST_UDP            = $([ "$TEST_UDP" = true ] && echo '✅' || echo '❌')"
 echo "  📦 TEST_TCP            = $([ "$TEST_TCP" = true ] && echo '✅' || echo '❌')"
 echo "  ⬆️  ENABLE_UL           = $([ "$ENABLE_UL" = true ] && echo '✅' || echo '❌')"
-echo "  🔁 MAX_RETRIES         = $MAX_RETRIES"
-echo "  ⏱️  TEST_DURATION       = $TEST_DURATION"
-echo "  ⬇️  DL_START            = $DL_START"
-echo "  ⬇️  DL_END              = $DL_END"
-echo "  ⬇️  DL_STEP             = $DL_STEP"
+echo "  ⬇️  DL Range            = ${DL_START}-${DL_END}M (step: ${DL_STEP}M)"
 if [ "$ENABLE_UL" = true ]; then
     echo "  ⬆️  UL_START            = $UL_START"
     echo "  ⬆️  UL_END              = $UL_END"
@@ -137,6 +134,10 @@ if [ "$MANUAL_MODE_ENABLED" = true ]; then
         start_gNB "$CURRENT_MODE"
     fi
     wait_for_ue_parameters
+    
+    # Generate test environment report after gNB is ready
+    generate_test_report "./data/${DIR_NAME}" "$CURRENT_MODE"
+    
     echo "gNB is fully started. You can manually turn off UE airplane mode now~"
     while true; do
         get_ue_ip
@@ -150,6 +151,17 @@ else
     reset_all "$CURRENT_MODE"
     start_gNB "$CURRENT_MODE"
     sleep 60
+    
+    # Check for gNB crash before proceeding
+    if check_gnb_crash; then
+        echo "❌ gNB crash detected during startup!"
+        backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
+        exit 1
+    fi
+    
+    # Generate test environment report after gNB is ready but before UE connection
+    generate_test_report "./data/${DIR_NAME}" "$CURRENT_MODE"
+    
     # Toggle airplane mode to reset UE with retry logic
     RETRY_COUNT=0
 
@@ -161,6 +173,13 @@ else
         sleep 3
         toggle_airplane_mode "off"
         sleep 3
+        
+        # Check for gNB crash during UE connection attempts
+        if check_gnb_crash; then
+            echo "❌ gNB crash detected during UE connection attempt!"
+            backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
+            exit 1
+        fi
         
         # Get UE IP
         get_ue_ip
@@ -223,6 +242,13 @@ for direction in $directions; do
 
         for bw in $(seq $start $step $end); do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
+            
+            # Check for gNB crash before each test
+            if check_gnb_crash; then
+                echo "❌ gNB crash detected during testing!"
+                backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
+                exit 1
+            fi
 
             # Set iperf parameters - TEST_DURATION is sourced
             params="-b ${bw}M -t $TEST_DURATION -p 5201 $reverse -J"

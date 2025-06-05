@@ -3,7 +3,7 @@
 # FREQUENTLY ADJUSTED PARAMETERS
 # ========================================
 # Duration in seconds for tests
-export TEST_DURATION=$((60*60))
+export TEST_DURATION=$((30*60))
 export SLEEP_WINDOW=5
 
 # Downlink test settings
@@ -82,10 +82,10 @@ export PNF_BASE_PATH="~/oai_mp_f_ming/openairinterface5g"
 # Common build directory and log files
 export VNF_LOG_FILE="VNF.txt"
 export PNF_LOG_FILE="PNF.txt"
-export GNF_LOG_FILE="~/ming.log"
+export GNB_LOG_FILE="~/ming.log"
 
 # Local measurement directory
-export LOCAL_MEASURE_DIR="/home/ming/E2E-network-measurement/Measure/log"
+export LOCAL_MEASURE_DIR="~/E2E-network-measurement/Measure/log"
 
 # Analysis script path
 export LOG_ANALYSIS_SCRIPT="$LOCAL_MEASURE_DIR/../analyze_logs.py"
