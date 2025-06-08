@@ -92,3 +92,79 @@ EOF
 }
 
 # radio_unit_utils "$1"
+
+
+# Function: check_jura_ru_ptp_sync
+# Description: Continuously checks PTP synchronization status on JURA RU device via SSH until synchronized
+#
+# This function performs the following operations:
+# 1. Creates an expect script to handle SSH interaction with JURA RU
+# 2. Logs into the JURA RU using provided credentials
+# 3. Continuously executes PTP time query command
+# 4. Loops until 'synchronized' shows 'YES'
+#
+# Arguments:
+#   None
+#
+# Environment variables required:
+#   JURA_RU_IP - IP address of the JURA RU
+#   JURA_RU_USER - Username for JURA RU SSH login
+#   JURA_RU_PASSWORD - Password for JURA RU SSH login
+#
+# Returns:
+#   0 when synchronized, non-zero on failure
+#
+# Outputs:
+#   - Creates expect script at $OUTPUT_DIR/check_jura_ptp.exp
+#   - Creates output log at $OUTPUT_DIR/check_jura_ptp.out
+
+check_jura_ru_ptp_sync() {
+    # Ensure the output directory exists
+    mkdir -p "$OUTPUT_DIR"
+
+    cat << 'EOF' > "$OUTPUT_DIR/check_jura_ptp.exp"
+#!/usr/bin/expect
+set timeout 30
+spawn ssh $env(JURA_RU_USER)@$env(JURA_RU_IP)
+expect "password:"
+send "$env(JURA_RU_PASSWORD)\r"
+expect "# "
+
+while {1} {
+    send "/root/bin/mpcli.py -m get -p splane/ptp-time\r"
+    expect "# "
+    
+    # Check if synchronized is YES
+    set output $expect_out(buffer)
+    if {[string match "*synchronized*YES*" $output]} {
+        break
+    }
+    
+    # Wait before next check
+    sleep 2
+}
+
+send "exit\r"
+expect eof
+EOF
+
+    # Ensure the script is executable
+    chmod +x "$OUTPUT_DIR/check_jura_ptp.exp"
+
+    # Export required variables for the expect script
+    export JURA_RU_IP JURA_RU_USER JURA_RU_PASSWORD OUTPUT_DIR
+
+    # Run the expect script and redirect output to .out file
+    expect "$OUTPUT_DIR/check_jura_ptp.exp" > "$OUTPUT_DIR/check_jura_ptp.out" 2>&1
+}
+
+# root@localhost:~# watch /root/bin/mpcli.py -m get -p splane/ptp-time
+# Every 2.0s: /root/bin/mpcli.py -m get -p...  localhost: Fri Jun  6 09:16:28 2025
+
+# {'code': 200,
+#  'result': {'arb-time-nsec': 585109744,
+#             'arb-time-sec': 1749172626,
+#             'ptp-time': '2025-06-06 01:17:06.585109744',
+#             'sync-state': 'SYNCHRONIZING',
+#             'synchronized': 'YES'},
+#  'success': True}

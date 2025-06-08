@@ -44,6 +44,11 @@ export RU_USER="user"
 export RU_PASSWORD="user"
 export RU_ENABLE_PASSWORD="liteon168"
 
+# JURA RU settings
+export JURA_RU_IP="192.168.8.93"
+export JURA_RU_USER="root"
+export JURA_RU_PASSWORD="root"
+
 # gNB server settings
 export VNF_GNB_SERVER_USER="hpe"
 export VNF_GNB_SERVER_HOST="192.168.8.26"

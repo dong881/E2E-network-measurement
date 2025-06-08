@@ -5,6 +5,9 @@ source core_network_utils.sh
 source user_equipment_utils.sh
 source gnb_utils.sh
 
+source radio_unit_utils.sh
+check_jura_ru_ptp_sync
+
 # Initialize variables
 UE_IP=""
 MANUAL_MODE_ENABLED=false
