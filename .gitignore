@@ -1,3 +1,5 @@
 __pycache__/network_analysis.cpython-312.pyc
 E2E/
-Measure/log/
+Measure/log/(100-700M)monolithic-PNF.txt
+Measure/log/(100-700M)monolithic-VNF.txt
+Measure/log/monolithic-VNF.txt

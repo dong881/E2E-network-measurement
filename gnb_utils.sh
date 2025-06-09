@@ -587,9 +587,43 @@ clean_measurement_file() {
     sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no "$target_user@$target_host" \
         "echo $SERVER_PASSWORD | sudo -S rm -f $MEASURE_FILE_PATH" &>/dev/null
     
+    # if [ $? -eq 0 ]; then
+    #     echo "Successfully cleaned measurement file: $MEASURE_FILE_PATH"
+    # else
+    #     echo "Failed to clean measurement file: $MEASURE_FILE_PATH"
+    # fi
+}
+
+# Function to process and fetch measurement file from gNB server
+process_and_fetch_measurement() {
+    local mode=${1:-$CURRENT_MODE}
+    local target_user=${2:-$GNB_SERVER_USER}
+    local target_host=${3:-$GNB_SERVER_HOST}
+        
+    # Execute reorganize_measure.py script remotely
+    sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no "$target_user@$target_host" \
+        "echo $SERVER_PASSWORD | sudo -S python $REORGANIZE_SCRIPT_PATH" &>/dev/null
+    
+    if [ $? -ne 0 ]; then
+        echo "Failed to execute reorganize_measure.py script"
+        return 1
+    fi
+    
+    # Expand LOCAL_MEASURE_DIR to handle ~ properly
+    local expanded_measure_dir=$(eval echo $LOCAL_MEASURE_DIR)
+    
+    # Create the local directory if it doesn't exist
+    mkdir -p "$expanded_measure_dir"
+    
+    # Define local filename with mode suffix
+    local local_filename="$expanded_measure_dir/measure_filtered-${mode}.txt"
+
+    sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$target_user@$target_host:$MEASURE_FILTERED_FILE_PATH" "$local_filename"
+    
     if [ $? -eq 0 ]; then
-        echo "Successfully cleaned measurement file: $MEASURE_FILE_PATH"
+        echo "Successfully fetched measurement file: $local_filename"
     else
-        echo "Failed to clean measurement file: $MEASURE_FILE_PATH"
+        echo "Failed to fetch measurement file from $target_user@$target_host:$MEASURE_FILTERED_FILE_PATH"
+        return 1
     fi
 }

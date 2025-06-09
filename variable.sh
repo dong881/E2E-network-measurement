@@ -103,3 +103,5 @@ export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\iperf3"
 
 # Measurement file path
 export MEASURE_FILE_PATH="$PNF_BASE_PATH/cmake_targets/ran_build/build/measure.txt"
+export REORGANIZE_SCRIPT_PATH="$PNF_BASE_PATH/../reorganize_measure.py"
+export MEASURE_FILTERED_FILE_PATH="$PNF_BASE_PATH/../measure_filtered.txt"
