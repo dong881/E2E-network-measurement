@@ -43,37 +43,20 @@ def extract_throughput_data(file_path):
         return None
 
 def extract_mode_from_folder(folder_path):
-    """Extract mode from folder name pattern: MODE(bandwidth) or YYYYMMDD-MODE(bandwidth)"""
+    """Extract mode from folder name - simplified and reliable"""
     folder_name = Path(folder_path).name
-    try:
-        # Handle date prefix pattern: YYYYMMDD-MODE(bandwidth)
-        if folder_name and len(folder_name) > 8 and folder_name[8:9] == '-':
-            # Remove date prefix (first 9 characters: YYYYMMDD-)
-            folder_name = folder_name[9:]
-        
-        # Extract mode before parentheses
-        if '(' in folder_name:
-            mode_part = folder_name.split('(')[0].strip()
-            # Remove any trailing dashes or hyphens
-            mode_part = mode_part.rstrip('-').strip()
-            return mode_part if mode_part else "Unknown Mode"
-        
-        # If no parentheses, check for common mode patterns
-        if '-' in folder_name:
-            parts = folder_name.split('-')
-            # Return the first non-empty part that's not a number
-            for part in parts:
-                part = part.strip()
-                if part and not part.isdigit():
-                    return part
-        
-        # Clean up the folder name and return
-        cleaned_name = folder_name.strip()
-        return cleaned_name if cleaned_name else "Unknown Mode"
-    except Exception as e:
-        print(f"Warning: Error parsing folder name '{folder_name}': {e}")
-        return "Unknown Mode"
-
+    
+    # Handle date prefix pattern: YYYYMMDD-MODE
+    if len(folder_name) > 8 and folder_name[8:9] == '-':
+        folder_name = folder_name[9:]
+    
+    # Extract mode before parentheses or first part
+    if '(' in folder_name:
+        mode = folder_name.split('(')[0].strip().rstrip('-')
+    else:
+        mode = folder_name.split('-')[0] if '-' in folder_name else folder_name
+    
+    return mode.strip() if mode.strip() else "Unknown"
 def get_bandwidth_configs(data_dir):
     """Find all bandwidth configuration files"""
     configs = []
@@ -170,7 +153,7 @@ def find_iperf_files(data_dir, bandwidth_val):
     
     return cn_file, ue_file
 
-def create_throughput_comparison_plot(results_dict, output_dir):
+def create_throughput_comparison_plot(results_dict, data_dir, output_dir):
     """Create professional throughput comparison with consistent styling"""
     
     plt.style.use('seaborn-v0_8-whitegrid')
@@ -181,7 +164,7 @@ def create_throughput_comparison_plot(results_dict, output_dir):
     width = 0.35
     
     # Extract mode from output directory
-    mode = extract_mode_from_folder(output_dir.parent) if hasattr(output_dir, 'parent') else "Unknown"
+    mode = extract_mode_from_folder(data_dir)
     
     fig, ax = plt.subplots(figsize=(16, 10))
     
@@ -296,7 +279,7 @@ def analyze_throughput(data_dir=None):
     
     # Create throughput comparison plot
     try:
-        output_file = create_throughput_comparison_plot(results_dict, output_dir)
+        output_file = create_throughput_comparison_plot(results_dict, data_dir, output_dir)
         print(f"✅ Throughput comparison plot saved: {output_file.name}")
     except Exception as e:
         print(f"❌ Error creating throughput plot: {e}")

@@ -63,15 +63,20 @@ def find_iperf_files(data_dir, bandwidth_val):
     return cn_file, ue_file
 
 def extract_mode_from_folder(folder_path):
-    """Extract mode from folder name"""
+    """Extract mode from folder name - simplified and reliable"""
     folder_name = Path(folder_path).name
     
-    if '-' in folder_name:
-        parts = folder_name.split('-')
-        if len(parts) >= 2:
-            mode_part = parts[1].split('(')[0]
-            return mode_part
-    return "Unknown Mode"
+    # Handle date prefix pattern: YYYYMMDD-MODE
+    if len(folder_name) > 8 and folder_name[8:9] == '-':
+        folder_name = folder_name[9:]
+    
+    # Extract mode before parentheses or first part
+    if '(' in folder_name:
+        mode = folder_name.split('(')[0].strip().rstrip('-')
+    else:
+        mode = folder_name.split('-')[0] if '-' in folder_name else folder_name
+    
+    return mode.strip() if mode.strip() else "Unknown"
 
 def analyze_jitter(data_dir=None):
     """Main function to analyze and plot jitter data"""

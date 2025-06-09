@@ -1,12 +1,12 @@
 Network Analysis Suite Log
-Started: 2025-06-09 10:38:58
+Started: 2025-06-09 14:41:28
 Data Directory: /home/ming/E2E-network-measurement/data/20250608-NFAPI(100-800M)
 Selected Analyses: clean_json, throughput, packet_loss, ping_latency, jitter, cpu
 ================================================================================
 
 ================================================================================
 Analysis: clean_iperf_json_analysis.py
-Started: 2025-06-09 10:39:05
+Started: 2025-06-09 14:41:32
 ================================================================================
 STDOUT:
 🧹 Cleaning and validating iperf3 JSON files in: /home/ming/E2E-network-measurement/data/20250608-NFAPI(100-800M)
@@ -90,11 +90,11 @@ STDOUT:
 ================================================================================
 
 Return Code: 0
-Completed: 2025-06-09 10:39:05
+Completed: 2025-06-09 14:41:32
 
 ================================================================================
 Analysis: analyze_throughput.py
-Started: 2025-06-09 10:39:13
+Started: 2025-06-09 14:41:35
 ================================================================================
 STDOUT:
 Analyzing throughput data from: /home/ming/E2E-network-measurement/data/20250608-NFAPI(100-800M)
@@ -127,11 +127,11 @@ Processing throughput data:
 ✅ Throughput analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250608-NFAPI(100-800M)
 
 Return Code: 0
-Completed: 2025-06-09 10:39:13
+Completed: 2025-06-09 14:41:35
 
 ================================================================================
 Analysis: analyze_packet_loss.py
-Started: 2025-06-09 10:39:15
+Started: 2025-06-09 14:41:37
 ================================================================================
 STDOUT:
 Analyzing UE packet loss data from: /home/ming/E2E-network-measurement/data/20250608-NFAPI(100-800M)
@@ -155,11 +155,11 @@ Processing UE packet loss data:
 ✅ UE packet loss analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250608-NFAPI(100-800M)/ue_packet_loss_analysis.png
 
 Return Code: 0
-Completed: 2025-06-09 10:39:15
+Completed: 2025-06-09 14:41:37
 
 ================================================================================
 Analysis: analyze_ping_latency.py
-Started: 2025-06-09 10:39:19
+Started: 2025-06-09 14:41:41
 ================================================================================
 STDOUT:
 📋 Detected mode: NFAPI
@@ -198,11 +198,11 @@ Processing ping latency data:
 ✅ Ping latency analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250608-NFAPI(100-800M)
 
 Return Code: 0
-Completed: 2025-06-09 10:39:19
+Completed: 2025-06-09 14:41:41
 
 ================================================================================
 Analysis: analyze_jitter.py
-Started: 2025-06-09 10:39:21
+Started: 2025-06-09 14:41:43
 ================================================================================
 STDOUT:
 Analyzing jitter data from: /home/ming/E2E-network-measurement/data/20250608-NFAPI(100-800M)
@@ -226,11 +226,11 @@ Processing jitter data:
 ✅ Jitter analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250608-NFAPI(100-800M)/ue_jitter_analysis.png
 
 Return Code: 0
-Completed: 2025-06-09 10:39:21
+Completed: 2025-06-09 14:41:43
 
 ================================================================================
 Analysis: analyze_cpu_utilization.py
-Started: 2025-06-09 10:39:24
+Started: 2025-06-09 14:41:48
 ================================================================================
 STDOUT:
 Analyzing CPU utilization data from: /home/ming/E2E-network-measurement/data/20250608-NFAPI(100-800M)
@@ -247,11 +247,11 @@ Analyzing CPU utilization data from: /home/ming/E2E-network-measurement/data/202
 ✅ CPU analysis complete! Generated 2 plots in /home/ming/E2E-network-measurement/Analysis/analysis-20250608-NFAPI(100-800M)
 
 Return Code: 0
-Completed: 2025-06-09 10:39:24
+Completed: 2025-06-09 14:41:48
 
 ================================================================================
 Analysis Suite Summary
-Completed: 2025-06-09 10:39:24
+Completed: 2025-06-09 14:41:48
 Successful: 6
 Failed: 0
 ================================================================================
