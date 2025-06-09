@@ -40,6 +40,29 @@ def extract_cpu_data(data):
         print(f"Error extracting CPU data: {e}")
         return None
 
+def extract_throughput_data(file_path):
+    """Extract throughput data from iPerf JSON file (borrowed from analyze_throughput.py)"""
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        end_summary = data.get('end', {})
+        sum_sent = end_summary.get('sum_sent', {})
+        sum_received = end_summary.get('sum_received', {})
+        
+        # For CN data, use bits_per_second from sum section if available
+        cn_bits_per_second = end_summary.get('sum', {}).get('bits_per_second', 0)
+        if cn_bits_per_second == 0:
+            cn_bits_per_second = sum_sent.get('bits_per_second', 0)
+        
+        return {
+            'sent_mbps': cn_bits_per_second / 1_000_000,
+            'received_mbps': sum_received.get('bits_per_second', 0) / 1_000_000,
+        }
+    except Exception as e:
+        print(f"Error extracting throughput data from {file_path}: {e}")
+        return None
+
 def get_bandwidth_configs(data_dir):
     """Find all bandwidth configuration directories"""
     configs = []
@@ -73,18 +96,99 @@ def find_iperf_files(data_dir, bandwidth_val):
     
     return cn_file, ue_file
 
-def create_cpu_analysis_plot(results_dict, output_dir):
+def find_iperf_files_for_bandwidth(data_dir, bandwidth_val):
+    """Find CN and UE iPerf files for throughput data"""
+    cn_file = None
+    ue_file = None
+    
+    # Multiple patterns to search for files
+    cn_patterns = [
+        f'*CN*{bandwidth_val}M*.json',
+        f'*CN*{bandwidth_val}*.json',
+        f'*cn*{bandwidth_val}m*.json',
+        f'*{bandwidth_val}*CN*.json',
+        f'*{bandwidth_val}*cn*.json'
+    ]
+    
+    ue_patterns = [
+        f'*UE*{bandwidth_val}M*.json', 
+        f'*UE*{bandwidth_val}*.json',
+        f'*ue*{bandwidth_val}m*.json',
+        f'*{bandwidth_val}*UE*.json',
+        f'*{bandwidth_val}*ue*.json'
+    ]
+    
+    # Search for CN files
+    for pattern in cn_patterns:
+        for file_path in data_dir.glob(pattern):
+            if 'iperf' in file_path.name.lower():
+                cn_file = file_path
+                break
+        if cn_file:
+            break
+    
+    # Search for UE files
+    for pattern in ue_patterns:
+        for file_path in data_dir.glob(pattern):
+            if 'iperf' in file_path.name.lower():
+                ue_file = file_path
+                break
+        if ue_file:
+            break
+    
+    return cn_file, ue_file
+
+def get_throughput_data_for_bandwidths(data_dir, bandwidths):
+    """Get throughput data for all bandwidth configurations"""
+    throughput_data = {}
+    
+    for bandwidth_val in bandwidths:
+        cn_file, ue_file = find_iperf_files_for_bandwidth(data_dir, bandwidth_val)
+        
+        cn_data = None
+        ue_data = None
+        
+        if cn_file:
+            cn_data = extract_throughput_data(cn_file)
+        
+        if ue_file:
+            ue_data = extract_throughput_data(ue_file)
+        
+        throughput_data[bandwidth_val] = {
+            'cn_sent': cn_data['sent_mbps'] if cn_data else 0,
+            'ue_received': ue_data['received_mbps'] if ue_data else 0
+        }
+    
+    return throughput_data
+
+def create_cpu_analysis_plot(results_dict, data_dir, output_dir):
     """Create comprehensive CPU utilization analysis visualization"""
     
     plt.style.use('seaborn-v0_8-whitegrid')
     
     bandwidths = sorted(results_dict.keys())
-    labels = [f"{bw}M" for bw in bandwidths]
+    
+    # Get throughput data for enhanced labels
+    throughput_data = get_throughput_data_for_bandwidths(data_dir, bandwidths)
+    
+    # Create enhanced labels with throughput information (send/recv format)
+    labels = []
+    for bw in bandwidths:
+        if bw in throughput_data:
+            recv_mbps = throughput_data[bw]['ue_received']
+            sent_mbps = throughput_data[bw]['cn_sent']
+            if recv_mbps > 0 and sent_mbps > 0:
+                labels.append(f"{sent_mbps:.0f}/{recv_mbps:.0f}")
+            else:
+                labels.append(f"{bw}M")
+        else:
+            labels.append(f"{bw}M")
+    
     x_pos = np.arange(len(labels))
     width = 0.35  # Slightly wider bars for better visibility
     
     # Extract mode from output directory
-    mode = extract_mode_from_folder(output_dir.parent) if hasattr(output_dir, 'parent') else "Unknown"
+    mode = extract_mode_from_folder(data_dir)
     
     # Enhanced Total CPU Utilization with Stacked Bars and User Values
     fig1, ax1 = plt.subplots(figsize=(16, 10))
@@ -106,7 +210,7 @@ def create_cpu_analysis_plot(results_dict, output_dir):
     bars2_system = ax1.bar(x_pos + width/2, ue_system, width, bottom=ue_user, label='UE System CPU',
                           color='#C85A90', alpha=0.9, edgecolor='#7A2D56', linewidth=1.2)
     
-    ax1.set_xlabel('Bandwidth Configuration', fontsize=13, fontweight='bold')
+    ax1.set_xlabel('iPerf Bandwidth Configuration (send/recv Mbps)', fontsize=13, fontweight='bold')
     ax1.set_ylabel('CPU Utilization (%)', fontsize=13, fontweight='bold')
     ax1.set_title(f'CPU Utilization Analysis - {mode} Mode: CN vs UE (User + System)', 
                   fontsize=15, fontweight='bold', pad=20)
@@ -161,11 +265,11 @@ def create_cpu_analysis_plot(results_dict, output_dir):
     
     # Create enhanced summary table with more detailed breakdown
     table_data = []
-    for bw in bandwidths:
+    for i, bw in enumerate(bandwidths):
         cn_data = results_dict[bw]['cn']
         ue_data = results_dict[bw]['ue']
         row = [
-            f"{bw}M",
+            labels[i],  # Use the same send/recv format for table
             f"{cn_data['host_total']:.1f}" if cn_data else "N/A",
             f"{cn_data['host_user']:.1f}" if cn_data else "N/A",
             f"{cn_data['host_system']:.1f}" if cn_data else "N/A",
@@ -178,7 +282,7 @@ def create_cpu_analysis_plot(results_dict, output_dir):
     
     table = ax2.table(
         cellText=table_data,
-        colLabels=['Bandwidth', 'CN Total', 'CN User', 'CN System', 'UE Total', 'UE User', 'UE System', 'Difference'],
+        colLabels=['Bandwidth (send/recv)', 'CN Total', 'CN User', 'CN System', 'UE Total', 'UE User', 'UE System', 'Difference'],
         loc='center',
         cellLoc='center'
     )
@@ -203,17 +307,20 @@ def create_cpu_analysis_plot(results_dict, output_dir):
     return [output_file1, output_file2]
 
 def extract_mode_from_folder(folder_path):
-    """Extract mode from folder name"""
-    try:
-        folder_name = Path(folder_path).name
-        if '-' in folder_name:
-            parts = folder_name.split('-')
-            if len(parts) >= 2:
-                mode_part = parts[1].split('(')[0]
-                return mode_part
-    except:
-        pass
-    return "Unknown"
+    """Extract mode from folder name - simplified and reliable"""
+    folder_name = Path(folder_path).name
+    
+    # Handle date prefix pattern: YYYYMMDD-MODE
+    if len(folder_name) > 8 and folder_name[8:9] == '-':
+        folder_name = folder_name[9:]
+    
+    # Extract mode before parentheses or first part
+    if '(' in folder_name:
+        mode = folder_name.split('(')[0].strip().rstrip('-')
+    else:
+        mode = folder_name.split('-')[0] if '-' in folder_name else folder_name
+    
+    return mode.strip() if mode.strip() else "Unknown"
 
 def analyze_cpu_utilization(data_dir=None):
     """Main function to analyze CPU utilization across bandwidth configurations"""
@@ -269,7 +376,7 @@ def analyze_cpu_utilization(data_dir=None):
     # Create visualization
     if results_dict:
         print("📈 Creating CPU utilization visualizations...")
-        output_files = create_cpu_analysis_plot(results_dict, output_dir)
+        output_files = create_cpu_analysis_plot(results_dict, data_dir, output_dir)
         print(f"✅ CPU analysis complete! Generated {len(output_files)} plots in {output_dir}")
         if log_file:
             print(f"📋 Log file saved to: {log_file}")
