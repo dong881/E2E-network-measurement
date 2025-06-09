@@ -156,6 +156,11 @@ EOF
 
     # Run the expect script and redirect output to .out file
     expect "$OUTPUT_DIR/check_jura_ptp.exp" > "$OUTPUT_DIR/check_jura_ptp.out" 2>&1
+    
+    # If execution completed successfully, clean up
+    if [ $? -eq 0 ]; then
+        rm -rf "$OUTPUT_DIR"
+    fi
 }
 
 # root@localhost:~# watch /root/bin/mpcli.py -m get -p splane/ptp-time
