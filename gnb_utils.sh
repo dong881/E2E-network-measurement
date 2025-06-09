@@ -561,6 +561,24 @@ EOF
     echo "📋✅ Test environment report generated: $report_file"
 }
 
+# Function to run analysis suite with direct parameters
+run_analysis_suite() {
+    local measure_file=$1
+    local data_dir=$2
+    
+    # Activate virtual environment and run both Python scripts
+    source ~/E2E-network-measurement/E2E/bin/activate && \
+    python /home/ming/E2E-network-measurement/Measure/analyze_measure_filtered.py "$measure_file" && \
+    python /home/ming/E2E-network-measurement/scripts/run_all_analysis.py --data "$data_dir" --analyses "throughput,packet_loss,ping_latency,jitter,cpu"
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Analysis suite completed successfully"
+    else
+        echo "❌ Analysis suite failed"
+        return 1
+    fi
+}
+
 # Example usage:
 # clean_log_files "Monolithic"  # Clean log files in monolithic mode
 # clean_log_files "NFAPI" # Clean log files in NFAPI mode
@@ -622,7 +640,8 @@ process_and_fetch_measurement() {
     sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$target_user@$target_host:$MEASURE_FILTERED_FILE_PATH" "$local_filename"
     
     if [ $? -eq 0 ]; then
-        echo "Successfully fetched measurement file: $local_filename"
+        # echo "Successfully fetched measurement file: $local_filename"
+        echo "$local_filename"  # Return the filename for capture
     else
         echo "Failed to fetch measurement file from $target_user@$target_host:$MEASURE_FILTERED_FILE_PATH"
         return 1

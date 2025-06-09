@@ -276,7 +276,9 @@ for direction in $directions; do
     done
 done
 
-process_and_fetch_measurement $CURRENT_MODE
+# Capture the measure file path from process_and_fetch_measurement
+run_analysis_suite "$(process_and_fetch_measurement $CURRENT_MODE)" "./data/${DIR_NAME}"
+
 sleep 5
 reset_all
 sleep 5

@@ -19,7 +19,7 @@ ping-start() {
 ping-stop() {
     # Kill the ping screen session
     sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
-    "screen -X -S ping-session quit"
+    "screen -X -S ping-session quit 2>/dev/null"
     
     # Copy the ping results back to local machine
     local output_file="$1"
@@ -57,9 +57,9 @@ iperf-stop() {
     sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
     "timeout 10 bash -c 'while ! tail -1 ~/iperf-server.json | grep -q \"}\"; do sleep 1; done'"
     
-    # 清理：關閉遠端的 screen session
+    # 清理：關閉遠端的 screen session (如果存在)
     sshpass -p "$SERVER_PASSWORD" ssh "$CN_SERVER_USER@$CN_SERVER_HOST" \
-    "screen -X -S iperf-server quit"
+    "screen -X -S iperf-server quit 2>/dev/null"
 
     # 當測試完成後，從遠端複製日誌檔案到本機
     local output_file="$1"
