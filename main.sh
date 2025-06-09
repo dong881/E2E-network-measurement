@@ -4,7 +4,6 @@ source variable.sh
 source core_network_utils.sh
 source user_equipment_utils.sh
 source gnb_utils.sh
-
 source radio_unit_utils.sh
 check_jura_ru_ptp_sync
 
@@ -133,7 +132,7 @@ fi
 
 if [ "$MANUAL_MODE_ENABLED" = true ]; then
     if [ "$PASS" = false ]; then
-        reset_all "$CURRENT_MODE"
+        reset_all
         start_gNB "$CURRENT_MODE"
     fi
     wait_for_ue_parameters
@@ -151,7 +150,7 @@ if [ "$MANUAL_MODE_ENABLED" = true ]; then
         sleep 1
     done
 else
-    reset_all "$CURRENT_MODE"
+    reset_all
     start_gNB "$CURRENT_MODE"
     sleep 60
     
@@ -277,7 +276,10 @@ for direction in $directions; do
     done
 done
 
+process_and_fetch_measurement $CURRENT_MODE
+sleep 5
 reset_all
 sleep 5
-fetch_and_analyze_logs "$CURRENT_MODE"
+
+# fetch_and_analyze_logs "$CURRENT_MODE"
 # toggle_airplane_mode "on"
