@@ -211,28 +211,28 @@ def clean_iperf_json_analysis(data_dir=None):
     if cleaned_count > 0:
         print(f"💾 All cleaned files are saved in-place in: {data_dir}")
     
-    # Create summary report file
-    try:
-        summary_file = output_dir / 'json_cleaning_summary.txt'
-        with open(summary_file, 'w') as f:
-            f.write(f"JSON Cleaning and Validation Summary\n")
-            f.write(f"Generated: {Path(__file__).name}\n")
-            f.write(f"Data Directory: {data_dir}\n")
-            f.write(f"="*50 + "\n")
-            f.write(f"Total files processed: {len(json_files)}\n")
-            f.write(f"Successfully cleaned: {cleaned_count}\n")
-            f.write(f"Successfully validated: {validated_count}\n")
-            f.write(f"Failed to process: {failed_count}\n")
-            f.write(f"="*50 + "\n")
+    # # Create summary report file
+    # try:
+    #     summary_file = output_dir / 'json_cleaning_summary.txt'
+    #     with open(summary_file, 'w') as f:
+    #         f.write(f"JSON Cleaning and Validation Summary\n")
+    #         f.write(f"Generated: {Path(__file__).name}\n")
+    #         f.write(f"Data Directory: {data_dir}\n")
+    #         f.write(f"="*50 + "\n")
+    #         f.write(f"Total files processed: {len(json_files)}\n")
+    #         f.write(f"Successfully cleaned: {cleaned_count}\n")
+    #         f.write(f"Successfully validated: {validated_count}\n")
+    #         f.write(f"Failed to process: {failed_count}\n")
+    #         f.write(f"="*50 + "\n")
             
-            f.write(f"\nProcessed files:\n")
-            for json_file in sorted(json_files):
-                f.write(f"  - {json_file.name}\n")
+    #         f.write(f"\nProcessed files:\n")
+    #         for json_file in sorted(json_files):
+    #             f.write(f"  - {json_file.name}\n")
         
-        print(f"📋 Summary report saved to: {summary_file}")
+    #     print(f"📋 Summary report saved to: {summary_file}")
         
-    except Exception as e:
-        print(f"⚠️ Could not save summary report: {e}")
+    # except Exception as e:
+    #     print(f"⚠️ Could not save summary report: {e}")
     
     print("=" * 80)
     
