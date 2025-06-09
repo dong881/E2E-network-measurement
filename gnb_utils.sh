@@ -578,3 +578,18 @@ EOF
 # stop_single_setup "100M" "Monolithic"     # Stop 100M bandwidth Monolithic setup
 # stop_single_setup "40M" "Monolithic"      # Stop 40M bandwidth Monolithic setup
 
+# Function to clean measurement file on gNB server
+clean_measurement_file() {
+    local target_user=${1:-$GNB_SERVER_USER}
+    local target_host=${2:-$GNB_SERVER_HOST}
+    
+    echo "Cleaning measurement file on $target_user@$target_host..."
+    sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no "$target_user@$target_host" \
+        "echo $SERVER_PASSWORD | sudo -S rm -f $MEASURE_FILE_PATH" &>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        echo "Successfully cleaned measurement file: $MEASURE_FILE_PATH"
+    else
+        echo "Failed to clean measurement file: $MEASURE_FILE_PATH"
+    fi
+}

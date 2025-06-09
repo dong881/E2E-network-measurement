@@ -100,3 +100,6 @@ export LOG_ANALYSIS_SCRIPT="$LOCAL_MEASURE_DIR/../analyze_logs.py"
 export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\iperf3"
 # Control MTK UE NoteBook
 # export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\MTK\\iperf3"
+
+# Measurement file path
+export MEASURE_FILE_PATH="$PNF_BASE_PATH/cmake_targets/ran_build/build/measure.txt"
