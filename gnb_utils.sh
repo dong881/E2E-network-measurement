@@ -273,6 +273,7 @@ reset_all() {
     stop_gNB "NFAPI"
     clean_log_files "Monolithic"
     clean_log_files "NFAPI"
+    clean_measurement_file
 
     # Stop sessions on CN server
     if [ -n "$CN_SERVER_USER" ] && [ -n "$CN_SERVER_HOST" ]; then
@@ -616,7 +617,7 @@ process_and_fetch_measurement() {
     mkdir -p "$expanded_measure_dir"
     
     # Define local filename with mode suffix
-    local local_filename="$expanded_measure_dir/measure_filtered-${mode}.txt"
+    local local_filename="$expanded_measure_dir/measure_filtered-${mode}-$(date +%Y%m%d).txt"
 
     sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$target_user@$target_host:$MEASURE_FILTERED_FILE_PATH" "$local_filename"
     
@@ -627,3 +628,4 @@ process_and_fetch_measurement() {
         return 1
     fi
 }
+
