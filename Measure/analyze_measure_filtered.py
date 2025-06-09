@@ -92,7 +92,7 @@ def plot_averages_with_count(pairs, averages, mode, output_path):
     
     # Title
     ax1.set_title(f'Data Distribution and Average Times ({mode} Mode)', 
-                  fontsize=14, pad=25, color='#333333', fontweight='normal')
+                  fontsize=14, pad=40, color='#333333', fontweight='normal')
     
     # Remove spines
     ax1.spines['top'].set_visible(False)
@@ -107,11 +107,11 @@ def plot_averages_with_count(pairs, averages, mode, output_path):
     ax1.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
     ax1.set_axisbelow(True)
     
-    # Legends - positioned to avoid overlap
+    # Legends - positioned above the plot area but below title
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', 
-               frameon=True, fancybox=False, shadow=False, framealpha=0.9)
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper center', 
+               bbox_to_anchor=(0.5, 1.05), ncol=2, frameon=True, fancybox=False, shadow=False, framealpha=0.9)
     
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
@@ -275,7 +275,7 @@ def plot_combined_raw_data(pairs, timestamps, mode, output_path, log_file=None):
         return
     
     # Create box plots with all outliers shown
-    box_plot = ax.boxplot(box_data, labels=labels, patch_artist=True,
+    box_plot = ax.boxplot(box_data, tick_labels=labels, patch_artist=True,
                          showmeans=True, meanline=True, showfliers=True)
     
     # Customize box plot colors
@@ -362,6 +362,67 @@ def plot_combined_raw_data(pairs, timestamps, mode, output_path, log_file=None):
     plt.close()
 
 def main():
+    import sys
+    
+    # Check if input file is provided as command line argument
+    if len(sys.argv) > 1:
+        input_file = sys.argv[1]
+        if not os.path.exists(input_file):
+            print(f"Error: Input file not found: {input_file}")
+            return
+        
+        # Extract mode from filename
+        filename = os.path.basename(input_file)
+        if 'Monolithic' in filename or 'monolithic' in filename:
+            mode = 'Monolithic'
+        elif 'NFAPI' in filename or 'nfapi' in filename:
+            mode = 'NFAPI'
+        else:
+            mode = 'Unknown'
+        
+        print(f"Processing single file: {input_file} ({mode} mode)")
+        
+        # Create timestamped output directory
+        timestamp = datetime.now().strftime('%Y%m%d')
+        output_dir = os.path.join('/home/ming/E2E-network-measurement/Measure/Analysis', f'analysis-measure-{mode}-{timestamp}')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Create log report file
+        log_report_path = os.path.join(output_dir, f'analysis_report_{timestamp}.log')
+        
+        with open(log_report_path, 'w') as log_report:
+            log_report.write(f"Analysis Report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            log_report.write("=" * 60 + "\n")
+            log_report.write(f"\nProcessing {filename} ({mode} mode)\n")
+            log_report.write("-" * 40 + "\n")
+            
+            pairs, timestamps = process_log_file(input_file)
+            averages = calculate_averages(pairs)
+            
+            # Write averages to log
+            log_report.write(f"\nAverage time differences for {mode} mode (µs):\n")
+            for suffix, avg in averages.items():
+                log_report.write(f"  {suffix}: {avg:.2f} µs\n")
+            
+            # Generate charts
+            output_path_bar = os.path.join(output_dir, f'average_time_differences_{mode}_bar.png')
+            plot_averages_with_count(pairs, averages, mode, output_path_bar)
+            print(f"Bar chart saved as {output_path_bar}")
+            
+            output_path_raw = os.path.join(output_dir, f'raw_data_trends_{mode}.png')
+            plot_raw_data(pairs, timestamps, mode, output_path_raw, log_report)
+            print(f"Combined raw data chart saved as {output_path_raw}")
+            
+            output_path_combined = os.path.join(output_dir, f'raw_data_trends_{mode}_combined.png')
+            plot_combined_raw_data(pairs, timestamps, mode, output_path_combined, log_report)
+            print(f"Combined all-in-one raw data chart saved as {output_path_combined}")
+            
+            plot_individual_raw_data(pairs, timestamps, mode, output_dir)
+        
+        print(f"Analysis report saved as {log_report_path}")
+        return
+    
+    # Original code for processing all files in log directory
     log_dir = '/home/ming/E2E-network-measurement/Measure/log/'
     base_output_dir = '/home/ming/E2E-network-measurement/Measure/Analysis'
     
