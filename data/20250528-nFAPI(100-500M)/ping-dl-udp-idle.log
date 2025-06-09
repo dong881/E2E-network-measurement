@@ -1,3 +1,0 @@
-1748368744: PING 10.45.0.40 (10.45.0.40) from 10.45.0.1 ogstun: 56(84) bytes of data.
-1748368744: 64 bytes from 10.45.0.40: icmp_seq=1 ttl=64 time=31.5 ms
-1748368745: 64 bytes from 10.45.0.40: icmp_seq=2 ttl=64 time=34.9 ms
