@@ -1,0 +1,7 @@
+1749384431: PING 10.45.0.8 (10.45.0.8) from 10.45.0.1 ogstun: 56(84) bytes of data.
+1749384431: 64 bytes from 10.45.0.8: icmp_seq=1 ttl=64 time=36.5 ms
+1749384432: 64 bytes from 10.45.0.8: icmp_seq=2 ttl=64 time=35.4 ms
+1749384433: 64 bytes from 10.45.0.8: icmp_seq=3 ttl=64 time=33.9 ms
+1749384434: 64 bytes from 10.45.0.8: icmp_seq=4 ttl=64 time=18.1 ms
+1749384435: 64 bytes from 10.45.0.8: icmp_seq=5 ttl=64 time=31.5 ms
+1749384436: 64 bytes from 10.45.0.8: icmp_seq=6 ttl=64 time=23.1 ms

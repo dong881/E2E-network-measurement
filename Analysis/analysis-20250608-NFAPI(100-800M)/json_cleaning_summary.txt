@@ -1,0 +1,27 @@
+JSON Cleaning and Validation Summary
+Generated: clean_iperf_json_analysis.py
+Data Directory: /home/ming/E2E-network-measurement/data/20250608-NFAPI(100-800M)
+==================================================
+Total files processed: 16
+Successfully cleaned: 16
+Successfully validated: 16
+Failed to process: 0
+==================================================
+
+Processed files:
+  - iperf-dl-udp-100M-CN.json
+  - iperf-dl-udp-100M-UE.json
+  - iperf-dl-udp-200M-CN.json
+  - iperf-dl-udp-200M-UE.json
+  - iperf-dl-udp-300M-CN.json
+  - iperf-dl-udp-300M-UE.json
+  - iperf-dl-udp-400M-CN.json
+  - iperf-dl-udp-400M-UE.json
+  - iperf-dl-udp-500M-CN.json
+  - iperf-dl-udp-500M-UE.json
+  - iperf-dl-udp-600M-CN.json
+  - iperf-dl-udp-600M-UE.json
+  - iperf-dl-udp-700M-CN.json
+  - iperf-dl-udp-700M-UE.json
+  - iperf-dl-udp-800M-CN.json
+  - iperf-dl-udp-800M-UE.json
