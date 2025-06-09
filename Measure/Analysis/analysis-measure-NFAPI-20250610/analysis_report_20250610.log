@@ -1,0 +1,65 @@
+Analysis Report - 2025-06-10 01:42:05
+============================================================
+
+
+Processing measure_filtered-NFAPI-20250610.txt (NFAPI mode)
+----------------------------------------
+
+Average time differences for NFAPI mode (µs):
+  ultti: 9.03 µs
+  dltti: 7.82 µs
+  txdata: 8.85 µs
+  uldci: 9.71 µs
+
+Outliers found in NFAPI mode:
+  ultti:
+    Index 41913: 8592.37 µs (8.59 ms)
+      Start timestamp: 1749472982.497255
+      Stop timestamp: 1749472982.505847
+    Index 59901: 63.42 µs (0.06 ms)
+      Start timestamp: 1749473024.569758
+      Stop timestamp: 1749473024.569821
+    Index 74688: 62.70 µs (0.06 ms)
+      Start timestamp: 1749473062.477286
+      Stop timestamp: 1749473062.477348
+  dltti:
+    Index 55932: 61.51 µs (0.06 ms)
+      Start timestamp: 1749473024.569758
+      Stop timestamp: 1749473024.569819
+  txdata:
+    Index 55932: 62.47 µs (0.06 ms)
+      Start timestamp: 1749473024.569758
+      Stop timestamp: 1749473024.569820
+    Index 69622: 61.51 µs (0.06 ms)
+      Start timestamp: 1749473062.477286
+      Stop timestamp: 1749473062.477347
+
+Box plot statistics for NFAPI mode (all data including outliers):
+  ULTTI (n=137243):
+    Min: 6.91 µs
+    Q1:  7.63 µs
+    Q2 (Median): 8.11 µs
+    Q3:  8.82 µs
+    Max: 8592.37 µs
+    Mean: 9.03 µs
+  DLTTI (n=138053):
+    Min: 3.81 µs
+    Q1:  5.48 µs
+    Q2 (Median): 7.87 µs
+    Q3:  8.58 µs
+    Max: 61.51 µs
+    Mean: 7.82 µs
+  TXDATA (n=138053):
+    Min: 4.77 µs
+    Q1:  6.44 µs
+    Q2 (Median): 8.82 µs
+    Q3:  9.54 µs
+    Max: 62.47 µs
+    Mean: 8.85 µs
+  ULDCI (n=12697):
+    Min: 6.91 µs
+    Q1:  7.87 µs
+    Q2 (Median): 9.54 µs
+    Q3:  10.49 µs
+    Max: 53.64 µs
+    Mean: 9.71 µs
