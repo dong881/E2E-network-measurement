@@ -629,12 +629,6 @@ clean_measurement_file() {
     echo "Cleaning measurement file on $target_user@$target_host..."
     sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no "$target_user@$target_host" \
         "echo $SERVER_PASSWORD | sudo -S rm -f $MEASURE_FILE_PATH" &>/dev/null
-    
-    # if [ $? -eq 0 ]; then
-    #     echo "Successfully cleaned measurement file: $MEASURE_FILE_PATH"
-    # else
-    #     echo "Failed to clean measurement file: $MEASURE_FILE_PATH"
-    # fi
 }
 
 # Function to process and fetch measurement file from gNB server
