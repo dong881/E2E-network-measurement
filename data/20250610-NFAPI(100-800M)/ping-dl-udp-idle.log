@@ -1,0 +1,7 @@
+1749493795: PING 10.45.0.19 (10.45.0.19) from 10.45.0.1 ogstun: 56(84) bytes of data.
+1749493795: 64 bytes from 10.45.0.19: icmp_seq=1 ttl=64 time=36.7 ms
+1749493796: 64 bytes from 10.45.0.19: icmp_seq=2 ttl=64 time=35.0 ms
+1749493797: 64 bytes from 10.45.0.19: icmp_seq=3 ttl=64 time=33.9 ms
+1749493798: 64 bytes from 10.45.0.19: icmp_seq=4 ttl=64 time=31.9 ms
+1749493799: 64 bytes from 10.45.0.19: icmp_seq=5 ttl=64 time=35.6 ms
+1749493800: 64 bytes from 10.45.0.19: icmp_seq=6 ttl=64 time=33.7 ms
