@@ -94,25 +94,46 @@ echo "  ⏱️  Estimated duration: ${ESTIMATED_HOURS}h ${ESTIMATED_MINUTES}m"
 
 # Get current date and next day
 CURRENT_DATE=$(date +"%Y%m%d")
+CURRENT_HOUR=$(date +"%H")
 NEXT_DATE=$(date -d "tomorrow" +"%Y%m%d")
 
-# Create directory name based on mode and bandwidth range
-DIR_NAME="${CURRENT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)"
-if [ "$ENABLE_UL" = true ]; then
-    DIR_NAME="${DIR_NAME}-UL(${UL_START}-${UL_END}M)"
+# Create directory name based on mode, bandwidth range, duration, and hour
+TEST_DURATION_MIN=$((TEST_DURATION / 60))
+if [ "$TEST_DURATION_MIN" -eq 0 ]; then
+    DIR_NAME="${CURRENT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-${TEST_DURATION}sec-${CURRENT_HOUR}"
+    if [ "$ENABLE_UL" = true ]; then
+        DIR_NAME="${CURRENT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-UL(${UL_START}-${UL_END}M)-${TEST_DURATION}sec-${CURRENT_HOUR}"
+    fi
+else
+    DIR_NAME="${CURRENT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-${TEST_DURATION_MIN}min-${CURRENT_HOUR}"
+    if [ "$ENABLE_UL" = true ]; then
+        DIR_NAME="${CURRENT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-UL(${UL_START}-${UL_END}M)-${TEST_DURATION_MIN}min-${CURRENT_HOUR}"
+    fi
 fi
 
 # Check if estimated end time would be tomorrow
 CURRENT_TIMESTAMP=$(date +%s)
 ESTIMATED_END_TIMESTAMP=$((CURRENT_TIMESTAMP + ESTIMATED_TIME))
 ESTIMATED_END_DATE=$(date -d "@$ESTIMATED_END_TIMESTAMP" +"%Y%m%d")
+ESTIMATED_END_HOUR=$(date -d "@$ESTIMATED_END_TIMESTAMP" +"%H")
 
 # Create appropriate directory
 if [ "$ESTIMATED_END_DATE" != "$CURRENT_DATE" ]; then
     echo "⚠️  Warning: Tests will likely continue into tomorrow"
     echo "Creating directories for both today and tomorrow"
     mkdir -p "./data/${DIR_NAME}"
-    mkdir -p "./data/${NEXT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)"
+    if [ "$TEST_DURATION_MIN" -eq 0 ]; then
+        NEXT_DIR_NAME="${NEXT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-${TEST_DURATION}sec-${ESTIMATED_END_HOUR}"
+        if [ "$ENABLE_UL" = true ]; then
+            NEXT_DIR_NAME="${NEXT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-UL(${UL_START}-${UL_END}M)-${TEST_DURATION}sec-${ESTIMATED_END_HOUR}"
+        fi
+    else
+        NEXT_DIR_NAME="${NEXT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-${TEST_DURATION_MIN}min-${ESTIMATED_END_HOUR}"
+        if [ "$ENABLE_UL" = true ]; then
+            NEXT_DIR_NAME="${NEXT_DATE}-${CURRENT_MODE}(${DL_START}-${DL_END}M)-UL(${UL_START}-${UL_END}M)-${TEST_DURATION_MIN}min-${ESTIMATED_END_HOUR}"
+        fi
+    fi
+    mkdir -p "./data/${NEXT_DIR_NAME}"
 else
     mkdir -p "./data/${DIR_NAME}"
 fi
@@ -208,6 +229,117 @@ fi
 
 sleep 1
 
+# Global variables for monitoring
+UE_MONITOR_PID=""
+RESTART_FLAG_FILE="/tmp/e2e_restart_flag"
+
+# Function to monitor UE IP status in background
+monitor_ue_connection() {
+    local check_interval=30  # Check every 30 seconds
+    local max_failures=3     # Allow 3 consecutive failures before declaring crash
+    local failure_count=0
+    
+    echo "🔍 Starting UE connection monitor (PID: $$)"
+    
+    while true; do
+        sleep $check_interval
+        
+        # Try to get UE IP
+        local current_ue_ip=""
+        current_ue_ip=$(sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS $CONTROL_PC_USER@$CONTROL_PC_IP \
+                       "adb -s $ADB_DEVICE shell ip -f inet addr show" | awk '/inet/ && !/127\.0\.0\.1/ {print $2}' | cut -d/ -f1 | head -n1 2>/dev/null)
+        
+        if [ -z "$current_ue_ip" ]; then
+            failure_count=$((failure_count + 1))
+            echo "⚠️  UE IP check failed (attempt $failure_count/$max_failures)"
+            
+            if [ $failure_count -ge $max_failures ]; then
+                echo "🚨 UE connection lost! Environment problem detected."
+                echo "📝 Creating restart flag file..."
+                echo "UE_CONNECTION_LOST" > "$RESTART_FLAG_FILE"
+                break
+            fi
+        else
+            # Reset failure count on successful check
+            if [ $failure_count -gt 0 ]; then
+                echo "✅ UE connection restored: $current_ue_ip"
+            fi
+            failure_count=0
+        fi
+    done
+}
+
+# Function to start UE monitoring in background
+start_ue_monitoring() {
+    if [ -n "$UE_MONITOR_PID" ]; then
+        echo "UE monitoring already running (PID: $UE_MONITOR_PID)"
+        return
+    fi
+    
+    # Remove any existing restart flag
+    rm -f "$RESTART_FLAG_FILE"
+    
+    # Start monitoring in background
+    monitor_ue_connection &
+    UE_MONITOR_PID=$!
+    echo "🚀 Started UE monitoring (PID: $UE_MONITOR_PID)"
+}
+
+# Function to stop UE monitoring
+stop_ue_monitoring() {
+    if [ -n "$UE_MONITOR_PID" ]; then
+        echo "🛑 Stopping UE monitoring (PID: $UE_MONITOR_PID)"
+        kill $UE_MONITOR_PID 2>/dev/null || true
+        UE_MONITOR_PID=""
+    fi
+}
+
+# Function to check for restart flag and handle restart
+check_restart_flag() {
+    if [ -f "$RESTART_FLAG_FILE" ]; then
+        local restart_reason=$(cat "$RESTART_FLAG_FILE")
+        echo "🔄 Restart flag detected: $restart_reason"
+        
+        # Stop monitoring
+        stop_ue_monitoring
+        
+        # Backup crash logs
+        echo "📦 Backing up crash logs due to: $restart_reason"
+        backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
+        
+        # Reset environment
+        echo "🔧 Resetting environment..."
+        reset_all
+        
+        # Clean up restart flag
+        rm -f "$RESTART_FLAG_FILE"
+        
+        # Restart script with same parameters
+        echo "🚀 Restarting script with same parameters..."
+        exec "$0" "$@"
+    fi
+}
+
+# Function to periodically check restart flag during tests
+periodic_restart_check() {
+    local check_interval=10  # Check every 10 seconds during tests
+    
+    while true; do
+        sleep $check_interval
+        check_restart_flag "$@"
+    done
+}
+
+# Add this after UE connection is established and before starting tests
+if [ "$MANUAL_MODE_ENABLED" = false ]; then
+    # Start UE monitoring after successful connection
+    start_ue_monitoring
+    
+    # Start periodic restart checking in background
+    periodic_restart_check "$@" &
+    RESTART_CHECK_PID=$!
+fi
+
 # Define test protocols
 protocols=""
 [ "$TEST_UDP" = true ] && protocols+=" udp"
@@ -236,6 +368,10 @@ for direction in $directions; do
     
     for protocol in $protocols; do
         echo "Running ${dir_name} ${protocol} tests (${start}M-${end}M)"
+        
+        # Check restart flag before starting protocol tests
+        check_restart_flag "$@"
+        
         # Check if UE_IP exists and is not empty, if not get it
         [ -z "$UE_IP" ] && get_ue_ip
         ping-start $UE_IP
@@ -245,11 +381,16 @@ for direction in $directions; do
         for bw in $(seq $start $step $end); do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
             
+            # Check restart flag before each bandwidth test
+            check_restart_flag "$@"
+            
             # Check for gNB crash before each test
             if check_gnb_crash; then
                 echo "❌ gNB crash detected during testing!"
                 backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
-                # exit 1
+                # Create restart flag for gNB crash
+                echo "GNB_CRASH" > "$RESTART_FLAG_FILE"
+                check_restart_flag "$@"
             fi
 
             # Set iperf parameters - TEST_DURATION is sourced
@@ -276,6 +417,12 @@ for direction in $directions; do
     done
 done
 
+# Stop monitoring when tests complete successfully
+stop_ue_monitoring
+if [ -n "$RESTART_CHECK_PID" ]; then
+    kill $RESTART_CHECK_PID 2>/dev/null || true
+fi
+
 # Capture the measure file path from process_and_fetch_measurement
 run_analysis_suite "$(process_and_fetch_measurement $CURRENT_MODE)" "./data/${DIR_NAME}"
 
@@ -285,3 +432,18 @@ sleep 5
 
 # fetch_and_analyze_logs "$CURRENT_MODE"
 # toggle_airplane_mode "on"
+
+# Signal handling for clean shutdown
+cleanup_and_exit() {
+    echo "🛑 Received termination signal. Cleaning up..."
+    stop_ue_monitoring
+    if [ -n "$RESTART_CHECK_PID" ]; then
+        kill $RESTART_CHECK_PID 2>/dev/null || true
+    fi
+    rm -f "$RESTART_FLAG_FILE"
+    reset_all
+    exit 1
+}
+
+# Set up signal traps
+trap cleanup_and_exit SIGINT SIGTERM

@@ -31,10 +31,10 @@ CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
 # Commands for Single Machine Setup
 CMD_VNF_100M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_VNF_100M $VNF_OPTS"
 CMD_VNF_40M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_VNF_40M $VNF_OPTS"
-CMD_MONO_100M_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M $MONO_OPTS"
+CMD_MONO_100M_SINGLE="$COMMON_CMD rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M $MONO_OPTS"
 CMD_MONO_40M_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_40M $MONO_OPTS"
-CMD_MONO_100M_JURA_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M_JURA $MONO_OPTS"
-CMD_PNF_SINGLE="$COMMON_CMD bash -c 'echo -e \"set confirm off\\ndefine hook-stop\\nbt\\nend\\nrun\" > gdb_script.txt' && $SUDO_PREFIX gdb --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_PNF $PNF_OPTS"
+CMD_MONO_100M_JURA_SINGLE="$COMMON_CMD rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M_JURA $MONO_OPTS"
+CMD_PNF_SINGLE="$COMMON_CMD rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_PNF $PNF_OPTS"
 
 # Additional config files
 CONF_PNF_SPLIT="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
@@ -46,7 +46,7 @@ PNF_SPLIT_CMD_PREFIX="cd $PNF_BASE_PATH/$BUILD_DIR && echo '$SERVER_PASSWORD' | 
 # Commands for Split Machine Setup (Two Machines)
 CMD_VNF_100M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_100M $VNF_OPTS"
 CMD_VNF_40M_SPLIT="$VNF_SPLIT_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_40M $VNF_OPTS"
-CMD_PNF_SPLIT="$PNF_SPLIT_CMD_PREFIX bash -c 'echo -e \"set confirm off\\ndefine hook-stop\\nbt\\nend\\nrun\" > gdb_script.txt' && echo '$SERVER_PASSWORD' | sudo -S gdb --command=gdb_script.txt --args ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_PNF_SPLIT $PNF_OPTS"
+CMD_PNF_SPLIT="$PNF_SPLIT_CMD_PREFIX rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_PNF_SPLIT $PNF_OPTS"
 
 
 
@@ -244,35 +244,18 @@ fetch_and_analyze_logs() {
 
 # Function to clean log files on servers
 clean_log_files() {
-    local mode=$1  # "Monolithic" or "NFAPI"    
-    if [ "$mode" = "Monolithic" ]; then
-        # For Monolithic mode, both logs are on the same server
-        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
-        
-        # Execute with a direct command string that handles the password prompt
-        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log $pnf_remote_log" &>/dev/null
-        
-    else
-        # For NFAPI mode, logs are on different servers
-        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
-        
-        # Adding -t option to allocate a pseudo-terminal
-        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $vnf_remote_log" &>/dev/null
-        
-        # Adding -t option to allocate a pseudo-terminal
-        sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $pnf_remote_log" &>/dev/null
-    fi
+    # Execute with a direct command string that handles the password prompt
+    sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $MEASURE_FILE_PATH" &>/dev/null
+    sleep 2
 }
 
 # Function to reset all states and prepare for a clean start
 reset_all() {
+    local restart_scenario=${1:-"normal"}  # Accept restart scenario parameter
 
     stop_gNB "Monolithic"
     stop_gNB "NFAPI"
-    clean_log_files "Monolithic"
-    clean_log_files "NFAPI"
+    clean_log_files
     clean_measurement_file
 
     # Stop sessions on CN server
@@ -287,25 +270,25 @@ reset_all() {
     
     # Execute remote script on main host if needed
     if [ -n "$GNB_SERVER_USER" ] && [ -n "$GNB_SERVER_HOST" ]; then
-        # sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
-        #     "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S /oai72/Script/oaiLONvf.sh 2>/dev/null || true'"
+        # Enhanced reset for restart scenarios
+        if [ "$restart_scenario" = "crash" ] || [ "$restart_scenario" = "ue_lost" ]; then
+            echo "🔧 Performing enhanced reset for restart scenario: $restart_scenario"
+            # Additional cleanup for crash scenarios
+            sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
+                "screen -wipe 2>/dev/null || true" &>/dev/null
+        fi
+        
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
             "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf_demo.sh || true'" &>/dev/null
     else
         echo "gNB server information not set, skipping remote script execution."
     fi
     
-    # Optional: Set RU bandwidth
-    # if type radio_unit_utils &>/dev/null; then
-    #     echo "Setting RU bandwidth to 100M..."
-    #     radio_unit_utils "100000000"
-    # fi
-
     # Optional: Reset Jura RU configuration
     source smo.sh
     configure_jura_ru
     
-    echo "Reset complete."
+    echo "Reset complete for scenario: $restart_scenario"
 }
 
 # Function to get git tag from remote server
@@ -566,9 +549,6 @@ run_analysis_suite() {
 }
 
 # Example usage:
-# clean_log_files "Monolithic"  # Clean log files in monolithic mode
-# clean_log_files "NFAPI" # Clean log files in NFAPI mode
-
 # Example usage:
 # fetch_and_analyze_logs "Monolithic"  # For monolithic mode
 # fetch_and_analyze_logs "NFAPI" # For NFAPI mode

@@ -115,10 +115,8 @@ The script defines multiple configuration variables:
   2. Retrieves VNF and PNF logs from appropriate servers based on mode
   3. Calls the log analysis script if logs are successfully retrieved
 
-#### `clean_log_files <mode>`
+#### `clean_log_files`
 - **Purpose**: Cleans up log files on gNB servers
-- **Parameters**:
-  - `$1` (mode): Mode to clean (Monolithic or NFAPI)
 - **Actions**: Removes VNF and PNF log files from appropriate servers based on mode
 
 #### `reset_all [mode]`
