@@ -441,6 +441,7 @@ backup_crash_logs() {
     local mode=${2:-$CURRENT_MODE}
     
     echo "🚨 gNB crash detected! Backing up logs..."
+    sleep 5
     
     # Create crash backup directory
     local crash_dir="$test_dir/crash_logs_$(date +%Y%m%d_%H%M%S)"
@@ -449,27 +450,12 @@ backup_crash_logs() {
     # Backup main gNB log
     echo "Backing up main gNB log..."
     sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$GNB_LOG_FILE" "$crash_dir/gnb_crash.log" 2>/dev/null || echo "Failed to backup main gNB log"
-    
-    if [ "$mode" = "Monolithic" ]; then
-        # Backup monolithic logs
-        local vnf_log="$PNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
-        
-        echo "Backing up monolithic VNF log..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$vnf_log" "$crash_dir/mono_vnf_crash.log" 2>/dev/null || echo "Failed to backup monolithic VNF log"
-        
-        echo "Backing up monolithic PNF log..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_log" "$crash_dir/mono_pnf_crash.log" 2>/dev/null || echo "Failed to backup monolithic PNF log"
-    else
-        # Backup VNF and PNF logs for NFAPI mode
-        local vnf_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
-        
-        echo "Backing up VNF log..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$vnf_log" "$crash_dir/vnf_crash.log" 2>/dev/null || echo "Failed to backup VNF log"
-        
-        echo "Backing up PNF log..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_log" "$crash_dir/pnf_crash.log" 2>/dev/null || echo "Failed to backup PNF log"
+    echo "Backing up measurement files..."
+    sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$MEASURE_FILE_PATH" "$crash_dir/measure_crash.txt" 2>/dev/null || echo "Failed to backup measurement file"
+    # Backup VNF log if not in Monolithic mode
+    if [ ! "$mode" = "Monolithic" ]; then
+        echo "Backing up VNF gNB log..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$GNB_LOG_FILE" "$crash_dir/vnf_gnb_crash.log" 2>/dev/null || echo "Failed to backup VNF gNB log"
     fi
     
     echo "Crash logs backed up to: $crash_dir"
