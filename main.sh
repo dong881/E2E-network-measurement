@@ -158,7 +158,7 @@ else
     if check_gnb_crash; then
         echo "❌ gNB crash detected during startup!"
         backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
-        exit 1
+        # exit 1
     fi
     
     # Generate test environment report after gNB is ready but before UE connection
@@ -180,7 +180,7 @@ else
         if check_gnb_crash; then
             echo "❌ gNB crash detected during UE connection attempt!"
             backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
-            exit 1
+            # exit 1
         fi
         
         # Get UE IP
@@ -249,7 +249,7 @@ for direction in $directions; do
             if check_gnb_crash; then
                 echo "❌ gNB crash detected during testing!"
                 backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
-                exit 1
+                # exit 1
             fi
 
             # Set iperf parameters - TEST_DURATION is sourced

@@ -420,7 +420,7 @@ check_gnb_crash() {
         "Segmentation fault"
         "segfault"
         "Aborted"
-        "FATAL"
+        "Assertion"
         "ERROR.*crash"
         "core dumped"
         "terminate called"
