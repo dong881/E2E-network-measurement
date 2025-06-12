@@ -3,6 +3,30 @@
 # Global variables
 source variable.sh
 
+# Function to check and install sshpass if needed
+check_sshpass_installed() {
+    if ! command -v sshpass &> /dev/null; then
+        echo "sshpass is not installed. Installing..."
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y sshpass
+        elif command -v yum &> /dev/null; then
+            sudo yum install -y sshpass
+        elif command -v dnf &> /dev/null; then
+            sudo dnf install -y sshpass
+        else
+            echo "Error: Cannot install sshpass. Please install it manually."
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Check if sshpass is installed at script start
+if ! check_sshpass_installed; then
+    echo "Error: sshpass is required but could not be installed."
+    exit 1
+fi
+
 # Commands for Single Machine Setup
 # Define common paths and options
 BUILD_DIR="cmake_targets/ran_build/build"

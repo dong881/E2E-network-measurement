@@ -34,9 +34,34 @@ if [ -f "$(dirname "$0")/run_config.sh" ]; then
 	source "$(dirname "$0")/run_config.sh"
 fi
 mkdir -p "$OUTPUT_DIR"
+
+# Function to check and install expect if needed
+check_expect_installed() {
+    if ! command -v expect &> /dev/null; then
+        echo "expect is not installed. Installing..."
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y expect
+        elif command -v yum &> /dev/null; then
+            sudo yum install -y expect
+        elif command -v dnf &> /dev/null; then
+            sudo dnf install -y expect
+        else
+            echo "Error: Cannot install expect. Please install it manually."
+            return 1
+        fi
+    fi
+    return 0
+}
+
 radio_unit_utils() {
     local bw=$1
     echo "Setting RU bandwidth to $bw bps..."
+
+    # Check if expect is installed
+    if ! check_expect_installed; then
+        echo "Error: expect is required but could not be installed."
+        return 1
+    fi
 
     # Ensure the output directory exists
     mkdir -p "$OUTPUT_DIR"
@@ -119,6 +144,12 @@ EOF
 #   - Creates output log at $OUTPUT_DIR/check_jura_ptp.out
 
 check_jura_ru_ptp_sync() {
+    # Check if expect is installed
+    if ! check_expect_installed; then
+        echo "Error: expect is required but could not be installed."
+        return 1
+    fi
+
     # Ensure the output directory exists
     mkdir -p "$OUTPUT_DIR"
 
