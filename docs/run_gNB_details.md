@@ -1,10 +1,15 @@
 # `gnb_utils.sh` - Detailed Functions
 
-This script manages the lifecycle of gNodeB (gNB) processes running on one or more remote servers. It handles starting and stopping different gNB configurations (e.g., split VNF/PNF, monolithic).
+This script manages the lifecycle of gNodeB (gNB) processes running on one or more remote servers. It handles starting and stopping different gNB configurations (e.g., split VNF/PNF, monolithic, single-machine NFAPI).
 
 ## Overview
 
-The `gnb_utils.sh` script provides functions to manage the 5G gNodeB (gNB) components, supporting both split architecture (separate VNF/CU and PNF/DU) and monolithic (single-server) deployments. It uses SSH to remotely control processes and `screen` sessions for persistent execution.
+The `gnb_utils.sh` script provides functions to manage the 5G gNodeB (gNB) components, supporting three deployment modes:
+1. **Monolithic**: Single-server deployment with all gNB functions in one process
+2. **NFAPI Split**: Separate VNF/CU and PNF/DU processes on different servers
+3. **NFAPI Single-Machine**: Separate VNF/CU and PNF/DU processes on the same server with isolated log files
+
+It uses SSH to remotely control processes and `screen` sessions for persistent execution.
 
 ## Configuration Variables
 
@@ -64,14 +69,39 @@ The script defines multiple configuration variables:
 *   **Called By**: `stop_gNB` or directly from `main.sh`.
 *   **Environment Variables Used**: `SERVER_PASSWORD`, `VNF_GNB_SERVER_USER`, `VNF_GNB_SERVER_HOST`, `GNB_SERVER_USER`, `GNB_SERVER_HOST`.
 
+### Single Machine NFAPI Setup Functions
+
+#### `start_single_machine_nfapi_setup <bandwidth_config>`
+
+*   **Purpose**: Starts the gNB components in NFAPI mode on a single server with separate log files.
+*   **Parameters**:
+    *   `$1` (bandwidth\_config): A string identifier for the current bandwidth configuration (e.g., "100M" or "40M").
+*   **Actions**:
+    1.  Connects via SSH to the gNB server (`GNB_SERVER_USER@GNB_SERVER_HOST`).
+    2.  Executes commands to start the VNF/CU component in a separate screen session with isolated log file.
+    3.  Executes commands to start the PNF/DU component in another screen session with its own log file.
+    4.  Uses single-machine specific configuration files to ensure proper local communication.
+*   **Log Files**: Uses `$VNF_LOG_FILE_SINGLE` and `$PNF_LOG_FILE_SINGLE` to avoid conflicts.
+*   **Called By**: `start_gNB` when `SINGLE_MACHINE_MODE=true`.
+
+#### `stop_single_machine_nfapi_setup <bandwidth_config>`
+
+*   **Purpose**: Stops the gNB components running in single-machine NFAPI mode.
+*   **Parameters**:
+    *   `$1` (bandwidth\_config): String identifier (e.g., "100M" or "40M").
+*   **Actions**:
+    1.  Connects via SSH to the gNB server.
+    2.  Sends commands to terminate both VNF/CU and PNF/DU processes running in separate screen sessions.
+*   **Called By**: `stop_gNB` when `SINGLE_MACHINE_MODE=true`.
+
 ### Single Machine Setup Functions
 
 #### `start_single_setup <bandwidth_config> <mode>`
 
-*   **Purpose**: Starts the gNB in a monolithic (single server) configuration.
+*   **Purpose**: Starts the gNB in a monolithic (single server) configuration or single-machine NFAPI mode.
 *   **Parameters**:
     *   `$1` (bandwidth\_config): String identifier (e.g., "100M" or "40M").
-    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI" or "Monolithic").
+    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI", "NFAPI-SingleMachine", or "Monolithic").
 *   **Actions**:
     1.  Connects via SSH to the designated gNB server (`GNB_SERVER_USER@GNB_SERVER_HOST`).
     2.  Executes commands to start the appropriate gNB process (VNF, PNF, or monolithic) based on mode and bandwidth.
@@ -80,10 +110,10 @@ The script defines multiple configuration variables:
 
 #### `stop_single_setup <bandwidth_config> <mode>`
 
-*   **Purpose**: Stops the gNB running in a monolithic configuration.
+*   **Purpose**: Stops the gNB running in a monolithic configuration or single-machine NFAPI mode.
 *   **Parameters**:
     *   `$1` (bandwidth\_config): String identifier (e.g., "100M" or "40M").
-    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI" or "Monolithic").
+    *   `$2` (mode): String identifier for the mode (e.g., "NFAPI", "NFAPI-SingleMachine", or "Monolithic").
 *   **Actions**:
     1.  Connects via SSH to the gNB server.
     2.  Sends commands to terminate the appropriate gNB process based on mode and bandwidth.
@@ -125,6 +155,9 @@ start_gNB "Monolithic"
 # Stop gNB in NFAPI mode
 stop_gNB "NFAPI"
 
+# Start gNB in single-machine NFAPI mode
+SINGLE_MACHINE_MODE=true start_gNB "NFAPI"
+
 # Reset all components
 reset_all
 ```
@@ -136,3 +169,5 @@ reset_all
 - SSH access must be configured correctly for password authentication via `sshpass`
 - Proper path configuration is essential for finding executables and configuration files on remote servers
 - The script assumes specific directory structures for OpenAirInterface installations
+- **Single-Machine Mode**: Uses separate log files (`$VNF_LOG_FILE_SINGLE` and `$PNF_LOG_FILE_SINGLE`) to avoid conflicts
+- **Configuration Files**: Single-machine mode requires specific config files with local IP addresses for VNF-PNF communication

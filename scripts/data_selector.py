@@ -124,6 +124,8 @@ def get_mode_from_data_dir(data_dir):
     dir_name = data_dir.name.lower()
     
     if 'nfapi' in dir_name:
+        if 'singlemachine' in dir_name or 'single-machine' in dir_name:
+            return 'NFAPI-SingleMachine'
         return 'NFAPI'
     elif 'monolithic' in dir_name or 'Monolithic' in dir_name:
         return 'Monolithic'

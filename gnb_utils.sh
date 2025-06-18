@@ -74,14 +74,38 @@ CMD_PNF_SPLIT="$PNF_SPLIT_CMD_PREFIX rm -f gdb_script.txt && echo -e \"set confi
 
 
 
-# Function to start a screen session
+# Additional log files for single-machine mode
+VNF_LOG_FILE_SINGLE="~/ming-vnf.log"
+PNF_LOG_FILE_SINGLE="~/ming-pnf.log"
+
+# Commands for Single Machine NFAPI Setup (both VNF and PNF on same server)
+VNF_SINGLE_CMD_PREFIX="cd $PNF_BASE_PATH/$BUILD_DIR && echo '$SERVER_PASSWORD' | sudo -S $NFAPI_TRACE"
+PNF_SINGLE_CMD_PREFIX="cd $PNF_BASE_PATH/$BUILD_DIR && echo '$SERVER_PASSWORD' | sudo -S"
+
+# Single machine NFAPI commands (VNF and PNF both run on GNB_SERVER)
+CMD_VNF_100M_SINGLE_MACHINE="$VNF_SINGLE_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_100M $VNF_OPTS"
+CMD_VNF_40M_SINGLE_MACHINE="$VNF_SINGLE_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_40M $VNF_OPTS"
+CMD_PNF_SINGLE_MACHINE="$PNF_SINGLE_CMD_PREFIX rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_PNF_SPLIT $PNF_OPTS"
+
+# Additional config files for single machine
+CONF_VNF_100M_SINGLE="gnb-vnf.sa.band78.273prb.nfapi-samemachine.conf"
+CONF_VNF_40M_SINGLE="gnb-vnf.sa.band78.106prb.nfapi-samemachine.conf"
+CONF_PNF_SINGLE="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia-samemachine.conf"
+
+# Update commands to use single-machine config files
+CMD_VNF_100M_SINGLE_MACHINE="$VNF_SINGLE_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_100M_SINGLE $VNF_OPTS"
+CMD_VNF_40M_SINGLE_MACHINE="$VNF_SINGLE_CMD_PREFIX ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_VNF_40M_SINGLE $VNF_OPTS"
+CMD_PNF_SINGLE_MACHINE="$PNF_SINGLE_CMD_PREFIX rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/$CONF_PNF_SINGLE $PNF_OPTS"
+
+# Function to start a screen session with custom log file
 start_session() {
     local session_name=$1
     local command=$2
     local target_user=$3
     local target_host=$4
+    local log_file=${5:-$GNB_LOG_FILE}  # Use custom log file if provided, default to GNB_LOG_FILE
     
-    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command &> $GNB_LOG_FILE'"
+    sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $target_user@$target_host "screen -dmS $session_name bash -c '$command &> $log_file'"
 }
 
 # Function to stop a screen session
@@ -148,6 +172,32 @@ start_single_setup() {
     fi
 }
 
+# Function to start single machine NFAPI setup
+start_single_machine_nfapi_setup() {
+    local bandwidth=$1  # 100M or 40M
+    
+    if [ "$bandwidth" = "100M" ]; then
+        start_session "VNF_100M_SINGLE" "$CMD_VNF_100M_SINGLE_MACHINE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$VNF_LOG_FILE_SINGLE"
+        start_session "PNF_SINGLE" "$CMD_PNF_SINGLE_MACHINE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$PNF_LOG_FILE_SINGLE"
+    elif [ "$bandwidth" = "40M" ]; then
+        start_session "VNF_40M_SINGLE" "$CMD_VNF_40M_SINGLE_MACHINE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$VNF_LOG_FILE_SINGLE"
+        start_session "PNF_SINGLE" "$CMD_PNF_SINGLE_MACHINE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$PNF_LOG_FILE_SINGLE"
+    fi
+}
+
+# Function to stop single machine NFAPI setup
+stop_single_machine_nfapi_setup() {
+    local bandwidth=$1  # 100M or 40M
+    
+    if [ "$bandwidth" = "100M" ]; then
+        stop_session "VNF_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+        stop_session "PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+    elif [ "$bandwidth" = "40M" ]; then
+        stop_session "VNF_40M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+        stop_session "PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+    fi
+}
+
 ### ------------------------------------------------------------------------------------------------
 
 # Example usage of all possible function combinations
@@ -200,19 +250,25 @@ stop_single_setup() {
     fi
 }
 
+# Update start_gNB function to support single-machine mode
 start_gNB() {
-    local mode=${1:-$CURRENT_MODE}  # Use provided mode or default to CURRENT_MODE
+    local mode=${1:-$CURRENT_MODE}
     if [ "$mode" = "Monolithic" ]; then
         start_single_setup "100M" "Monolithic"
+    elif [ "$SINGLE_MACHINE_MODE" = true ]; then
+        start_single_machine_nfapi_setup "100M"
     else
         start_split_setup "100M"
     fi
 }
 
+# Update stop_gNB function to support single-machine mode
 stop_gNB() {
-    local mode=${1:-$CURRENT_MODE}  # Use provided mode or default to CURRENT_MODE
+    local mode=${1:-$CURRENT_MODE}
     if [ "$mode" = "Monolithic" ]; then
         stop_single_setup "100M" "Monolithic"
+    elif [ "$SINGLE_MACHINE_MODE" = true ]; then
+        stop_single_machine_nfapi_setup "100M"
     else
         stop_split_setup "100M"
     fi
@@ -220,10 +276,14 @@ stop_gNB() {
 
 # Function to reset all states and prepare for a clean start
 reset_all() {
-    local restart_scenario=${1:-"normal"}  # Accept restart scenario parameter
+    local restart_scenario=${1:-"normal"}
 
     stop_gNB "Monolithic"
-    stop_gNB "NFAPI"
+    if [ "$SINGLE_MACHINE_MODE" = true ]; then
+        stop_single_machine_nfapi_setup "100M"
+    else
+        stop_gNB "NFAPI"
+    fi
     clean_measurement_file
 
     # Stop sessions on CN server
@@ -403,8 +463,16 @@ backup_crash_logs() {
     sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$GNB_LOG_FILE" "$crash_dir/gnb_crash.log" 2>/dev/null || echo "Failed to backup main gNB log"
     echo "Backing up measurement files..."
     sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$MEASURE_FILE_PATH" "$crash_dir/measure_crash.txt" 2>/dev/null || echo "Failed to backup measurement file"
-    # Backup VNF log if not in Monolithic mode
-    if [ ! "$mode" = "Monolithic" ]; then
+    
+    # Backup logs based on mode
+    if [ "$mode" = "Monolithic" ]; then
+        echo "Monolithic mode - single log file already backed up"
+    elif [ "$SINGLE_MACHINE_MODE" = true ]; then
+        echo "Backing up VNF log (single machine mode)..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$VNF_LOG_FILE_SINGLE" "$crash_dir/vnf_crash_single.log" 2>/dev/null || echo "Failed to backup VNF log (single machine)"
+        echo "Backing up PNF log (single machine mode)..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$PNF_LOG_FILE_SINGLE" "$crash_dir/pnf_crash_single.log" 2>/dev/null || echo "Failed to backup PNF log (single machine)"
+    else
         echo "Backing up VNF gNB log..."
         sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$GNB_LOG_FILE" "$crash_dir/vnf_gnb_crash.log" 2>/dev/null || echo "Failed to backup VNF gNB log"
     fi
@@ -427,6 +495,10 @@ generate_test_report() {
     local gnb_tag="Unknown"
     if [ "$mode" = "Monolithic" ]; then
         gnb_tag=$(get_git_tag "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$PNF_BASE_PATH")
+    elif [ "$SINGLE_MACHINE_MODE" = true ]; then
+        # Both VNF and PNF run on the same server in single-machine mode
+        vnf_tag=$(get_git_tag "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$PNF_BASE_PATH")
+        gnb_tag="$vnf_tag"  # Same as VNF since they're on the same server
     else
         vnf_tag=$(get_git_tag "$VNF_GNB_SERVER_USER" "$VNF_GNB_SERVER_HOST" "$VNF_BASE_PATH")
         gnb_tag=$(get_git_tag "$GNB_SERVER_USER" "$GNB_SERVER_HOST" "$PNF_BASE_PATH")
@@ -456,7 +528,7 @@ generate_test_report() {
 # Test Environment Report
 
 **Generated:** $current_time  
-**Test Mode:** $mode  
+**Test Mode:** $mode$([ "$SINGLE_MACHINE_MODE" = true ] && echo " (Single Machine)" || echo "")  
 ## 📊 Test Configuration
 
 ### Test Parameters
@@ -468,7 +540,7 @@ $([ "$ENABLE_UL" = true ] && echo "- **Uplink Range:** ${UL_START}M - ${UL_END}M
 ## 🏗️ Software Versions
 
 ### gNB Software
-- **Mode:** $mode
+- **Mode:** $mode$([ "$SINGLE_MACHINE_MODE" = true ] && echo " (Single Machine)" || echo "")
 $([ "$mode" != "Monolithic" ] && echo "- **VNF Version Tag:** $vnf_tag
 - **PNF Version Tag:** $gnb_tag" || echo "- **gNB Version Tag:** $gnb_tag")
 
@@ -486,7 +558,15 @@ $([ "$mode" != "Monolithic" ] && echo "- **VNF Version Tag:** $vnf_tag
 - **Test Server IP:** $TEST_SERVER_IP
 - **Network Interface:** $INTERFACE
 
-$([ "$mode" != "Monolithic" ] && echo "### NFAPI Split Configuration
+$([ "$mode" != "Monolithic" ] && [ "$SINGLE_MACHINE_MODE" = true ] && echo "### NFAPI Single Machine Configuration
+- **VNF Server:** $GNB_SERVER_USER@$GNB_SERVER_HOST (Single Machine Mode)
+- **PNF Server:** $GNB_SERVER_USER@$GNB_SERVER_HOST (Single Machine Mode)
+- **VNF Base Path:** $PNF_BASE_PATH
+- **PNF Base Path:** $PNF_BASE_PATH
+- **VNF Log File:** $VNF_LOG_FILE_SINGLE
+- **PNF Log File:** $PNF_LOG_FILE_SINGLE")
+
+$([ "$mode" != "Monolithic" ] && [ "$SINGLE_MACHINE_MODE" != true ] && echo "### NFAPI Split Configuration
 - **VNF Server:** $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST
 - **PNF Server:** $GNB_SERVER_USER@$GNB_SERVER_HOST
 - **VNF Base Path:** $VNF_BASE_PATH
@@ -496,80 +576,5 @@ $([ "$mode" != "Monolithic" ] && echo "### NFAPI Split Configuration
 EOF
 
     echo "📋✅ Test environment report generated: $report_file"
-}
-
-# Function to run analysis suite with direct parameters
-run_analysis_suite() {
-    local measure_file=$1
-    local data_dir=$2
-    
-    # Activate virtual environment and run both Python scripts
-    source ~/E2E-network-measurement/E2E/bin/activate && \
-    python /home/ming/E2E-network-measurement/Measure/analyze_measure_filtered.py "$measure_file" && \
-    python /home/ming/E2E-network-measurement/scripts/run_all_analysis.py --data "$data_dir" --analyses "throughput,packet_loss,ping_latency,jitter,cpu"
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Analysis suite completed successfully"
-    else
-        echo "❌ Analysis suite failed"
-        return 1
-    fi
-}
-
-# Example usage:
-
-# Split machine setup stop examples
-# stop_split_setup "100M"    # Stop 100M bandwidth setup
-# stop_split_setup "40M"     # Stop 40M bandwidth setup
-
-# Single machine setup stop examples
-# stop_single_setup "100M" "NFAPI"    # Stop 100M bandwidth NFAPI setup
-# stop_single_setup "40M" "NFAPI"     # Stop 40M bandwidth NFAPI setup
-# stop_single_setup "100M" "Monolithic"     # Stop 100M bandwidth Monolithic setup
-# stop_single_setup "40M" "Monolithic"      # Stop 40M bandwidth Monolithic setup
-
-# Function to clean measurement file on gNB server
-clean_measurement_file() {
-    local target_user=${1:-$GNB_SERVER_USER}
-    local target_host=${2:-$GNB_SERVER_HOST}
-    
-    echo "Cleaning measurement file on $target_user@$target_host..."
-    sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no "$target_user@$target_host" \
-        "echo $SERVER_PASSWORD | sudo -S rm -f $MEASURE_FILE_PATH" &>/dev/null
-}
-
-# Function to process and fetch measurement file from gNB server
-process_and_fetch_measurement() {
-    local mode=${1:-$CURRENT_MODE}
-    local target_user=${2:-$GNB_SERVER_USER}
-    local target_host=${3:-$GNB_SERVER_HOST}
-        
-    # Execute reorganize_measure.py script remotely
-    sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no "$target_user@$target_host" \
-        "echo $SERVER_PASSWORD | sudo -S python $REORGANIZE_SCRIPT_PATH" &>/dev/null
-    
-    if [ $? -ne 0 ]; then
-        echo "Failed to execute reorganize_measure.py script"
-        return 1
-    fi
-    
-    # Expand LOCAL_MEASURE_DIR to handle ~ properly
-    local expanded_measure_dir=$(eval echo $LOCAL_MEASURE_DIR)
-    
-    # Create the local directory if it doesn't exist
-    mkdir -p "$expanded_measure_dir"
-    
-    # Define local filename with mode suffix
-    local local_filename="$expanded_measure_dir/measure_filtered-${mode}-$(date +%Y%m%d).txt"
-
-    sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$target_user@$target_host:$MEASURE_FILTERED_FILE_PATH" "$local_filename"
-    
-    if [ $? -eq 0 ]; then
-        # echo "Successfully fetched measurement file: $local_filename"
-        echo "$local_filename"  # Return the filename for capture
-    else
-        echo "Failed to fetch measurement file from $target_user@$target_host:$MEASURE_FILTERED_FILE_PATH"
-        return 1
-    fi
 }
 

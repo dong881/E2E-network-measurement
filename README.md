@@ -13,7 +13,7 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
 **Enhanced Analysis Features:**
 - **Automatic Data Source Selection**: The system remembers your last data directory selection for streamlined analysis
 - **Comprehensive Logging**: All analysis output is saved to log files with only status messages shown to users
-- **Mode Auto-Detection**: Automatically extracts testing mode (e.g., "nFAPI", "Monolithic") from folder names
+- **Mode Auto-Detection**: Automatically extracts testing mode (e.g., "NFAPI", "NFAPI-SingleMachine", "Monolithic") from folder names
 - **Professional Visualizations**: Enhanced color schemes and styling suitable for academic presentations and publications
 - **Interactive Analysis Menu**: Comprehensive analysis runner with selectable individual or grouped analyses
 
@@ -31,6 +31,10 @@ The core workflow involves setting up the network components (RU bandwidth, gNB)
 - **Parametric Testing**: `main.sh` orchestrates tests across specified ranges of bandwidth, protocols (TCP/UDP), and directions (Uplink/Downlink).
 - **Data Collection**: Saves iPerf JSON results and ping logs for each test run.
 - **Robust Execution**: Includes retry logic for establishing UE connection.
+- **Flexible Deployment Modes**: 
+    - **Monolithic Mode**: Single gNB process handling all functions
+    - **NFAPI Split Mode**: Separate VNF and PNF processes across different servers
+    - **NFAPI Single-Machine Mode**: Separate VNF and PNF processes on the same server with isolated log files
 - **Advanced Analytics**:
     - Network packet loss analysis (`VNF-lossPacket.py`) with interactive data folder selection
     - Comprehensive performance data processing (`network_analysis.py`)
@@ -161,6 +165,12 @@ Modify the following files to match your environment:
     # Specify gNB mode (Monolithic or NFAPI)
     ./main.sh --mode Monolithic
     ./main.sh --mode NFAPI
+    
+    # NFAPI single-machine mode (both VNF and PNF on same server)
+    ./main.sh --mode NFAPI --single-machine
+    
+    # Combined options
+    ./main.sh --mode NFAPI --single-machine --manual-mode
     ```
     The script will:
     - Source configuration variables.

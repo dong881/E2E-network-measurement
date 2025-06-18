@@ -376,7 +376,10 @@ def main():
         if 'Monolithic' in filename or 'monolithic' in filename:
             mode = 'Monolithic'
         elif 'NFAPI' in filename or 'nfapi' in filename:
-            mode = 'NFAPI'
+            if 'SingleMachine' in filename or 'single-machine' in filename or 'singlemachine' in filename:
+                mode = 'NFAPI-SingleMachine'
+            else:
+                mode = 'NFAPI'
         else:
             mode = 'Unknown'
         

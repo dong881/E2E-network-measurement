@@ -12,6 +12,7 @@ UE_IP=""
 MANUAL_MODE_ENABLED=false
 PASS=false
 CURRENT_MODE="Monolithic"
+SINGLE_MACHINE_MODE=false
 
 # Parse input arguments (只允許四個參數: --manual-mode, --mode, --pass, 與 --shutdown)
 SHUTDOWN_MODE=false
@@ -24,19 +25,22 @@ while [[ "$#" -gt 0 ]]; do
             echo "  --help, -h          Show this help message and exit"
             echo "  --manual-mode       Enable manual mode (skip automatic UE connection)"
             echo "  --mode NFAPI         Set gNB mode (default: Monolithic)"
+            echo "  --single-machine    Run NFAPI mode on single machine (only valid with --mode NFAPI)"
             echo "  --pass              Skip reset and gNB restart (continue from current state)"
             echo "  --shutdown          Shutdown mode - stop gNB and exit"
             echo "  --ru-bw BANDWIDTH   Set LiteOn RU bandwidth and exit"
             echo ""
             echo "Examples:"
-            echo "  $0                           # Run with default settings"
-            echo "  $0 --manual-mode             # Run in manual mode"
-            echo "  $0 --mode Monolithic --pass  # Run in Monolithic mode, skip reset"
-            echo "  $0 --shutdown                # Stop gNB and exit"
-            echo "  $0 --ru-bw 100000000         # Set RU bandwidth to 100MHz and exit"
+            echo "  $0                                    # Run with default settings"
+            echo "  $0 --manual-mode                     # Run in manual mode"
+            echo "  $0 --mode Monolithic --pass          # Run in Monolithic mode, skip reset"
+            echo "  $0 --mode NFAPI --single-machine     # Run NFAPI mode on single machine"
+            echo "  $0 --shutdown                        # Stop gNB and exit"
+            echo "  $0 --ru-bw 100000000                 # Set RU bandwidth to 100MHz and exit"
             exit 0 ;;
         --manual-mode) MANUAL_MODE_ENABLED=true ;;
         --mode) CURRENT_MODE="$2"; shift ;;
+        --single-machine) SINGLE_MACHINE_MODE=true ;;
         --pass) PASS=true ;;
         --shutdown) SHUTDOWN_MODE=true ;;
         --ru-bw) 
@@ -49,6 +53,15 @@ while [[ "$#" -gt 0 ]]; do
     esac
     shift
 done
+
+# Validate single-machine mode usage
+if [ "$SINGLE_MACHINE_MODE" = true ] && [ "$CURRENT_MODE" == "Monolithic" ]; then
+    echo "❌ Error: --single-machine can not be used with --mode Monolithic"
+    exit 1
+fi
+
+# Export single-machine mode for use in other scripts
+export SINGLE_MACHINE_MODE
 
 if [ "$SHUTDOWN_MODE" = true ]; then
     echo "Shutdown mode enabled. Stopping gNB and exiting."
@@ -141,6 +154,7 @@ fi
 echo "🔎 Current status:"
 # echo "  🛠️  MANUAL_MODE_ENABLED = $([ "$MANUAL_MODE_ENABLED" = true ] && echo '✅' || echo '❌')"
 echo "  🎛️  CURRENT_MODE        = $CURRENT_MODE"
+echo "  🖥️  SINGLE_MACHINE_MODE = $([ "$SINGLE_MACHINE_MODE" = true ] && echo '✅' || echo '❌')"
 echo "  📦 TEST_UDP            = $([ "$TEST_UDP" = true ] && echo '✅' || echo '❌')"
 echo "  📦 TEST_TCP            = $([ "$TEST_TCP" = true ] && echo '✅' || echo '❌')"
 echo "  ⬆️  ENABLE_UL           = $([ "$ENABLE_UL" = true ] && echo '✅' || echo '❌')"
