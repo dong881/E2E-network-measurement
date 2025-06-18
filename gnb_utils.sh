@@ -284,7 +284,6 @@ reset_all() {
     else
         stop_gNB "NFAPI"
     fi
-    clean_measurement_file
 
     # Stop sessions on CN server
     if [ -n "$CN_SERVER_USER" ] && [ -n "$CN_SERVER_HOST" ]; then
