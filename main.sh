@@ -7,6 +7,14 @@ source gnb_utils.sh
 source radio_unit_utils.sh
 check_jura_ru_ptp_sync
 
+# Record original parameters for restart functionality
+ORIGINAL_PARAMS_FILE="/tmp/e2e_original_params"
+if [ ! -f "$ORIGINAL_PARAMS_FILE" ]; then
+    # First time running - record original parameters
+    echo "$@" > "$ORIGINAL_PARAMS_FILE"
+    echo "📝 Recorded original parameters: $@"
+fi
+
 # Initialize variables
 UE_IP=""
 MANUAL_MODE_ENABLED=false
@@ -328,9 +336,16 @@ check_restart_flag() {
         # Clean up restart flag
         rm -f "$RESTART_FLAG_FILE"
         
-        # Restart script with same parameters
-        echo "🚀 Restarting script with same parameters..."
-        exec "$0" "$@"
+        # Read original parameters for restart
+        if [ -f "$ORIGINAL_PARAMS_FILE" ]; then
+            ORIGINAL_PARAMS=$(cat "$ORIGINAL_PARAMS_FILE")
+            echo "🚀 Restarting script with original parameters: $ORIGINAL_PARAMS"
+            # Don't remove the params file - keep it for subsequent restarts
+            exec "$0" $ORIGINAL_PARAMS
+        else
+            echo "⚠️  Original parameters file not found, restarting with current parameters"
+            exec "$0" "$@"
+        fi
     fi
 }
 
@@ -340,7 +355,7 @@ periodic_restart_check() {
     
     while true; do
         sleep $check_interval
-        check_restart_flag "$@"
+        check_restart_flag
     done
 }
 
@@ -350,7 +365,7 @@ if [ "$MANUAL_MODE_ENABLED" = false ]; then
     start_ue_monitoring
     
     # Start periodic restart checking in background
-    periodic_restart_check "$@" &
+    periodic_restart_check &
     RESTART_CHECK_PID=$!
 fi
 
@@ -384,7 +399,7 @@ for direction in $directions; do
         echo "Running ${dir_name} ${protocol} tests (${start}M-${end}M)"
         
         # Check restart flag before starting protocol tests
-        check_restart_flag "$@"
+        check_restart_flag
         
         # Check if UE_IP exists and is not empty, if not get it
         [ -z "$UE_IP" ] && get_ue_ip
@@ -396,7 +411,7 @@ for direction in $directions; do
             echo "Testing ${dir_name} ${protocol} at ${bw}M"
             
             # Check restart flag before each bandwidth test
-            check_restart_flag "$@"
+            check_restart_flag
             
             # Check for gNB crash before each test
             if check_gnb_crash; then
@@ -404,7 +419,7 @@ for direction in $directions; do
                 backup_crash_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
                 # Create restart flag for gNB crash
                 echo "GNB_CRASH" > "$RESTART_FLAG_FILE"
-                check_restart_flag "$@"
+                check_restart_flag
             fi
 
             # Set iperf parameters - TEST_DURATION is sourced
@@ -454,9 +469,14 @@ cleanup_and_exit() {
         kill $RESTART_CHECK_PID 2>/dev/null || true
     fi
     rm -f "$RESTART_FLAG_FILE"
+    # Clean up original parameters file on manual exit
+    rm -f "$ORIGINAL_PARAMS_FILE"
     reset_all
     exit 1
 }
 
 # Set up signal traps
 trap cleanup_and_exit SIGINT SIGTERM
+
+# Clean up original parameters file on successful completion
+rm -f "$ORIGINAL_PARAMS_FILE"
