@@ -49,8 +49,8 @@ CONF_VNF_40M="gnb-vnf.sa.band78.106prb.nfapi.conf"
 CONF_MONO_100M="gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf"
 CONF_MONO_100M_JURA="gnb.sa.band78.273prb.fhi72.4x4-metanoia.conf"
 CONF_MONO_40M="gnb.sa.band78.106prb.fhi72.4x4-liteon_new.conf"
-CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
-# CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
+# CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
+CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
 
 # Commands for Single Machine Setup
 CMD_VNF_100M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_VNF_100M $VNF_OPTS"
@@ -218,68 +218,12 @@ stop_gNB() {
     fi
 }
 
-# Function to fetch log files and analyze them
-fetch_and_analyze_logs() {
-    local mode=$1  # "Monolithic" or "NFAPI"
-
-    # Create measurement directory if it doesn't exist
-    mkdir -p $LOCAL_MEASURE_DIR
-    
-    if [ "$mode" = "Monolithic" ]; then
-        # For Monolithic mode
-        local vnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
-        local vnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$VNF_LOG_FILE"
-        local pnf_local_log="$LOCAL_MEASURE_DIR/monolithic-$PNF_LOG_FILE"
-        
-        echo "Fetching VNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$vnf_remote_log" "$vnf_local_log"
-        
-        echo "Fetching PVNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_remote_log" "$pnf_local_log"
-
-        if [ -f "$vnf_local_log" ] && [ -f "$pnf_local_log" ]; then
-            echo "Successfully copied VNF and PNF logs"
-            python $LOG_ANALYSIS_SCRIPT "$vnf_local_log" "$pnf_local_log"
-        else
-            echo "Failed to copy one or more log files"
-        fi
-    else
-        # For NFAPI mode (need both VNF and PNF logs)
-        local vnf_remote_log="$VNF_BASE_PATH/$BUILD_DIR/$VNF_LOG_FILE"
-        local pnf_remote_log="$PNF_BASE_PATH/$BUILD_DIR/$PNF_LOG_FILE"
-        local vnf_local_log="$LOCAL_MEASURE_DIR/nfapi-$VNF_LOG_FILE"
-        local pnf_local_log="$LOCAL_MEASURE_DIR/nfapi-$PNF_LOG_FILE"
-        
-        echo "Fetching VNF logs from $VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$vnf_remote_log" "$vnf_local_log"
-        
-        echo "Fetching PNF logs from $GNB_SERVER_USER@$GNB_SERVER_HOST..."
-        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$pnf_remote_log" "$pnf_local_log"
-        
-        if [ -f "$vnf_local_log" ] && [ -f "$pnf_local_log" ]; then
-            echo "Successfully copied VNF and PNF logs"
-            python $LOG_ANALYSIS_SCRIPT "$vnf_local_log" "$pnf_local_log"
-        else
-            echo "Failed to copy one or more log files"
-        fi
-    fi
-}
-
-# Function to clean log files on servers
-clean_log_files() {
-    # Execute with a direct command string that handles the password prompt
-    sshpass -p "$SERVER_PASSWORD" ssh -t -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST "echo $SERVER_PASSWORD | sudo -S rm -f $MEASURE_FILE_PATH" &>/dev/null
-    sleep 2
-}
-
 # Function to reset all states and prepare for a clean start
 reset_all() {
     local restart_scenario=${1:-"normal"}  # Accept restart scenario parameter
 
     stop_gNB "Monolithic"
     stop_gNB "NFAPI"
-    clean_log_files
     clean_measurement_file
 
     # Stop sessions on CN server
@@ -303,7 +247,7 @@ reset_all() {
         fi
         
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
-            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf_demo.sh || true'" &>/dev/null
+            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf.sh || true'" &>/dev/null
     else
         echo "gNB server information not set, skipping remote script execution."
     fi
@@ -573,9 +517,6 @@ run_analysis_suite() {
 }
 
 # Example usage:
-# Example usage:
-# fetch_and_analyze_logs "Monolithic"  # For monolithic mode
-# fetch_and_analyze_logs "NFAPI" # For NFAPI mode
 
 # Split machine setup stop examples
 # stop_split_setup "100M"    # Stop 100M bandwidth setup

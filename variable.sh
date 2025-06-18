@@ -3,7 +3,7 @@
 # FREQUENTLY ADJUSTED PARAMETERS
 # ========================================
 # Duration in seconds for tests
-export TEST_DURATION=$((40*60))
+export TEST_DURATION=$((60*60))
 export SLEEP_WINDOW=5
 
 # Downlink test settings
@@ -85,12 +85,7 @@ export PNF_BASE_PATH="~/oai_mp_f_ming/openairinterface5g"
 # export PNF_BASE_PATH="~/FH_7.2_dev/openairinterface5g"
 
 # Common build directory and log files
-export VNF_LOG_FILE="VNF.txt"
-export PNF_LOG_FILE="PNF.txt"
 export GNB_LOG_FILE="~/ming.log"
-
-# Local measurement directory
-export LOCAL_MEASURE_DIR="~/E2E-network-measurement/Measure/log"
 
 # Analysis script path
 export LOG_ANALYSIS_SCRIPT="$LOCAL_MEASURE_DIR/../analyze_logs.py"
@@ -102,6 +97,8 @@ export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\iperf3"
 # export control_pc_iperf_path="C:\\Users\\$CONTROL_PC_USER\\Desktop\\MTK\\iperf3"
 
 # Measurement file path
+# Local measurement directory
+export LOCAL_MEASURE_DIR="~/E2E-network-measurement/Measure/log"
 export MEASURE_FILE_PATH="$PNF_BASE_PATH/cmake_targets/ran_build/build/measure.txt"
 export REORGANIZE_SCRIPT_PATH="$PNF_BASE_PATH/../reorganize_measure.py"
 export MEASURE_FILTERED_FILE_PATH="$PNF_BASE_PATH/../measure_filtered.txt"

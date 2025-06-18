@@ -106,19 +106,6 @@ The script defines multiple configuration variables:
 
 ### Log Management Functions
 
-#### `fetch_and_analyze_logs <mode>`
-- **Purpose**: Retrieves log files from gNB servers and analyzes them
-- **Parameters**:
-  - `$1` (mode): Mode to analyze (Monolithic or NFAPI)
-- **Actions**:
-  1. Creates measurement directory if it doesn't exist
-  2. Retrieves VNF and PNF logs from appropriate servers based on mode
-  3. Calls the log analysis script if logs are successfully retrieved
-
-#### `clean_log_files`
-- **Purpose**: Cleans up log files on gNB servers
-- **Actions**: Removes VNF and PNF log files from appropriate servers based on mode
-
 #### `reset_all [mode]`
 - **Purpose**: Comprehensive reset function that stops all processes and cleans logs
 - **Parameters**:
@@ -140,9 +127,6 @@ stop_gNB "NFAPI"
 
 # Reset all components
 reset_all
-
-# Fetch and analyze logs for monolithic mode
-fetch_and_analyze_logs "Monolithic"
 ```
 
 ## Important Notes
