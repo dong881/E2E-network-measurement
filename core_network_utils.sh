@@ -26,7 +26,7 @@ ping-stop() {
     if [ -z "$output_file" ]; then
         output_file="~/ping_results.log"
     fi
-    sshpass -p "$SERVER_PASSWORD" scp "$CN_SERVER_USER@$CN_SERVER_HOST:~/ping_value.log" "$output_file"
+    sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$CN_SERVER_USER@$CN_SERVER_HOST:~/ping_value.log" "$output_file"
 }
 
 iperf-start() {

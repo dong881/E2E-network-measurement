@@ -479,6 +479,46 @@ backup_crash_logs() {
     echo "Crash logs backed up to: $crash_dir"
 }
 
+# Function to backup gNB logs after successful test completion
+backup_gnb_logs() {
+    local test_dir=$1
+    local mode=${2:-$CURRENT_MODE}
+    
+    echo "📦 Backing up gNB logs to $test_dir..."
+    
+    # Create logs backup directory
+    local logs_dir="$test_dir/logs"
+    mkdir -p "$logs_dir"
+    
+    # Backup main gNB log file
+    echo "Backing up main gNB log..."
+    sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$GNB_LOG_FILE" "$logs_dir/gnb.log" 2>/dev/null || echo "Failed to backup main gNB log"
+    
+    # Backup measurement file
+    echo "Backing up measurement file..."
+    sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$MEASURE_FILE_PATH" "$logs_dir/measure.txt" 2>/dev/null || echo "Failed to backup measurement file"
+    
+    # Backup logs based on mode
+    if [ "$mode" = "Monolithic" ]; then
+        echo "Monolithic mode - single log file backed up"
+    elif [ "$SINGLE_MACHINE_MODE" = true ]; then
+        echo "Backing up VNF log (single machine mode)..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$VNF_LOG_FILE_SINGLE" "$logs_dir/vnf_single.log" 2>/dev/null || echo "Failed to backup VNF log (single machine)"
+        echo "Backing up PNF log (single machine mode)..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST:$PNF_LOG_FILE_SINGLE" "$logs_dir/pnf_single.log" 2>/dev/null || echo "Failed to backup PNF log (single machine)"
+    else
+        echo "Backing up VNF gNB log..."
+        sshpass -p "$SERVER_PASSWORD" scp $SSH_OPTIONS "$VNF_GNB_SERVER_USER@$VNF_GNB_SERVER_HOST:$GNB_LOG_FILE" "$logs_dir/vnf_gnb.log" 2>/dev/null || echo "Failed to backup VNF gNB log"
+    fi
+    
+    # Backup additional system logs if available
+    echo "Backing up system logs..."
+    sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST" "sudo tail -1000 /var/log/syslog 2>/dev/null || echo 'No syslog available'" > "$logs_dir/syslog.log" 2>/dev/null || echo "Failed to backup syslog"
+    sshpass -p "$SERVER_PASSWORD" ssh $SSH_OPTIONS "$GNB_SERVER_USER@$GNB_SERVER_HOST" "sudo dmesg 2>/dev/null || echo 'No dmesg available'" > "$logs_dir/dmesg.log" 2>/dev/null || echo "Failed to backup dmesg"
+    
+    echo "📦✅ gNB logs backed up to: $logs_dir"
+}
+
 # Function to generate comprehensive test environment report
 generate_test_report() {
     local test_dir=$1

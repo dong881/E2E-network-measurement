@@ -146,6 +146,24 @@ The script defines multiple configuration variables:
   3. Stops sessions on CN server
   4. Executes any required remote scripts on the main host
 
+#### `backup_gnb_logs <test_dir> [mode]`
+- **Purpose**: Backup all gNB log files after successful test completion
+- **Parameters**:
+  - `$1` (test_dir): Directory where backup should be stored
+  - `$2` (mode): Optional. gNB mode (Monolithic or NFAPI). Defaults to CURRENT_MODE.
+- **Actions**:
+  1. Creates backup directory within test directory (`<test_dir>/logs`)
+  2. Backs up main gNB log file (`$GNB_LOG_FILE` → `logs/gnb.log`)
+  3. Backs up measurement file (`$MEASURE_FILE_PATH` → `logs/measure.txt`)
+  4. Backs up mode-specific logs (VNF/PNF logs for NFAPI modes)
+  5. Backs up additional system logs (syslog, dmesg) if available
+- **Log Files Backed Up**:
+  - Main gNB log (`$GNB_LOG_FILE`)
+  - Measurement file (`$MEASURE_FILE_PATH`)
+  - VNF/PNF logs (for NFAPI modes)
+  - System logs (syslog, dmesg)
+- **Error Handling**: Continues execution even if individual log backups fail, with error messages for failed operations
+
 ## Usage Examples
 
 ```bash
@@ -160,6 +178,9 @@ SINGLE_MACHINE_MODE=true start_gNB "NFAPI"
 
 # Reset all components
 reset_all
+
+# Backup gNB logs after test completion
+backup_gnb_logs "./data/test_directory" "Monolithic"
 ```
 
 ## Important Notes

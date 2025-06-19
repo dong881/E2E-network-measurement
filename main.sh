@@ -455,6 +455,9 @@ fi
 # Capture the measure file path from process_and_fetch_measurement
 run_analysis_suite "$(process_and_fetch_measurement $CURRENT_MODE)" "./data/${DIR_NAME}"
 
+# Backup gNB logs after successful test completion
+backup_gnb_logs "./data/${DIR_NAME}" "$CURRENT_MODE"
+
 sleep 5
 reset_all
 sleep 5
