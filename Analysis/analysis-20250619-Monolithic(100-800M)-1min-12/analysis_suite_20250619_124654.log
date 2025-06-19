@@ -1,0 +1,237 @@
+Network Analysis Suite Log
+Started: 2025-06-19 12:46:54
+Data Directory: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+Selected Analyses: clean_json, throughput, packet_loss, ping_latency, jitter, cpu
+================================================================================
+
+================================================================================
+Analysis: clean_iperf_json_analysis.py
+Started: 2025-06-19 12:46:55
+================================================================================
+STDOUT:
+🧹 Cleaning and validating iperf3 JSON files in: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+📁 Found 14 JSON files to process
+
+🔄 Processing JSON files:
+------------------------------------------------------------
+📄 Processing: iperf-dl-udp-100M-CN.json
+✅ Cleaned: iperf-dl-udp-100M-CN.json
+✅ Validation passed: iperf-dl-udp-100M-CN.json
+
+📄 Processing: iperf-dl-udp-100M-UE.json
+✅ Cleaned: iperf-dl-udp-100M-UE.json
+✅ Validation passed: iperf-dl-udp-100M-UE.json
+
+📄 Processing: iperf-dl-udp-200M-CN.json
+✅ Cleaned: iperf-dl-udp-200M-CN.json
+✅ Validation passed: iperf-dl-udp-200M-CN.json
+
+📄 Processing: iperf-dl-udp-200M-UE.json
+✅ Cleaned: iperf-dl-udp-200M-UE.json
+✅ Validation passed: iperf-dl-udp-200M-UE.json
+
+📄 Processing: iperf-dl-udp-300M-CN.json
+✅ Cleaned: iperf-dl-udp-300M-CN.json
+✅ Validation passed: iperf-dl-udp-300M-CN.json
+
+📄 Processing: iperf-dl-udp-300M-UE.json
+✅ Cleaned: iperf-dl-udp-300M-UE.json
+✅ Validation passed: iperf-dl-udp-300M-UE.json
+
+📄 Processing: iperf-dl-udp-400M-CN.json
+✅ Cleaned: iperf-dl-udp-400M-CN.json
+✅ Validation passed: iperf-dl-udp-400M-CN.json
+
+📄 Processing: iperf-dl-udp-400M-UE.json
+✅ Cleaned: iperf-dl-udp-400M-UE.json
+✅ Validation passed: iperf-dl-udp-400M-UE.json
+
+📄 Processing: iperf-dl-udp-500M-CN.json
+✅ Cleaned: iperf-dl-udp-500M-CN.json
+✅ Validation passed: iperf-dl-udp-500M-CN.json
+
+📄 Processing: iperf-dl-udp-500M-UE.json
+✅ Cleaned: iperf-dl-udp-500M-UE.json
+✅ Validation passed: iperf-dl-udp-500M-UE.json
+
+📄 Processing: iperf-dl-udp-600M-CN.json
+✅ Cleaned: iperf-dl-udp-600M-CN.json
+✅ Validation passed: iperf-dl-udp-600M-CN.json
+
+📄 Processing: iperf-dl-udp-600M-UE.json
+✅ Cleaned: iperf-dl-udp-600M-UE.json
+✅ Validation passed: iperf-dl-udp-600M-UE.json
+
+📄 Processing: iperf-dl-udp-700M-CN.json
+✅ Cleaned: iperf-dl-udp-700M-CN.json
+✅ Validation passed: iperf-dl-udp-700M-CN.json
+
+📄 Processing: iperf-dl-udp-700M-UE.json
+✅ Cleaned: iperf-dl-udp-700M-UE.json
+✅ Validation passed: iperf-dl-udp-700M-UE.json
+
+================================================================================
+🧹 JSON Cleaning and Validation Summary
+================================================================================
+📁 Total files processed: 14
+✅ Successfully cleaned: 14
+✅ Successfully validated: 14
+❌ Failed to process: 0
+💾 All cleaned files are saved in-place in: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+================================================================================
+
+Return Code: 0
+Completed: 2025-06-19 12:46:55
+
+================================================================================
+Analysis: analyze_throughput.py
+Started: 2025-06-19 12:46:59
+================================================================================
+STDOUT:
+Analyzing throughput data from: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+Processing throughput data:
+📊 Processing 100M bandwidth...
+  📤 CN: 100.0 Mbps sent
+  📥 UE: 100.1 Mbps received
+📊 Processing 200M bandwidth...
+  📤 CN: 200.0 Mbps sent
+  📥 UE: 200.1 Mbps received
+📊 Processing 300M bandwidth...
+  📤 CN: 300.0 Mbps sent
+  📥 UE: 300.2 Mbps received
+📊 Processing 400M bandwidth...
+  📤 CN: 400.0 Mbps sent
+  📥 UE: 394.5 Mbps received
+📊 Processing 500M bandwidth...
+  📤 CN: 500.0 Mbps sent
+  📥 UE: 493.7 Mbps received
+📊 Processing 600M bandwidth...
+  📤 CN: 600.0 Mbps sent
+  📥 UE: 555.8 Mbps received
+📊 Processing 700M bandwidth...
+  📤 CN: 700.0 Mbps sent
+  📥 UE: 624.6 Mbps received
+✅ Throughput comparison plot saved: throughput_comparison.png
+✅ Throughput analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250619-Monolithic(100-800M)-1min-12
+
+Return Code: 0
+Completed: 2025-06-19 12:46:59
+
+================================================================================
+Analysis: analyze_packet_loss.py
+Started: 2025-06-19 12:47:02
+================================================================================
+STDOUT:
+Analyzing UE packet loss data from: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+Processing UE packet loss data:
+📊 Processing 100M bandwidth...
+  📉 UE Loss Rate: 0.000%
+📊 Processing 200M bandwidth...
+  📉 UE Loss Rate: 0.000%
+📊 Processing 300M bandwidth...
+  📉 UE Loss Rate: 0.011%
+📊 Processing 400M bandwidth...
+  📉 UE Loss Rate: 1.460%
+📊 Processing 500M bandwidth...
+  📉 UE Loss Rate: 1.388%
+📊 Processing 600M bandwidth...
+  📉 UE Loss Rate: 7.469%
+📊 Processing 700M bandwidth...
+  📉 UE Loss Rate: 12.331%
+✅ UE packet loss analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250619-Monolithic(100-800M)-1min-12/ue_packet_loss_analysis.png
+
+Return Code: 0
+Completed: 2025-06-19 12:47:02
+
+================================================================================
+Analysis: analyze_ping_latency.py
+Started: 2025-06-19 12:47:07
+================================================================================
+STDOUT:
+📋 Detected mode: Monolithic
+Analyzing ping latency data from: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+Processing ping latency data:
+📊 Processing 100M bandwidth...
+  📥 Downlink: 82 ping measurements
+📊 Processing 200M bandwidth...
+  📥 Downlink: 82 ping measurements
+📊 Processing 300M bandwidth...
+  📥 Downlink: 81 ping measurements
+📊 Processing 400M bandwidth...
+  📥 Downlink: 77 ping measurements
+📊 Processing 500M bandwidth...
+  📥 Downlink: 81 ping measurements
+📊 Processing 600M bandwidth...
+  📥 Downlink: 74 ping measurements
+📊 Processing 700M bandwidth...
+  📥 Downlink: 77 ping measurements
+📊 Creating DL ping analysis...
+✅ Analysis plots saved: 3 files
+
+📋 DL Ping Latency Summary:
+--------------------------------------------------
+100M: Mean=20.54ms, Median=20.40ms, Std=5.45ms, Outliers=0
+200M: Mean=23.21ms, Median=23.85ms, Std=6.28ms, Outliers=1
+300M: Mean=20.75ms, Median=20.20ms, Std=6.00ms, Outliers=0
+400M: Mean=22.98ms, Median=24.40ms, Std=7.28ms, Outliers=1
+500M: Mean=23.63ms, Median=23.60ms, Std=9.00ms, Outliers=1
+600M: Mean=28.99ms, Median=27.20ms, Std=10.75ms, Outliers=3
+700M: Mean=31.19ms, Median=28.00ms, Std=18.49ms, Outliers=9
+⚠️ No UL ping data found, skipping...
+✅ Ping latency analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250619-Monolithic(100-800M)-1min-12
+
+Return Code: 0
+Completed: 2025-06-19 12:47:07
+
+================================================================================
+Analysis: analyze_jitter.py
+Started: 2025-06-19 12:47:11
+================================================================================
+STDOUT:
+Analyzing jitter data from: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+Processing jitter data:
+📊 Processing 100M bandwidth...
+  📈 UE Jitter: 0.087ms
+📊 Processing 200M bandwidth...
+  📈 UE Jitter: 0.038ms
+📊 Processing 300M bandwidth...
+  📈 UE Jitter: 0.082ms
+📊 Processing 400M bandwidth...
+  📈 UE Jitter: 0.261ms
+📊 Processing 500M bandwidth...
+  📈 UE Jitter: 0.016ms
+📊 Processing 600M bandwidth...
+  📈 UE Jitter: 0.061ms
+📊 Processing 700M bandwidth...
+  📈 UE Jitter: 0.019ms
+✅ Jitter analysis complete! Plot saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250619-Monolithic(100-800M)-1min-12/ue_jitter_analysis.png
+
+Return Code: 0
+Completed: 2025-06-19 12:47:11
+
+================================================================================
+Analysis: analyze_cpu_utilization.py
+Started: 2025-06-19 12:47:20
+================================================================================
+STDOUT:
+Analyzing CPU utilization data from: /home/ming/E2E-network-measurement/data/20250619-Monolithic(100-800M)-1min-12
+✅ Processing CPU utilization data...
+📊 Processing 100M bandwidth...
+📊 Processing 200M bandwidth...
+📊 Processing 300M bandwidth...
+📊 Processing 400M bandwidth...
+📊 Processing 500M bandwidth...
+📊 Processing 600M bandwidth...
+📊 Processing 700M bandwidth...
+📈 Creating CPU utilization visualizations...
+✅ CPU analysis complete! Generated 2 plots in /home/ming/E2E-network-measurement/Analysis/analysis-20250619-Monolithic(100-800M)-1min-12
+
+Return Code: 0
+Completed: 2025-06-19 12:47:20
+
+================================================================================
+Analysis Suite Summary
+Completed: 2025-06-19 12:47:20
+Successful: 6
+Failed: 0
+================================================================================
