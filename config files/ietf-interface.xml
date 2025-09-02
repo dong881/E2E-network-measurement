@@ -1,0 +1,31 @@
+<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces" xmlns:oif="urn:o-ran:interfaces:1.0" xmlns:ip="urn:ietf:params:xml:ns:yang:ietf-ip">
+	<interface>
+		<name>fm1-mac9</name>
+		<type xmlns:ianaift="urn:ietf:params:xml:ns:yang:iana-if-type">ianaift:ethernetCsmacd</type>
+		<oif:l2-mtu>9000</oif:l2-mtu>
+		<mac-address xmlns="urn:o-ran:interfaces:1.0">00:e0:0c:00:ae:06</mac-address>
+		<oif:vlan-tagging>true</oif:vlan-tagging>
+		<oif:class-of-service>
+			<oif:u-plane-marking>7</oif:u-plane-marking>
+			<oif:c-plane-marking>7</oif:c-plane-marking>
+			<oif:m-plane-marking>2</oif:m-plane-marking>
+		</oif:class-of-service>
+		<oif:port-reference>
+			<oif:port-number>0</oif:port-number>
+		</oif:port-reference>
+	</interface>
+        <interface>
+                <name>fm1-mac9.3</name>
+                <type xmlns:ianaift="urn:ietf:params:xml:ns:yang:iana-if-type">ianaift:l2vlan</type>
+                <base-interface xmlns="urn:o-ran:interfaces:1.0">fm1-mac9</base-interface>
+                <vlan-id xmlns="urn:o-ran:interfaces:1.0">3</vlan-id>
+                <mac-address xmlns="urn:o-ran:interfaces:1.0">00:e0:0c:00:ae:06</mac-address>
+        </interface>
+        <interface>
+                <name>fm1-mac9.5</name>
+                <type xmlns:ianaift="urn:ietf:params:xml:ns:yang:iana-if-type">ianaift:l2vlan</type>
+                <base-interface xmlns="urn:o-ran:interfaces:1.0">fm1-mac9</base-interface>
+                <vlan-id xmlns="urn:o-ran:interfaces:1.0">5</vlan-id>
+                <mac-address xmlns="urn:o-ran:interfaces:1.0">00:e0:0c:00:ae:06</mac-address>
+        </interface>
+</interfaces>
