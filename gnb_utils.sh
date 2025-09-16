@@ -48,9 +48,11 @@ CONF_VNF_100M="gnb-vnf.sa.band78.273prb.nfapi.conf"
 CONF_VNF_40M="gnb-vnf.sa.band78.106prb.nfapi.conf"
 CONF_MONO_100M="gnb.sa.band78.273prb.fhi72.4x4-liteon_new.conf"
 CONF_MONO_100M_JURA="gnb.sa.band78.273prb.fhi72.4x4-metanoia.conf"
+CONF_MONO_100M_PEGA="gnb.sa.band78.273prb.fhi72.4x4-pega.conf"
 CONF_MONO_40M="gnb.sa.band78.106prb.fhi72.4x4-liteon_new.conf"
 # CONF_PNF="gnb-pnf.band78.fhi72.4x4-liteon_new.conf"
-CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
+# CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-metanoia.conf"
+CONF_PNF="gnb-pnf.sa.band78.fhi72.nfapi.4x4-pega.conf"
 
 # Commands for Single Machine Setup
 CMD_VNF_100M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_VNF_100M $VNF_OPTS"
@@ -58,6 +60,7 @@ CMD_VNF_40M_SINGLE="$COMMON_CMD $NFAPI_TRACE ./nr-softmodem -O $CONF_DIR/$CONF_V
 CMD_MONO_100M_SINGLE="$COMMON_CMD rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M $MONO_OPTS"
 CMD_MONO_40M_SINGLE="$COMMON_CMD ./nr-softmodem -O $CONF_DIR/$CONF_MONO_40M $MONO_OPTS"
 CMD_MONO_100M_JURA_SINGLE="$COMMON_CMD rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M_JURA $MONO_OPTS"
+CMD_MONO_100M_PEGA_SINGLE="$COMMON_CMD rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_MONO_100M_PEGA $MONO_OPTS"
 CMD_PNF_SINGLE="$COMMON_CMD rm -f gdb_script.txt && echo -e \"set confirm off\\nrun\\ndefine hook-stop\\nbt\\nend\" | sudo tee gdb_script.txt > /dev/null && sudo gdb --batch --command=gdb_script.txt --args ./nr-softmodem -O $CONF_DIR/$CONF_PNF $PNF_OPTS"
 
 # Additional config files
@@ -157,7 +160,8 @@ start_single_setup() {
     if [ "$bandwidth" = "100M" ]; then
         if [ "$mode" = "Monolithic" ]; then
             # start_session "MONO_100M" "$CMD_MONO_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
-            start_session "MONO_100M" "$CMD_MONO_100M_JURA_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+            # start_session "MONO_100M" "$CMD_MONO_100M_JURA_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
+            start_session "MONO_100M" "$CMD_MONO_100M_PEGA_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
         else
             start_session "VNF_100M" "$CMD_VNF_100M_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
             start_session "PNF" "$CMD_PNF_SINGLE" "$GNB_SERVER_USER" "$GNB_SERVER_HOST"
@@ -304,16 +308,20 @@ reset_all() {
             sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
                 "screen -wipe 2>/dev/null || true" &>/dev/null
         fi
-        
+        # backup existing script
+        # sshpass -p "$SERVER_PASSWORD" scp -o StrictHostKeyChecking=no /home/ming/E2E-network-measurement/tools/oaijuravf.sh $GNB_SERVER_USER@$GNB_SERVER_HOST:/home/oai72_su/Script/oaijuravf.sh
+        # sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
+        #     "screen -dmS oaijura bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/Script/oaijuravf.sh || true'" &>/dev/null
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $GNB_SERVER_USER@$GNB_SERVER_HOST \
-            "screen -dmS oaiLONvf bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/juravf.sh || true'" &>/dev/null
+            "screen -dmS oaipega bash -c 'echo $SERVER_PASSWORD | sudo -S source /home/oai72_su/Script/oaipega.sh || true'" &>/dev/null
     else
         echo "gNB server information not set, skipping remote script execution."
     fi
     
     # Optional: Reset Jura RU configuration
     source smo.sh
-    configure_jura_ru
+    # configure_jura_ru
+    # configure_pega_ru
     
     echo "Reset complete for scenario: $restart_scenario"
 }

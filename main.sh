@@ -5,7 +5,7 @@ source core_network_utils.sh
 source user_equipment_utils.sh
 source gnb_utils.sh
 source radio_unit_utils.sh
-check_jura_ru_ptp_sync
+# check_jura_ru_ptp_sync
 
 # Record original parameters for restart functionality
 ORIGINAL_PARAMS_FILE="/tmp/e2e_original_params"
