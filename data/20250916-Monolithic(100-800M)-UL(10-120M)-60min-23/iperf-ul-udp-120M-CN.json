@@ -1,0 +1,31 @@
+{"start_timestamp": 1758082969,
+	"start":	{
+		"connected":	[],
+		"version":	"iperf 3.7",
+		"system_info":	"Linux oaicn-virtual-machine 5.15.0-136-generic #147~20.04.1-Ubuntu SMP Wed Mar 19 16:13:14 UTC 2025 x86_64",
+		"target_bitrate":	120000000,
+		"timestamp":	{
+			"time":	"Wed, 17 Sep 2025 04:22:51 GMT",
+			"timesecs":	1758082971
+		},
+		"accepted_connection":	{
+			"host":	"10.45.0.8",
+			"port":	57536
+		},
+		"cookie":	"ephzdswo5o74qteg7kjggdwtr5jude62ditn"
+	},
+	"intervals":	[],
+	"end":	{
+	}
+}
+{
+	"start":	{
+		"connected":	[],
+		"version":	"iperf 3.7",
+		"system_info":	"Linux oaicn-virtual-machine 5.15.0-136-generic #147~20.04.1-Ubuntu SMP Wed Mar 19 16:13:14 UTC 2025 x86_64"
+	},
+	"intervals":	[],
+	"end":	{
+	},
+	"error":	"interrupt - the server has terminated"
+}

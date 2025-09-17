@@ -1,0 +1,25 @@
+{
+	"start":	{
+		"connected":	[],
+		"version":	"iperf 3.18",
+		"system_info":	"Linux localhost 4.19.113-22299651 #1 SMP PREEMPT Fri Nov 12 10:33:08 KST 2021 aarch64",
+		"timestamp":	{
+			"time":	"Wed, 17 Sep 2025 04:22:51 GMT",
+			"timesecs":	1758082971
+		},
+		"connecting_to":	{
+			"host":	"10.45.0.1",
+			"port":	5201
+		},
+		"cookie":	"ephzdswo5o74qteg7kjggdwtr5jude62ditn",
+		"target_bitrate":	120000000,
+		"fq_rate":	0,
+		"sock_bufsize":	0,
+		"sndbuf_actual":	229376,
+		"rcvbuf_actual":	229376
+	},
+	"intervals":	[],
+	"end":	{
+	},
+	"error":	"unable to read from stream socket: Try again"
+}
