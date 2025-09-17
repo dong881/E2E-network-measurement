@@ -322,6 +322,56 @@ def extract_mode_from_folder(folder_path):
     
     return mode.strip() if mode.strip() else "Unknown"
 
+def parse_mpstat_total_usage(file_path: Path) -> float:
+    """
+    Parse mpstat log to approximate total CPU utilization as 100 - %idle average.
+    Supports both mpstat and top fallback logs.
+    """
+    try:
+        text = Path(file_path).read_text(errors="ignore")
+    except Exception:
+        return 0.0
+    idle_vals = []
+    # mpstat typical line includes "all" and %idle at last column
+    for line in text.splitlines():
+        parts = line.strip().split()
+        if len(parts) >= 12 and (parts[2].lower() == "all" or parts[1].lower() == "all"):
+            try:
+                # usually last column is %idle
+                idle = float(parts[-1])
+                if 0 <= idle <= 100:
+                    idle_vals.append(idle)
+            except:
+                pass
+        # top fallback: Cpu(s):  5.5%us,  2.0%sy, ...  90.0%id, ...
+        if "Cpu(s)" in line and "%id" in line:
+            m = re.search(r'([\d.,]+)\s*%id', line)
+            if m:
+                try:
+                    idle = float(m.group(1).replace(',', '.'))
+                    if 0 <= idle <= 100:
+                        idle_vals.append(idle)
+                except:
+                    pass
+    if not idle_vals:
+        return 0.0
+    avg_idle = float(np.mean(idle_vals))
+    return max(0.0, min(100.0, 100.0 - avg_idle))
+
+def find_mpstat_log(data_dir: Path, role: str, bw: int) -> Path:
+    """
+    Find a CPU sampling log saved by the orchestrator: cpu-<role>-<direction>-<proto>-<bw>M.log
+    We match any that contains '-<bw>M' to be robust and pick the newest one.
+    """
+    candidates = list(data_dir.glob(f"cpu-{role}-*-{bw}M.log"))
+    if not candidates:
+        # also try simpler form
+        candidates = list(data_dir.glob(f"cpu-{role}-{bw}M*.log"))
+    if not candidates:
+        return Path("")
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0]
+
 def analyze_cpu_utilization(data_dir=None):
     """Main function to analyze CPU utilization across bandwidth configurations"""
     # Use provided data_dir or interactive selection
@@ -367,12 +417,44 @@ def analyze_cpu_utilization(data_dir=None):
         
         cn_data = load_json_data(cn_file) if cn_file else None
         ue_data = load_json_data(ue_file) if ue_file else None
+
+        cn_cpu = extract_cpu_data(cn_data)
+        ue_cpu = extract_cpu_data(ue_data)
+
+        # Fallback to mpstat logs if iperf JSON has no CPU fields
+        if not cn_cpu:
+            mp_cn = find_mpstat_log(data_dir, "cn", bandwidth_val)
+            if mp_cn.exists():
+                total = parse_mpstat_total_usage(mp_cn)
+                cn_cpu = {'host_total': total, 'host_user': 0.0, 'host_system': 0.0,
+                          'remote_total': 0.0, 'remote_user': 0.0, 'remote_system': 0.0}
+        # Try to aggregate VNF/PNF into UE side if present for NFAPI
+        if not ue_cpu:
+            # Prefer VNF/PNF measurements
+            total_vnf = total_pnf = 0.0
+            mp_vnf = find_mpstat_log(data_dir, "vnf", bandwidth_val)
+            mp_pnf = find_mpstat_log(data_dir, "pnf", bandwidth_val)
+            if mp_vnf.exists():
+                total_vnf = parse_mpstat_total_usage(mp_vnf)
+            if mp_pnf.exists():
+                total_pnf = parse_mpstat_total_usage(mp_pnf)
+            if total_vnf or total_pnf:
+                # Use sum as "UE host_total" placeholder for NFAPI visualization
+                ue_cpu = {'host_total': total_vnf + total_pnf, 'host_user': 0.0, 'host_system': 0.0,
+                          'remote_total': 0.0, 'remote_user': 0.0, 'remote_system': 0.0}
+            else:
+                # Monolithic gNB fallback mapped to "UE" series to keep comparison
+                mp_gnb = find_mpstat_log(data_dir, "gnb", bandwidth_val)
+                if mp_gnb.exists():
+                    total = parse_mpstat_total_usage(mp_gnb)
+                    ue_cpu = {'host_total': total, 'host_user': 0.0, 'host_system': 0.0,
+                              'remote_total': 0.0, 'remote_user': 0.0, 'remote_system': 0.0}
         
         results_dict[bandwidth_val] = {
-            'cn': extract_cpu_data(cn_data),
-            'ue': extract_cpu_data(ue_data)
+            'cn': cn_cpu,
+            'ue': ue_cpu
         }
-    
+
     # Create visualization
     if results_dict:
         print("📈 Creating CPU utilization visualizations...")

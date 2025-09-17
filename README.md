@@ -236,6 +236,45 @@ After collecting test data, you can analyze the results using the provided Pytho
 
 Each analysis script creates organized output in separate directories under `Analysis/analysis-<folder_name>/` for better organization and focused analysis.
 
+## Python End-to-End Orchestrator
+
+A single Python runner now handles automated collection (ping + iperf) and analysis without shell wrappers.
+
+- Configure servers via environment variables:
+  - SERVER_PASSWORD
+  - CN_SERVER_USER, CN_SERVER_HOST
+  - GNB_SERVER_USER, GNB_SERVER_HOST
+  - VNF_GNB_SERVER_USER, VNF_GNB_SERVER_HOST (for NFAPI split)
+  - ADB_DEVICE
+  - INTERFACE (CN egress for ping)
+  - TEST_SERVER_IP (CN IP iperf server)
+- Optional: CENTRALIZED_OUTPUT_DIR to centralize analysis outputs
+
+Quick start:
+```bash
+# Export your server/test environment
+export SERVER_PASSWORD=...
+export CN_SERVER_USER=... CN_SERVER_HOST=...
+export GNB_SERVER_USER=... GNB_SERVER_HOST=...
+export VNF_GNB_SERVER_USER=... VNF_GNB_SERVER_HOST=...   # NFAPI split only
+export ADB_DEVICE=0123456789ABCDEF
+export INTERFACE=ogstun
+export TEST_SERVER_IP=10.45.0.1
+
+# Run full collection + analysis (Monolithic)
+python3 run_analysis.py --collect --mode Monolithic --dl 100:500:100 --duration 15
+
+# NFAPI single-machine example
+python3 run_analysis.py --collect --mode NFAPI --single-machine --dl 100:500:100
+
+# Analyze existing data directory
+python3 run_analysis.py --data ./data/20250101-NFAPI(100-500M)-15sec-12
+```
+
+Outputs:
+- Data: ./data/<date>-<mode>(...)/...
+- Analyses: ./Analysis/analysis-<folder>/ (also set via CENTRALIZED_OUTPUT_DIR)
+
 ## Script Details
 
 - **`main.sh`**: Orchestrates the entire test flow. Defines the test matrix (protocols, directions, bandwidths) and calls helper scripts.

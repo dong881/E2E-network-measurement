@@ -242,14 +242,30 @@ Analysis/
 
 This organization makes it easy to find specific types of analysis and ensures each metric gets proper attention and visualization.
 
-## Installation and Dependencies
+## Orchestrated Python Workflow (run_analysis.py)
 
-Install all required dependencies with:
+- Modular collectors (SSH/ADB):
+  - iperf3 server on CN with JSON logging and start timestamp
+  - UE iperf3 client JSON capture
+  - CN→UE ping with per-line epoch timestamps
+  - mpstat CPU sampling on CN, gNB (Monolithic), VNF/PNF (NFAPI), fetched as logs
+- Independent analyses (no cross-script dependency):
+  - Throughput comparison: CN sent vs UE received; efficiency annotation
+  - Packet count comparison: CN Tx vs UE Rx
+  - Loss rate: merged CN vs UE bars with trends
+  - Ping latency: box plots with Q2 trend and throughput background bars
+  - CPU utilization: uses iperf JSON CPU if present; otherwise falls back to mpstat logs
+- Each figure is self-contained and labeled for paper-quality presentation
+
+Usage:
 ```bash
-pip install matplotlib numpy pandas seaborn
+# Collect + analyze
+python3 run_analysis.py --collect --mode Monolithic --dl 100:500:100 --duration 15
+
+# Analyze only
+python3 run_analysis.py --data ./data/20250101-NFAPI(100-500M)-15sec-12
 ```
 
-Ensure the correct directory structure exists:
-```bash
-mkdir -p data results Measure/log Measure/result
-```
+Notes:
+- mpstat logs are named: cpu-<role>-<direction>-<proto>-<bw>M.log (roles: cn, gnb, vnf, pnf)
+- Loss/throughput/ping files follow iperf-*, ping-* patterns already supported by scripts
