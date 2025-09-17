@@ -3,7 +3,7 @@
 # FREQUENTLY ADJUSTED PARAMETERS
 # ========================================
 # Duration in seconds for tests
-export TEST_DURATION=$((60)*60)  # 1 hour
+export TEST_DURATION=$((60*60*1))  # 1 hour
 export SLEEP_WINDOW=5
 
 # Downlink test settings
@@ -26,7 +26,7 @@ export WAIT_AFTER_GNB=18
 export MAX_RETRIES=6
 
 # Uplink test settings
-export ENABLE_UL=false
+export ENABLE_UL=true
 export UL_START=10
 export UL_END=120
 export UL_STEP=10
@@ -81,7 +81,7 @@ export ADB_DEVICE="R5CN30TMBYR" # Samsung UE device ID
 # ========================================
 # Base paths for different servers
 export VNF_BASE_PATH="~/OnlyOAI/openairinterface5g"
-export PNF_BASE_PATH="~/oai_mp_f_ming/openairinterface5g"
+export PNF_BASE_PATH="~/oai_mp_e/openairinterface5g"
 # export PNF_BASE_PATH="~/FH_7.2_dev/openairinterface5g"
 
 # Common build directory and log files

@@ -381,7 +381,7 @@ detect_fh_version() {
             if [[ \"\$oran_version\" =~ oran_e_maintenance_release_v([0-9]+)\\.([0-9]+) ]] || [[ \"\$oran_version\" =~ oran_e_.*release_v([0-9]+)\\.([0-9]+) ]]; then
                 # E release versions
                 version_type=\"E\"
-                fh_path=\"~/oai_mp_f_ming/phy_e\"
+                fh_path=\"~/oai_mp_e/phy_e\"
             elif [[ \"\$oran_version\" =~ oran_f_release_v([0-9]+)\\.([0-9]+) ]]; then
                 # F release versions
                 major_version=\${BASH_REMATCH[1]}
@@ -390,25 +390,25 @@ detect_fh_version() {
                 # Version mapping logic - easily extensible for future versions
                 if [ \"\$major_version\" -eq 1 ] && [ \"\$minor_version\" -le 3 ]; then
                     version_type=\"E\"
-                    fh_path=\"~/oai_mp_f_ming/phy_e\"
+                    fh_path=\"~/oai_mp_e/phy_e\"
                 else
                     # Default to F for v1.4+ and v2.0+
                     version_type=\"F\"
-                    fh_path=\"~/oai_mp_f_ming/phy\"
+                    fh_path=\"~/oai_mp_e/phy\"
                 fi
             else
                 # Default fallback when version parsing fails
                 version_type=\"F\"
-                fh_path=\"~/oai_mp_f_ming/phy\"
+                fh_path=\"~/oai_mp_e/phy\"
             fi
         else
             # Fallback to directory existence check
-            if [ -d ~/oai_mp_f_ming/phy_e ]; then
+            if [ -d ~/oai_mp_e/phy_e ]; then
                 version_type=\"E\"
-                fh_path=\"~/oai_mp_f_ming/phy_e\"
-            elif [ -d ~/oai_mp_f_ming/phy ]; then
+                fh_path=\"~/oai_mp_e/phy_e\"
+            elif [ -d ~/oai_mp_e/phy ]; then
                 version_type=\"F\"
-                fh_path=\"~/oai_mp_f_ming/phy\"
+                fh_path=\"~/oai_mp_e/phy\"
             fi
         fi
         
