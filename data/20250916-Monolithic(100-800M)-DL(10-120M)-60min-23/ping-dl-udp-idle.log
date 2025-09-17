@@ -1,0 +1,7 @@
+1758036399: PING 10.45.0.6 (10.45.0.6) from 10.45.0.1 ogstun: 56(84) bytes of data.
+1758036399: 64 bytes from 10.45.0.6: icmp_seq=1 ttl=64 time=40.9 ms
+1758036400: 64 bytes from 10.45.0.6: icmp_seq=2 ttl=64 time=10.5 ms
+1758036401: 64 bytes from 10.45.0.6: icmp_seq=3 ttl=64 time=25.6 ms
+1758036402: 64 bytes from 10.45.0.6: icmp_seq=4 ttl=64 time=26.6 ms
+1758036403: 64 bytes from 10.45.0.6: icmp_seq=5 ttl=64 time=32.0 ms
+1758036404: 64 bytes from 10.45.0.6: icmp_seq=6 ttl=64 time=23.3 ms

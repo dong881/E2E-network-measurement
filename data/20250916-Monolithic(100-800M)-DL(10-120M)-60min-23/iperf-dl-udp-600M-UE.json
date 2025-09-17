@@ -1,0 +1,10 @@
+{
+    "start": {
+        "connected": [],
+        "version": "iperf 3.18",
+        "system_info": "Linux localhost 4.19.113-22299651 #1 SMP PREEMPT Fri Nov 12 10:33:08 KST 2021 aarch64"
+    },
+    "intervals": [],
+    "end": {},
+    "error": "unable to connect to server - server may have stopped running or use a different port, firewall issue, etc.: Connection timed out"
+}
