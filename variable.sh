@@ -32,11 +32,21 @@ export UL_END=120
 export UL_STEP=10
 
 # ========================================
+# DEPLOYMENT MODE TOGGLES
+# ========================================
+# Default gNB mode: Monolithic or NFAPI
+export CURRENT_MODE=${CURRENT_MODE:-"Monolithic"}
+# NFAPI single-machine toggle (true/false). Only meaningful when CURRENT_MODE=NFAPI
+export SINGLE_MACHINE_MODE=${SINGLE_MACHINE_MODE:-false}
+
+# ========================================
 # NETWORK ADDRESSES & CREDENTIALS
 # ========================================
 export SSH_OPTIONS="-o StrictHostKeyChecking=no"
 export INTERFACE="ogstun"
 export TEST_SERVER_IP="10.45.0.1" # IP for iperf/ping tests
+# Configurable iPerf port (default 5201)
+export TEST_SERVER_PORT=${TEST_SERVER_PORT:-5201}
 
 # RU related settings
 export RU_IP="192.168.8.77"
@@ -62,6 +72,13 @@ export CONTROL_PC_IP="140.118.162.81" # DESKTOP-3NKR1VR for Samsung UE
 # export CONTROL_PC_IP="192.168.8.118"
 export CONTROL_PC_USER="sshuser"
 export SERVER_PASSWORD="bmwlab"
+
+# Per-host SSH passwords (fallback to SERVER_PASSWORD if not set)
+export CN_SERVER_PASSWORD="${CN_SERVER_PASSWORD:-$SERVER_PASSWORD}"
+export GNB_SERVER_PASSWORD="${GNB_SERVER_PASSWORD:-$SERVER_PASSWORD}"
+export VNF_GNB_SERVER_PASSWORD="${VNF_GNB_SERVER_PASSWORD:-$SERVER_PASSWORD}"
+export CONTROL_PC_PASSWORD="${CONTROL_PC_PASSWORD:-$SERVER_PASSWORD}"
+export KSMO_PASSWORD="${KSMO_PASSWORD:-$SERVER_PASSWORD}"
 
 # KSMO host configuration
 export KSMO_HOST="192.168.8.121"
@@ -102,3 +119,7 @@ export LOCAL_MEASURE_DIR="~/E2E-network-measurement/Measure/log"
 export MEASURE_FILE_PATH="$PNF_BASE_PATH/cmake_targets/ran_build/build/measure.txt"
 export REORGANIZE_SCRIPT_PATH="$PNF_BASE_PATH/../reorganize_measure.py"
 export MEASURE_FILTERED_FILE_PATH="$PNF_BASE_PATH/../measure_filtered.txt"
+
+# Optional: Centralized output directory for Python analyses
+# If set, Python analysis scripts will write outputs here
+export CENTRALIZED_OUTPUT_DIR="${CENTRALIZED_OUTPUT_DIR:-}"

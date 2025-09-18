@@ -35,6 +35,9 @@ class ServerConfig:
     vnf_host: str = os.environ.get("VNF_GNB_SERVER_HOST", "")
     # Control PC ADB device id
     adb_device: str = os.environ.get("ADB_DEVICE", "")
+    # Control PC (for remote ADB; optional)
+    control_pc_user: str = os.environ.get("CONTROL_PC_USER", "")
+    control_pc_ip: str = os.environ.get("CONTROL_PC_IP", "")
     # CN side egress interface for ping
     interface: str = os.environ.get("INTERFACE", "ogstun")
     # CN IP (server that iperf client connects to)
@@ -69,11 +72,20 @@ class ModeConfig:
 def which(cmd: str) -> bool:
     return subprocess.call(["bash", "-lc", f"command -v {shlex.quote(cmd)} >/dev/null 2>&1"]) == 0
 
+def prefer_remote_adb(server: ServerConfig) -> bool:
+    return bool(server.control_pc_user and server.control_pc_ip)
+
 def ensure_tools():
     missing = []
-    for tool in ["sshpass", "screen", "iperf3", "adb"]:
+    # Always need these on the orchestrator machine
+    for tool in ["sshpass", "screen", "iperf3"]:
         if not which(tool):
             missing.append(tool)
+    # Require local adb only when not using remote ADB via Control PC
+    server = ServerConfig()
+    if not prefer_remote_adb(server):
+        if not which("adb"):
+            missing.append("adb")
     if missing:
         print(f"Missing tools: {', '.join(missing)}. Please install them before running.")
         sys.exit(1)
@@ -90,30 +102,72 @@ def scp_to(server: ServerConfig, user: str, host: str, local_path: str, remote_p
     cmd = f"sshpass -p {shlex.quote(server.server_password)} scp {server.ssh_options} {shlex.quote(local_path)} {shlex.quote(user)}@{shlex.quote(host)}:{shlex.quote(remote_path)}"
     return subprocess.call(["bash", "-lc", cmd])
 
-def adb_shell(adb_device: str, shell_cmd: str, capture_to: Optional[Path] = None) -> int:
-    base = ["adb"]
-    if adb_device:
-        base += ["-s", adb_device]
-    base += ["shell", shell_cmd]
-    if capture_to:
-        with open(capture_to, "wb") as f:
-            return subprocess.call(base, stdout=f)
-    return subprocess.call(base)
+def adb_shell(server: ServerConfig, shell_cmd: str, capture_to: Optional[Path] = None) -> int:
+    """
+    Run 'adb shell <cmd>' either locally (if adb exists) or remotely via Control PC over SSH.
+    """
+    if prefer_remote_adb(server):
+        # Execute adb on Control PC via SSH and stream stdout back
+        remote_cmd = f"adb -s {shlex.quote(server.adb_device)} shell {shlex.quote(shell_cmd)}"
+        full = f"sshpass -p {shlex.quote(server.server_password)} ssh {server.ssh_options} {shlex.quote(server.control_pc_user)}@{shlex.quote(server.control_pc_ip)} {shlex.quote(remote_cmd)}"
+        if capture_to:
+            with open(capture_to, "wb") as f:
+                return subprocess.call(["bash", "-lc", full], stdout=f)
+        return subprocess.call(["bash", "-lc", full])
+    else:
+        base = ["adb"]
+        if server.adb_device:
+            base += ["-s", server.adb_device]
+        base += ["shell", shell_cmd]
+        if capture_to:
+            with open(capture_to, "wb") as f:
+                return subprocess.call(base, stdout=f)
+        return subprocess.call(base)
 
-def adb_shell_capture(adb_device: str, shell_cmd: str) -> str:
-    base = ["adb"]
-    if adb_device:
-        base += ["-s", adb_device]
-    base += ["shell", shell_cmd]
-    out = subprocess.run(base, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    return out.stdout.strip()
+def adb_shell_capture(server: ServerConfig, shell_cmd: str) -> str:
+    """
+    Capture 'adb shell <cmd>' output either locally or via remote Control PC.
+    Robust to non-UTF8 bytes (ignores undecodable sequences).
+    """
+    if prefer_remote_adb(server):
+        # Force C locale to minimize localized output noise
+        remote_inner = f"LC_ALL=C LANG=C adb -s {server.adb_device} shell {shell_cmd}"
+        remote_cmd = (
+            f"sshpass -p {shlex.quote(server.server_password)} ssh {server.ssh_options} "
+            f"{shlex.quote(server.control_pc_user)}@{shlex.quote(server.control_pc_ip)} "
+            f"{shlex.quote(remote_inner)}"
+        )
+        proc = subprocess.run(["bash", "-lc", remote_cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            return proc.stdout.decode("utf-8", errors="ignore").strip()
+        except Exception:
+            return ""
+    else:
+        base = ["adb"]
+        if server.adb_device:
+            base += ["-s", server.adb_device]
+        base += ["shell", shell_cmd]
+        proc = subprocess.run(base, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            return proc.stdout.decode("utf-8", errors="ignore").strip()
+        except Exception:
+            return ""
 
 # ---------------------------
 # Collection modules
 # ---------------------------
-def detect_ue_ip(adb_device: str) -> Optional[str]:
-    # Try common mobile interfaces; take first non-loopback IPv4
-    out = adb_shell_capture(adb_device, r"ip -f inet addr show | awk '/inet / && $2 !~ /^127\./ {print $2}' | cut -d/ -f1 | head -n1")
+def detect_ue_ip(server: ServerConfig) -> Optional[str]:
+    """
+    Try to detect UE IP. Attempts multiple passes and checks common interfaces.
+    """
+    probe_cmd = (
+        r"(ip -f inet addr show ccmni0 2>/dev/null || true; "
+        r"ip -f inet addr show ccmni1 2>/dev/null || true; "
+        r"ip -f inet addr show rmnet_data0 2>/dev/null || true; "
+        r"ip -f inet addr show || true) | "
+        r"awk '/inet / && $2 !~ /^127\./ {print $2}' | cut -d/ -f1 | head -n1"
+    )
+    out = adb_shell_capture(server, probe_cmd)
     return out if out else None
 
 def start_ping(server: ServerConfig, target_ip: str) -> int:
@@ -152,7 +206,7 @@ def stop_iperf_server_and_fetch(server: ServerConfig, local_path: Path) -> int:
 def run_iperf_client_on_ue(server: ServerConfig, params: str, local_path: Path) -> int:
     # Run iperf3 client on UE and capture stdout JSON locally
     shell_cmd = f"/data/local/tmp/iperf3 {params}"
-    return adb_shell(server.adb_device, shell_cmd, capture_to=local_path)
+    return adb_shell(server, shell_cmd, capture_to=local_path)
 
 def start_cpu_sampling(server: ServerConfig, user: str, host: str, label: str, duration: int, interval: int = 1) -> int:
     # mpstat sampling in screen to user home
@@ -180,16 +234,26 @@ def build_dir_name(mode_cfg: ModeConfig, tm: TestMatrix) -> str:
     dur = f"-{tm.duration}sec" if tm.duration < 60 else f"-{tm.duration//60}min"
     return f"{current_date}-{mode_cfg.mode}{dl_span}{ul_span}{dur}-{hour}"
 
-def run_collection(server: ServerConfig, mode_cfg: ModeConfig, tm: TestMatrix, data_dir: Path):
+def run_collection(server: ServerConfig, mode_cfg: ModeConfig, tm: TestMatrix, data_dir: Path, ue_ip_override: Optional[str] = None):
     ensure_tools()
 
-    # Resolve UE IP (user can manually ensure UE out of airplane mode)
-    print("Detecting UE IP via ADB...")
-    ue_ip = detect_ue_ip(server.adb_device)
-    if not ue_ip:
-        print("❌ UE IP not detected. Make sure the device is connected and data is enabled.")
-        sys.exit(1)
-    print(f"UE IP: {ue_ip}")
+    # Resolve UE IP (with optional manual override and retries)
+    if ue_ip_override:
+        ue_ip = ue_ip_override
+        print(f"Using provided UE IP: {ue_ip}")
+    else:
+        print("Detecting UE IP via ADB...")
+        ue_ip = None
+        for attempt in range(1, 6):
+            ue_ip = detect_ue_ip(server)
+            if ue_ip:
+                break
+            print(f"  Attempt {attempt}/5: UE IP not found, retrying...")
+            time.sleep(2)
+        if not ue_ip:
+            print("❌ UE IP not detected after retries. Provide manually with --ue-ip or verify ADB connectivity.")
+            sys.exit(1)
+        print(f"UE IP: {ue_ip}")
 
     protocols: List[str] = []
     if tm.test_udp:
@@ -313,6 +377,7 @@ def main():
     parser.add_argument("--single-machine", action="store_true", help="NFAPI on single machine")
     parser.add_argument("--out", type=str, default="", help="Centralized output directory for analyses")
     parser.add_argument("--data", type=str, default="", help="Use existing data directory (skip auto-naming)")
+    parser.add_argument("--ue-ip", type=str, default="", help="Manually supply UE IP (skip auto-detect)")
     # Optional overrides for ranges
     parser.add_argument("--dl", type=str, default="", help="DL range like start:end:step (e.g., 100:500:100)")
     parser.add_argument("--ul", type=str, default="", help="UL range like start:end:step")
@@ -347,7 +412,7 @@ def main():
     central_out.mkdir(parents=True, exist_ok=True)
 
     if args.collect:
-        run_collection(server, mode_cfg, tm, data_dir)
+        run_collection(server, mode_cfg, tm, data_dir, ue_ip_override=args.ue_ip or None)
 
     print(f"Analyzing data from: {data_dir}")
     run_all_analyses(central_out, data_dir)

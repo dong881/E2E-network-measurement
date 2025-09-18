@@ -275,6 +275,72 @@ Outputs:
 - Data: ./data/<date>-<mode>(...)/...
 - Analyses: ./Analysis/analysis-<folder>/ (also set via CENTRALIZED_OUTPUT_DIR)
 
+Notes:
+- CENTRALIZED_OUTPUT_DIR can be set to force all analysis outputs into a single directory.
+- When mode is NFAPI, set SINGLE_MACHINE_MODE=true if VNF/PNF are on the same server.
+- No local adb required: if CONTROL_PC_USER and CONTROL_PC_IP are set, the orchestrator runs ADB on the Control PC via SSH and streams output back. Otherwise, install adb locally.
+
+### One-shot environment export with .env
+Use a single .env file to export all variables at once for the Python orchestrator and analysis scripts.
+
+```bash
+# At project root
+set -a; source .env; set +a
+# Verify a few vars
+env | grep -E 'CN_SERVER_HOST|GNB_SERVER_HOST|ADB_DEVICE|TEST_SERVER_IP'
+```
+
+Then run:
+```bash
+# Full collection + analysis
+python3 run_analysis.py --collect --mode "$CURRENT_MODE" --duration "$TEST_DURATION"
+
+# Analyze an existing directory
+python3 run_analysis.py --data ./data/<your-folder>
+
+# Show CLI options
+python3 run_analysis.py --help
+```
+
+Troubleshooting:
+- Missing tools: adb
+  - Option A: install adb locally (sudo apt install -y android-tools-adb).
+  - Option B: set CONTROL_PC_USER and CONTROL_PC_IP to enable remote ADB over SSH:
+    ```bash
+    export CONTROL_PC_USER=sshuser
+    export CONTROL_PC_IP=140.118.162.81
+    ```
+  - Ensure SERVER_PASSWORD allows SSH to the Control PC.
+
+### File naming conventions (data)
+- Throughput (iPerf JSON):
+  - CN: iperf-<dl|ul>-<udp|tcp>-<BW>M-CN.json
+  - UE: iperf-<dl|ul>-<udp|tcp>-<BW>M-UE.json
+- Ping logs:
+  - ping-<dl|ul>-<udp|tcp>-<BW>M.log
+  - idle ping: ping-<dl|ul>-<udp|tcp>-idle.log
+- CPU sampling (mpstat/top fallback), created by run_analysis.py:
+  - cpu-<role>-<dl|ul>-<udp|tcp>-<BW>M.log
+  - roles: cn, gnb (Monolithic), vnf (NFAPI), pnf (NFAPI)
+
+### Figure meanings (what each plot conveys)
+- throughput_comparison.png
+  - CN sent vs UE received throughput across bandwidths, with efficiency label (% UE/CN). Quickly shows transport efficiency gaps.
+- cpu_total_utilization_stacked_comparison.png
+  - CPU utilization comparison; stacked bars show User+System usage for CN and UE (or aggregated VNF+PNF under NFAPI). Reveals compute scaling vs traffic.
+- cpu_utilization_enhanced_summary_table.png
+  - Tabular CPU stats per bandwidth (CN/UE totals and breakdown), with CN–UE difference column for quick deltas.
+- merged_loss_rate_analysis.png
+  - CN vs UE loss rates with bars and trend lines. Highlights sender vs receiver loss asymmetry and scaling behavior.
+- ping_latency_boxplot_dl.png / ping_latency_boxplot_ul.png
+  - Box plots (per bandwidth) of ping RTT with Q2 (median) trend line; background bars show received throughput. Shows latency distribution vs offered load.
+- ping_latency_quality_dl.png / ping_latency_quality_ul.png
+  - Outlier percentage per bandwidth with quality color coding. Indicates network stability across loads.
+- ue_jitter_analysis.png
+  - UE jitter per bandwidth with color-coded quality levels. Displays timing variation sensitivity to throughput.
+- packet_count_comparison.png
+  - CN transmitted vs UE received packet counts. Visualizes packet delivery discrepancy by bandwidth.
+
 ## Script Details
 
 - **`main.sh`**: Orchestrates the entire test flow. Defines the test matrix (protocols, directions, bandwidths) and calls helper scripts.
