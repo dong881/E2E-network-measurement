@@ -1,0 +1,29 @@
+Analyzing throughput data from: /home/ming/E2E-network-measurement/data/20250922-Monolithic(100-800M)-60min-15
+Processing throughput data:
+📊 Processing 100M bandwidth...
+  📤 CN: 100.0 Mbps sent
+  📥 UE: 100.0 Mbps received
+📊 Processing 200M bandwidth...
+  📤 CN: 200.0 Mbps sent
+  📥 UE: 200.0 Mbps received
+📊 Processing 300M bandwidth...
+  📤 CN: 300.0 Mbps sent
+  📥 UE: 300.0 Mbps received
+📊 Processing 400M bandwidth...
+  📤 CN: 400.0 Mbps sent
+  📥 UE: 399.8 Mbps received
+📊 Processing 500M bandwidth...
+  📤 CN: 500.0 Mbps sent
+  📥 UE: 497.6 Mbps received
+📊 Processing 600M bandwidth...
+  📤 CN: 600.0 Mbps sent
+  📥 UE: 574.6 Mbps received
+📊 Processing 700M bandwidth...
+  📤 CN: 700.0 Mbps sent
+  📥 UE: 627.1 Mbps received
+📊 Processing 800M bandwidth...
+  📤 CN: 800.0 Mbps sent
+  📥 UE: 626.8 Mbps received
+✅ Throughput comparison plot saved: throughput_comparison.png
+✅ Throughput analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250922-Monolithic(100-800M)-60min-15
+📋 Log file saved to: /home/ming/E2E-network-measurement/Analysis/analysis-20250922-Monolithic(100-800M)-60min-15/logs/throughput_analysis_20250923_095635.log

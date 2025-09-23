@@ -238,7 +238,7 @@ def create_quartile_analysis_plot(results_dict, output_dir, direction, mode, dat
     # SECOND: Create box plot on primary axis (middle layer)
     box_data = [results_dict[bw]['raw_data'] for bw in bandwidths]
     
-    box_plot = ax.boxplot(box_data, tick_labels=labels, patch_artist=True, 
+    box_plot = ax.boxplot(box_data, labels=labels, patch_artist=True, 
                           showfliers=False, widths=0.5, zorder=2)
     
     for patch in box_plot['boxes']:

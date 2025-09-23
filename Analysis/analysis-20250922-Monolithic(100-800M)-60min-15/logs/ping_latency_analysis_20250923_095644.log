@@ -1,0 +1,34 @@
+Analyzing ping latency data from: /home/ming/E2E-network-measurement/data/20250922-Monolithic(100-800M)-60min-15
+Processing ping latency data:
+📊 Processing 100M bandwidth...
+  📥 Downlink: 3618 ping measurements
+📊 Processing 200M bandwidth...
+  📥 Downlink: 3618 ping measurements
+📊 Processing 300M bandwidth...
+  📥 Downlink: 3617 ping measurements
+📊 Processing 400M bandwidth...
+  📥 Downlink: 3614 ping measurements
+📊 Processing 500M bandwidth...
+  📥 Downlink: 3606 ping measurements
+📊 Processing 600M bandwidth...
+  📥 Downlink: 3411 ping measurements
+📊 Processing 700M bandwidth...
+  📥 Downlink: 3131 ping measurements
+📊 Processing 800M bandwidth...
+  📥 Downlink: 2531 ping measurements
+📊 Creating DL ping analysis...
+✅ Analysis plots saved: 3 files
+
+📋 DL Ping Latency Summary:
+--------------------------------------------------
+100M: Mean=18.37ms, Median=18.50ms, Std=6.27ms, Outliers=50
+200M: Mean=20.68ms, Median=19.90ms, Std=8.18ms, Outliers=87
+300M: Mean=19.82ms, Median=19.20ms, Std=8.87ms, Outliers=174
+400M: Mean=20.20ms, Median=19.20ms, Std=9.80ms, Outliers=150
+500M: Mean=20.35ms, Median=19.80ms, Std=8.40ms, Outliers=138
+600M: Mean=25.00ms, Median=23.20ms, Std=12.23ms, Outliers=129
+700M: Mean=35.60ms, Median=28.90ms, Std=22.93ms, Outliers=440
+800M: Mean=36.56ms, Median=28.80ms, Std=28.92ms, Outliers=342
+⚠️ No UL ping data found, skipping...
+✅ Ping latency analysis complete! Results saved to /home/ming/E2E-network-measurement/Analysis/analysis-20250922-Monolithic(100-800M)-60min-15
+📋 Log file saved to: /home/ming/E2E-network-measurement/Analysis/analysis-20250922-Monolithic(100-800M)-60min-15/logs/ping_latency_analysis_20250923_095644.log
