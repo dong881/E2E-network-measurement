@@ -26,7 +26,7 @@ export WAIT_AFTER_GNB=18
 export MAX_RETRIES=6
 
 # Uplink test settings
-export ENABLE_UL=true
+export ENABLE_UL=false
 export UL_START=10
 export UL_END=120
 export UL_STEP=10
