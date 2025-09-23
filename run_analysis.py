@@ -12,6 +12,7 @@ def run_analysis():
     script_dir = Path(__file__).parent / "scripts"
     
     scripts = [
+        script_dir / "analyze_cpu_utilization.py",
         script_dir / "analyze_throughput.py",
         script_dir / "analyze_packet_count.py",
         script_dir / "analyze_loss_rate.py",
